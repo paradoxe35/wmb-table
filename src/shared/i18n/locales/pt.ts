@@ -388,12 +388,6 @@ const pt: Record<string, string> = {
     'Qualité moyenne': 'Qualidade média',
     'Qualité légère': 'Qualidade leve',
     'Qualité minimale': 'Qualidade mínima',
-    'Version compacte': 'Versão compacta',
-    'Version très compacte': 'Versão muito compacta',
-    'Téléchargement plus léger et lecture plus rapide, pour une voix quasi identique.':
-        'Descarregamento mais leve e leitura mais rápida, para uma voz quase idêntica.',
-    'Le téléchargement le plus léger et la lecture la plus rapide, avec une voix un peu moins nette.':
-        'O descarregamento mais leve e a leitura mais rápida, com uma voz um pouco menos nítida.',
     Multilingue: 'Multilíngue',
 
     // ── TTS provider ElevenLabs ──

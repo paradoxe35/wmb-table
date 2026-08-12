@@ -385,12 +385,6 @@ const sw: Record<string, string> = {
     'Qualité moyenne': 'Ubora wa kati',
     'Qualité légère': 'Ubora mwepesi',
     'Qualité minimale': 'Ubora wa chini kabisa',
-    'Version compacte': 'Toleo dogo',
-    'Version très compacte': 'Toleo dogo zaidi',
-    'Téléchargement plus léger et lecture plus rapide, pour une voix quasi identique.':
-        'Upakuaji mwepesi na usomaji wa haraka, kwa sauti inayofanana karibu kabisa.',
-    'Le téléchargement le plus léger et la lecture la plus rapide, avec une voix un peu moins nette.':
-        'Upakuaji mwepesi kuliko yote na usomaji wa haraka zaidi, kwa sauti isiyo wazi kidogo.',
     Multilingue: 'Lugha nyingi',
 
     // ── TTS provider ElevenLabs ──

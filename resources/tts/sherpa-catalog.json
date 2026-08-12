@@ -11,7 +11,6 @@
         "engine": "kitten",
         "name": "mini-v0_1",
         "langCode": ["en"],
-        "precision": "fp16",
         "filesizeMb": 149.37,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-mini-en-v0_1-fp16.tar.bz2",
         "modelName": "kitten-mini-en-v0_1-fp16"
@@ -28,7 +27,6 @@
         "engine": "kitten",
         "name": "nano-v0_1",
         "langCode": ["en"],
-        "precision": "fp16",
         "filesizeMb": 25.61,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-nano-en-v0_1-fp16.tar.bz2",
         "modelName": "kitten-nano-en-v0_1-fp16"
@@ -37,7 +35,6 @@
         "engine": "kitten",
         "name": "nano-v0_2",
         "langCode": ["en"],
-        "precision": "fp16",
         "filesizeMb": 25.36,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-nano-en-v0_2-fp16.tar.bz2",
         "modelName": "kitten-nano-en-v0_2-fp16"
@@ -46,7 +43,6 @@
         "engine": "kitten",
         "name": "nano-v0_8",
         "langCode": ["en"],
-        "precision": "fp32",
         "filesizeMb": 60.86,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-nano-en-v0_8-fp32.tar.bz2",
         "modelName": "kitten-nano-en-v0_8-fp32"
@@ -55,7 +51,6 @@
         "engine": "kitten",
         "name": "nano-v0_8",
         "langCode": ["en"],
-        "precision": "int8",
         "filesizeMb": 29.77,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-nano-en-v0_8-int8.tar.bz2",
         "modelName": "kitten-nano-en-v0_8-int8"
@@ -72,7 +67,6 @@
         "engine": "kokoro",
         "name": "v0_19",
         "langCode": ["en"],
-        "precision": "int8",
         "filesizeMb": 98.47,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-int8-en-v0_19.tar.bz2",
         "modelName": "kokoro-int8-en-v0_19"
@@ -81,7 +75,6 @@
         "engine": "kokoro",
         "name": "multi-lang-v1_0",
         "langCode": ["en", "zh"],
-        "precision": "int8",
         "filesizeMb": 125.73,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-int8-multi-lang-v1_0.tar.bz2",
         "modelName": "kokoro-int8-multi-lang-v1_0"
@@ -90,7 +83,6 @@
         "engine": "kokoro",
         "name": "multi-lang-v1_1",
         "langCode": ["en", "zh"],
-        "precision": "int8",
         "filesizeMb": 140.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-int8-multi-lang-v1_1.tar.bz2",
         "modelName": "kokoro-int8-multi-lang-v1_1"
@@ -163,7 +155,6 @@
         "engine": "pocket",
         "name": "2026-01-26",
         "langCode": ["en", "zh"],
-        "precision": "int8",
         "filesizeMb": 93.78,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2",
         "modelName": "sherpa-onnx-pocket-tts-int8-2026-01-26"
@@ -204,7 +195,6 @@
             "uk",
             "vi"
         ],
-        "precision": "int8",
         "filesizeMb": 122.81,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-supertonic-3-tts-int8-2026-05-11.tar.bz2",
         "modelName": "sherpa-onnx-supertonic-3-tts-int8-2026-05-11"
@@ -213,7 +203,6 @@
         "engine": "supertonic",
         "name": "2026-03-06",
         "langCode": ["en", "ko", "es", "pt", "fr"],
-        "precision": "int8",
         "filesizeMb": 80.77,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-supertonic-tts-int8-2026-03-06.tar.bz2",
         "modelName": "sherpa-onnx-supertonic-tts-int8-2026-03-06"
@@ -230,7 +219,6 @@
         "engine": "zipvoice",
         "name": "distill-emilia",
         "langCode": ["zh", "en"],
-        "precision": "fp32",
         "filesizeMb": 455.67,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-zipvoice-distill-fp32-zh-en-emilia.tar.bz2",
         "modelName": "sherpa-onnx-zipvoice-distill-fp32-zh-en-emilia"
@@ -239,7 +227,6 @@
         "engine": "zipvoice",
         "name": "distill-emilia",
         "langCode": ["zh", "en"],
-        "precision": "int8",
         "filesizeMb": 104.11,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-zipvoice-distill-int8-zh-en-emilia.tar.bz2",
         "modelName": "sherpa-onnx-zipvoice-distill-int8-zh-en-emilia"
@@ -716,7 +703,6 @@
         "name": "SA_dii",
         "langCode": ["ar"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.01,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-SA_dii-high-fp16.tar.bz2",
         "modelName": "vits-piper-ar_JO-SA_dii-high-fp16"
@@ -726,7 +712,6 @@
         "name": "SA_dii",
         "langCode": ["ar"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.98,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-SA_dii-high-int8.tar.bz2",
         "modelName": "vits-piper-ar_JO-SA_dii-high-int8"
@@ -745,7 +730,6 @@
         "name": "SA_miro",
         "langCode": ["ar"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 33.96,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-SA_miro-high-fp16.tar.bz2",
         "modelName": "vits-piper-ar_JO-SA_miro-high-fp16"
@@ -755,7 +739,6 @@
         "name": "SA_miro",
         "langCode": ["ar"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 21.1,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-SA_miro-high-int8.tar.bz2",
         "modelName": "vits-piper-ar_JO-SA_miro-high-int8"
@@ -774,7 +757,6 @@
         "name": "SA_miro_V2",
         "langCode": ["ar"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.04,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-SA_miro_V2-high-fp16.tar.bz2",
         "modelName": "vits-piper-ar_JO-SA_miro_V2-high-fp16"
@@ -784,7 +766,6 @@
         "name": "SA_miro_V2",
         "langCode": ["ar"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.86,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-SA_miro_V2-high-int8.tar.bz2",
         "modelName": "vits-piper-ar_JO-SA_miro_V2-high-int8"
@@ -803,7 +784,6 @@
         "name": "kareem",
         "langCode": ["ar"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.16,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-kareem-low-fp16.tar.bz2",
         "modelName": "vits-piper-ar_JO-kareem-low-fp16"
@@ -813,7 +793,6 @@
         "name": "kareem",
         "langCode": ["ar"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.18,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-kareem-low-int8.tar.bz2",
         "modelName": "vits-piper-ar_JO-kareem-low-int8"
@@ -832,7 +811,6 @@
         "name": "kareem",
         "langCode": ["ar"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-kareem-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ar_JO-kareem-medium-fp16"
@@ -842,7 +820,6 @@
         "name": "kareem",
         "langCode": ["ar"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-kareem-medium-int8.tar.bz2",
         "modelName": "vits-piper-ar_JO-kareem-medium-int8"
@@ -861,7 +838,6 @@
         "name": "upc_ona",
         "langCode": ["ca"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.28,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ca_ES-upc_ona-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ca_ES-upc_ona-medium-fp16"
@@ -871,7 +847,6 @@
         "name": "upc_ona",
         "langCode": ["ca"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.06,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ca_ES-upc_ona-medium-int8.tar.bz2",
         "modelName": "vits-piper-ca_ES-upc_ona-medium-int8"
@@ -890,7 +865,6 @@
         "name": "upc_ona",
         "langCode": ["ca"],
         "quality": "x_low",
-        "precision": "fp16",
         "filesizeMb": 15.76,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ca_ES-upc_ona-x_low-fp16.tar.bz2",
         "modelName": "vits-piper-ca_ES-upc_ona-x_low-fp16"
@@ -900,7 +874,6 @@
         "name": "upc_ona",
         "langCode": ["ca"],
         "quality": "x_low",
-        "precision": "int8",
         "filesizeMb": 12.73,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ca_ES-upc_ona-x_low-int8.tar.bz2",
         "modelName": "vits-piper-ca_ES-upc_ona-x_low-int8"
@@ -919,7 +892,6 @@
         "name": "upc_pau",
         "langCode": ["ca"],
         "quality": "x_low",
-        "precision": "fp16",
         "filesizeMb": 15.75,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ca_ES-upc_pau-x_low-fp16.tar.bz2",
         "modelName": "vits-piper-ca_ES-upc_pau-x_low-fp16"
@@ -929,7 +901,6 @@
         "name": "upc_pau",
         "langCode": ["ca"],
         "quality": "x_low",
-        "precision": "int8",
         "filesizeMb": 12.72,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ca_ES-upc_pau-x_low-int8.tar.bz2",
         "modelName": "vits-piper-ca_ES-upc_pau-x_low-int8"
@@ -948,7 +919,6 @@
         "name": "jirka",
         "langCode": ["cs"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-cs_CZ-jirka-low-fp16.tar.bz2",
         "modelName": "vits-piper-cs_CZ-jirka-low-fp16"
@@ -958,7 +928,6 @@
         "name": "jirka",
         "langCode": ["cs"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.07,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-cs_CZ-jirka-low-int8.tar.bz2",
         "modelName": "vits-piper-cs_CZ-jirka-low-int8"
@@ -977,7 +946,6 @@
         "name": "jirka",
         "langCode": ["cs"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.27,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-cs_CZ-jirka-medium-fp16.tar.bz2",
         "modelName": "vits-piper-cs_CZ-jirka-medium-fp16"
@@ -987,7 +955,6 @@
         "name": "jirka",
         "langCode": ["cs"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.03,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-cs_CZ-jirka-medium-int8.tar.bz2",
         "modelName": "vits-piper-cs_CZ-jirka-medium-int8"
@@ -1006,7 +973,6 @@
         "name": "bu_tts",
         "langCode": ["cy"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 40.1,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-cy_GB-bu_tts-medium-fp16.tar.bz2",
         "modelName": "vits-piper-cy_GB-bu_tts-medium-fp16"
@@ -1016,7 +982,6 @@
         "name": "bu_tts",
         "langCode": ["cy"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.2,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-cy_GB-bu_tts-medium-int8.tar.bz2",
         "modelName": "vits-piper-cy_GB-bu_tts-medium-int8"
@@ -1035,7 +1000,6 @@
         "name": "gwryw_gogleddol",
         "langCode": ["cy"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-cy_GB-gwryw_gogleddol-medium-fp16.tar.bz2",
         "modelName": "vits-piper-cy_GB-gwryw_gogleddol-medium-fp16"
@@ -1045,7 +1009,6 @@
         "name": "gwryw_gogleddol",
         "langCode": ["cy"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.14,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-cy_GB-gwryw_gogleddol-medium-int8.tar.bz2",
         "modelName": "vits-piper-cy_GB-gwryw_gogleddol-medium-int8"
@@ -1064,7 +1027,6 @@
         "name": "talesyntese",
         "langCode": ["da"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-da_DK-talesyntese-medium-fp16.tar.bz2",
         "modelName": "vits-piper-da_DK-talesyntese-medium-fp16"
@@ -1074,7 +1036,6 @@
         "name": "talesyntese",
         "langCode": ["da"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.05,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-da_DK-talesyntese-medium-int8.tar.bz2",
         "modelName": "vits-piper-da_DK-talesyntese-medium-int8"
@@ -1093,7 +1054,6 @@
         "name": "dii",
         "langCode": ["de"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-dii-high-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-dii-high-fp16"
@@ -1103,7 +1063,6 @@
         "name": "dii",
         "langCode": ["de"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.06,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-dii-high-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-dii-high-int8"
@@ -1122,7 +1081,6 @@
         "name": "eva_k",
         "langCode": ["de"],
         "quality": "x_low",
-        "precision": "fp16",
         "filesizeMb": 15.75,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-eva_k-x_low-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-eva_k-x_low-fp16"
@@ -1132,7 +1090,6 @@
         "name": "eva_k",
         "langCode": ["de"],
         "quality": "x_low",
-        "precision": "int8",
         "filesizeMb": 12.7,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-eva_k-x_low-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-eva_k-x_low-int8"
@@ -1151,7 +1108,6 @@
         "name": "glados",
         "langCode": ["de"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 55.72,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados-high-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-glados-high-fp16"
@@ -1161,7 +1117,6 @@
         "name": "glados",
         "langCode": ["de"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 33.39,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados-high-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-glados-high-int8"
@@ -1180,7 +1135,6 @@
         "name": "glados",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.27,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados-low-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-glados-low-fp16"
@@ -1190,7 +1144,6 @@
         "name": "glados",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.06,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados-low-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-glados-low-int8"
@@ -1209,7 +1162,6 @@
         "name": "glados",
         "langCode": ["de"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados-medium-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-glados-medium-fp16"
@@ -1219,7 +1171,6 @@
         "name": "glados",
         "langCode": ["de"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados-medium-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-glados-medium-int8"
@@ -1238,7 +1189,6 @@
         "name": "glados_turret",
         "langCode": ["de"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 55.72,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados_turret-high-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-glados_turret-high-fp16"
@@ -1248,7 +1198,6 @@
         "name": "glados_turret",
         "langCode": ["de"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 33.41,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados_turret-high-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-glados_turret-high-int8"
@@ -1267,7 +1216,6 @@
         "name": "glados_turret",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.27,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados_turret-low-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-glados_turret-low-fp16"
@@ -1277,7 +1225,6 @@
         "name": "glados_turret",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.06,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados_turret-low-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-glados_turret-low-int8"
@@ -1296,7 +1243,6 @@
         "name": "glados_turret",
         "langCode": ["de"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados_turret-medium-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-glados_turret-medium-fp16"
@@ -1306,7 +1252,6 @@
         "name": "glados_turret",
         "langCode": ["de"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.98,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados_turret-medium-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-glados_turret-medium-int8"
@@ -1325,7 +1270,6 @@
         "name": "karlsson",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.16,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-karlsson-low-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-karlsson-low-fp16"
@@ -1335,7 +1279,6 @@
         "name": "karlsson",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.15,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-karlsson-low-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-karlsson-low-int8"
@@ -1354,7 +1297,6 @@
         "name": "kerstin",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.17,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-kerstin-low-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-kerstin-low-fp16"
@@ -1364,7 +1306,6 @@
         "name": "kerstin",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.19,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-kerstin-low-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-kerstin-low-int8"
@@ -1383,7 +1324,6 @@
         "name": "miro",
         "langCode": ["de"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.21,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-miro-high-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-miro-high-fp16"
@@ -1393,7 +1333,6 @@
         "name": "miro",
         "langCode": ["de"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.3,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-miro-high-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-miro-high-int8"
@@ -1412,7 +1351,6 @@
         "name": "pavoque",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.17,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-pavoque-low-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-pavoque-low-fp16"
@@ -1422,7 +1360,6 @@
         "name": "pavoque",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-pavoque-low-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-pavoque-low-int8"
@@ -1441,7 +1378,6 @@
         "name": "ramona",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.18,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-ramona-low-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-ramona-low-fp16"
@@ -1451,7 +1387,6 @@
         "name": "ramona",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-ramona-low-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-ramona-low-int8"
@@ -1470,7 +1405,6 @@
         "name": "thorsten",
         "langCode": ["de"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 55.8,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten-high-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-thorsten-high-fp16"
@@ -1480,7 +1414,6 @@
         "name": "thorsten",
         "langCode": ["de"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 33.44,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten-high-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-thorsten-high-int8"
@@ -1499,7 +1432,6 @@
         "name": "thorsten",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.2,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten-low-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-thorsten-low-fp16"
@@ -1509,7 +1441,6 @@
         "name": "thorsten",
         "langCode": ["de"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.31,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten-low-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-thorsten-low-int8"
@@ -1528,7 +1459,6 @@
         "name": "thorsten",
         "langCode": ["de"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.27,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten-medium-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-thorsten-medium-fp16"
@@ -1538,7 +1468,6 @@
         "name": "thorsten",
         "langCode": ["de"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.98,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten-medium-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-thorsten-medium-int8"
@@ -1557,7 +1486,6 @@
         "name": "thorsten_emotional",
         "langCode": ["de"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 40.12,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten_emotional-medium-fp16.tar.bz2",
         "modelName": "vits-piper-de_DE-thorsten_emotional-medium-fp16"
@@ -1567,7 +1495,6 @@
         "name": "thorsten_emotional",
         "langCode": ["de"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.39,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-thorsten_emotional-medium-int8.tar.bz2",
         "modelName": "vits-piper-de_DE-thorsten_emotional-medium-int8"
@@ -1586,7 +1513,6 @@
         "name": "rapunzelina",
         "langCode": ["el"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.16,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-el_GR-rapunzelina-low-fp16.tar.bz2",
         "modelName": "vits-piper-el_GR-rapunzelina-low-fp16"
@@ -1596,7 +1522,6 @@
         "name": "rapunzelina",
         "langCode": ["el"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.11,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-el_GR-rapunzelina-low-int8.tar.bz2",
         "modelName": "vits-piper-el_GR-rapunzelina-low-int8"
@@ -1615,7 +1540,6 @@
         "name": "alan",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.18,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-low-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-alan-low-fp16"
@@ -1625,7 +1549,6 @@
         "name": "alan",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.3,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-low-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-alan-low-int8"
@@ -1644,7 +1567,6 @@
         "name": "alan",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-alan-medium-fp16"
@@ -1654,7 +1576,6 @@
         "name": "alan",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.13,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alan-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-alan-medium-int8"
@@ -1673,7 +1594,6 @@
         "name": "alba",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alba-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-alba-medium-fp16"
@@ -1683,7 +1603,6 @@
         "name": "alba",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.13,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-alba-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-alba-medium-int8"
@@ -1702,7 +1621,6 @@
         "name": "aru",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 40.15,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-aru-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-aru-medium-fp16"
@@ -1712,7 +1630,6 @@
         "name": "aru",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.05,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-aru-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-aru-medium-int8"
@@ -1731,7 +1648,6 @@
         "name": "cori",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 55.9,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-cori-high-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-cori-high-fp16"
@@ -1741,7 +1657,6 @@
         "name": "cori",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 33.42,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-cori-high-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-cori-high-int8"
@@ -1760,7 +1675,6 @@
         "name": "cori",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.29,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-cori-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-cori-medium-fp16"
@@ -1770,7 +1684,6 @@
         "name": "cori",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.81,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-cori-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-cori-medium-int8"
@@ -1789,7 +1702,6 @@
         "name": "dii",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-dii-high-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-dii-high-fp16"
@@ -1799,7 +1711,6 @@
         "name": "dii",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.06,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-dii-high-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-dii-high-int8"
@@ -1818,7 +1729,6 @@
         "name": "jenny_dioco",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-jenny_dioco-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-jenny_dioco-medium-fp16"
@@ -1828,7 +1738,6 @@
         "name": "jenny_dioco",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.98,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-jenny_dioco-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-jenny_dioco-medium-int8"
@@ -1847,7 +1756,6 @@
         "name": "miro",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.2,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-miro-high-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-miro-high-fp16"
@@ -1857,7 +1765,6 @@
         "name": "miro",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.36,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-miro-high-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-miro-high-int8"
@@ -1876,7 +1783,6 @@
         "name": "northern_english_male",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-northern_english_male-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-northern_english_male-medium-fp16"
@@ -1886,7 +1792,6 @@
         "name": "northern_english_male",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.12,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-northern_english_male-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-northern_english_male-medium-int8"
@@ -1905,7 +1810,6 @@
         "name": "semaine",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 40.06,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-semaine-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-semaine-medium-fp16"
@@ -1915,7 +1819,6 @@
         "name": "semaine",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.15,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-semaine-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-semaine-medium-int8"
@@ -1934,7 +1837,6 @@
         "name": "southern_english_female",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.16,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-southern_english_female-low-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-southern_english_female-low-fp16"
@@ -1944,7 +1846,6 @@
         "name": "southern_english_female",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-southern_english_female-low-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-southern_english_female-low-int8"
@@ -1963,7 +1864,6 @@
         "name": "southern_english_female",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 40.13,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-southern_english_female-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-southern_english_female-medium-fp16"
@@ -1973,7 +1873,6 @@
         "name": "southern_english_female",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.62,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-southern_english_female-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-southern_english_female-medium-int8"
@@ -2000,7 +1899,6 @@
         "name": "southern_english_male",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 40.1,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-southern_english_male-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-southern_english_male-medium-fp16"
@@ -2010,7 +1908,6 @@
         "name": "southern_english_male",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.51,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-southern_english_male-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-southern_english_male-medium-int8"
@@ -2037,7 +1934,6 @@
         "name": "vctk",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 40.31,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-vctk-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_GB-vctk-medium-fp16"
@@ -2047,7 +1943,6 @@
         "name": "vctk",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.28,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-vctk-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_GB-vctk-medium-int8"
@@ -2066,7 +1961,6 @@
         "name": "amy",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.19,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-amy-low-fp16"
@@ -2076,7 +1970,6 @@
         "name": "amy",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.12,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low-int8.tar.bz2",
         "modelName": "vits-piper-en_US-amy-low-int8"
@@ -2095,7 +1988,6 @@
         "name": "amy",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-amy-medium-fp16"
@@ -2105,7 +1997,6 @@
         "name": "amy",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.05,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-amy-medium-int8"
@@ -2124,7 +2015,6 @@
         "name": "arctic",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 40.17,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-arctic-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-arctic-medium-fp16"
@@ -2134,7 +2024,6 @@
         "name": "arctic",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-arctic-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-arctic-medium-int8"
@@ -2153,7 +2042,6 @@
         "name": "bryce",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.31,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-bryce-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-bryce-medium-fp16"
@@ -2163,7 +2051,6 @@
         "name": "bryce",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.94,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-bryce-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-bryce-medium-int8"
@@ -2182,7 +2069,6 @@
         "name": "danny",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.17,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-danny-low-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-danny-low-fp16"
@@ -2192,7 +2078,6 @@
         "name": "danny",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.2,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-danny-low-int8.tar.bz2",
         "modelName": "vits-piper-en_US-danny-low-int8"
@@ -2219,7 +2104,6 @@
         "name": "glados",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 55.76,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-glados-high-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-glados-high-fp16"
@@ -2229,7 +2113,6 @@
         "name": "glados",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 33.5,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-glados-high-int8.tar.bz2",
         "modelName": "vits-piper-en_US-glados-high-int8"
@@ -2248,7 +2131,6 @@
         "name": "hfc_female",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.28,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-hfc_female-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-hfc_female-medium-fp16"
@@ -2258,7 +2140,6 @@
         "name": "hfc_female",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.05,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-hfc_female-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-hfc_female-medium-int8"
@@ -2277,7 +2158,6 @@
         "name": "hfc_male",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-hfc_male-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-hfc_male-medium-fp16"
@@ -2287,7 +2167,6 @@
         "name": "hfc_male",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.01,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-hfc_male-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-hfc_male-medium-int8"
@@ -2306,7 +2185,6 @@
         "name": "joe",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.21,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-joe-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-joe-medium-fp16"
@@ -2316,7 +2194,6 @@
         "name": "joe",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-joe-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-joe-medium-int8"
@@ -2335,7 +2212,6 @@
         "name": "john",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.3,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-john-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-john-medium-fp16"
@@ -2345,7 +2221,6 @@
         "name": "john",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.84,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-john-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-john-medium-int8"
@@ -2364,7 +2239,6 @@
         "name": "kathleen",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.2,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-kathleen-low-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-kathleen-low-fp16"
@@ -2374,7 +2248,6 @@
         "name": "kathleen",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.3,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-kathleen-low-int8.tar.bz2",
         "modelName": "vits-piper-en_US-kathleen-low-int8"
@@ -2393,7 +2266,6 @@
         "name": "kristin",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.29,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-kristin-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-kristin-medium-fp16"
@@ -2403,7 +2275,6 @@
         "name": "kristin",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.91,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-kristin-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-kristin-medium-int8"
@@ -2422,7 +2293,6 @@
         "name": "kusal",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-kusal-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-kusal-medium-fp16"
@@ -2432,7 +2302,6 @@
         "name": "kusal",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.07,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-kusal-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-kusal-medium-int8"
@@ -2451,7 +2320,6 @@
         "name": "l2arctic",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 40.19,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-l2arctic-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-l2arctic-medium-fp16"
@@ -2461,7 +2329,6 @@
         "name": "l2arctic",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.2,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-l2arctic-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-l2arctic-medium-int8"
@@ -2480,7 +2347,6 @@
         "name": "lessac",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 55.73,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-lessac-high-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-lessac-high-fp16"
@@ -2490,7 +2356,6 @@
         "name": "lessac",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 33.4,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-lessac-high-int8.tar.bz2",
         "modelName": "vits-piper-en_US-lessac-high-int8"
@@ -2509,7 +2374,6 @@
         "name": "lessac",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.15,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-lessac-low-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-lessac-low-fp16"
@@ -2519,7 +2383,6 @@
         "name": "lessac",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.09,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-lessac-low-int8.tar.bz2",
         "modelName": "vits-piper-en_US-lessac-low-int8"
@@ -2538,7 +2401,6 @@
         "name": "lessac",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.29,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-lessac-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-lessac-medium-fp16"
@@ -2548,7 +2410,6 @@
         "name": "lessac",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-lessac-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-lessac-medium-int8"
@@ -2567,7 +2428,6 @@
         "name": "libritts",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 63.04,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-libritts-high-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-libritts-high-fp16"
@@ -2577,7 +2437,6 @@
         "name": "libritts",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 34.72,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-libritts-high-int8.tar.bz2",
         "modelName": "vits-piper-en_US-libritts-high-int8"
@@ -2596,7 +2455,6 @@
         "name": "libritts_r",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 41.08,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-libritts_r-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-libritts_r-medium-fp16"
@@ -2606,7 +2464,6 @@
         "name": "libritts_r",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.31,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-libritts_r-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-libritts_r-medium-int8"
@@ -2625,7 +2482,6 @@
         "name": "ljspeech",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 56.01,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ljspeech-high-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-ljspeech-high-fp16"
@@ -2635,7 +2491,6 @@
         "name": "ljspeech",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 32.32,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ljspeech-high-int8.tar.bz2",
         "modelName": "vits-piper-en_US-ljspeech-high-int8"
@@ -2654,7 +2509,6 @@
         "name": "ljspeech",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.17,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ljspeech-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-ljspeech-medium-fp16"
@@ -2664,7 +2518,6 @@
         "name": "ljspeech",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.11,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ljspeech-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-ljspeech-medium-int8"
@@ -2683,7 +2536,6 @@
         "name": "miro",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.2,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-miro-high-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-miro-high-fp16"
@@ -2693,7 +2545,6 @@
         "name": "miro",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.35,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-miro-high-int8.tar.bz2",
         "modelName": "vits-piper-en_US-miro-high-int8"
@@ -2712,7 +2563,6 @@
         "name": "norman",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-norman-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-norman-medium-fp16"
@@ -2722,7 +2572,6 @@
         "name": "norman",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.01,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-norman-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-norman-medium-int8"
@@ -2741,7 +2590,6 @@
         "name": "reza_ibrahim",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-reza_ibrahim-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-reza_ibrahim-medium-fp16"
@@ -2751,7 +2599,6 @@
         "name": "reza_ibrahim",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.16,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-reza_ibrahim-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-reza_ibrahim-medium-int8"
@@ -2770,7 +2617,6 @@
         "name": "ryan",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 55.81,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-high-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-ryan-high-fp16"
@@ -2780,7 +2626,6 @@
         "name": "ryan",
         "langCode": ["en"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 32.88,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-high-int8.tar.bz2",
         "modelName": "vits-piper-en_US-ryan-high-int8"
@@ -2799,7 +2644,6 @@
         "name": "ryan",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.18,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-low-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-ryan-low-fp16"
@@ -2809,7 +2653,6 @@
         "name": "ryan",
         "langCode": ["en"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-low-int8.tar.bz2",
         "modelName": "vits-piper-en_US-ryan-low-int8"
@@ -2828,7 +2671,6 @@
         "name": "ryan",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-ryan-medium-fp16"
@@ -2838,7 +2680,6 @@
         "name": "ryan",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.11,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-ryan-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-ryan-medium-int8"
@@ -2857,7 +2698,6 @@
         "name": "sam",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-sam-medium-fp16.tar.bz2",
         "modelName": "vits-piper-en_US-sam-medium-fp16"
@@ -2867,7 +2707,6 @@
         "name": "sam",
         "langCode": ["en"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.91,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-sam-medium-int8.tar.bz2",
         "modelName": "vits-piper-en_US-sam-medium-int8"
@@ -2895,7 +2734,6 @@
         "name": "daniela",
         "langCode": ["es"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 55.82,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_AR-daniela-high-fp16.tar.bz2",
         "modelName": "vits-piper-es_AR-daniela-high-fp16"
@@ -2905,7 +2743,6 @@
         "name": "daniela",
         "langCode": ["es"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 33.45,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_AR-daniela-high-int8.tar.bz2",
         "modelName": "vits-piper-es_AR-daniela-high-int8"
@@ -2924,7 +2761,6 @@
         "name": "carlfm",
         "langCode": ["es"],
         "quality": "x_low",
-        "precision": "fp16",
         "filesizeMb": 15.75,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-carlfm-x_low-fp16.tar.bz2",
         "modelName": "vits-piper-es_ES-carlfm-x_low-fp16"
@@ -2934,7 +2770,6 @@
         "name": "carlfm",
         "langCode": ["es"],
         "quality": "x_low",
-        "precision": "int8",
         "filesizeMb": 12.74,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-carlfm-x_low-int8.tar.bz2",
         "modelName": "vits-piper-es_ES-carlfm-x_low-int8"
@@ -2953,7 +2788,6 @@
         "name": "davefx",
         "langCode": ["es"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-davefx-medium-fp16.tar.bz2",
         "modelName": "vits-piper-es_ES-davefx-medium-fp16"
@@ -2963,7 +2797,6 @@
         "name": "davefx",
         "langCode": ["es"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.19,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-davefx-medium-int8.tar.bz2",
         "modelName": "vits-piper-es_ES-davefx-medium-int8"
@@ -2982,7 +2815,6 @@
         "name": "glados",
         "langCode": ["es"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-glados-medium-fp16.tar.bz2",
         "modelName": "vits-piper-es_ES-glados-medium-fp16"
@@ -2992,7 +2824,6 @@
         "name": "glados",
         "langCode": ["es"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.21,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-glados-medium-int8.tar.bz2",
         "modelName": "vits-piper-es_ES-glados-medium-int8"
@@ -3011,7 +2842,6 @@
         "name": "miro",
         "langCode": ["es"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.21,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-miro-high-fp16.tar.bz2",
         "modelName": "vits-piper-es_ES-miro-high-fp16"
@@ -3021,7 +2851,6 @@
         "name": "miro",
         "langCode": ["es"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.29,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-miro-high-int8.tar.bz2",
         "modelName": "vits-piper-es_ES-miro-high-int8"
@@ -3040,7 +2869,6 @@
         "name": "sharvard",
         "langCode": ["es"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 39.99,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-sharvard-medium-fp16.tar.bz2",
         "modelName": "vits-piper-es_ES-sharvard-medium-fp16"
@@ -3050,7 +2878,6 @@
         "name": "sharvard",
         "langCode": ["es"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.39,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-sharvard-medium-int8.tar.bz2",
         "modelName": "vits-piper-es_ES-sharvard-medium-int8"
@@ -3069,7 +2896,6 @@
         "name": "ald",
         "langCode": ["es"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_MX-ald-medium-fp16.tar.bz2",
         "modelName": "vits-piper-es_MX-ald-medium-fp16"
@@ -3079,7 +2905,6 @@
         "name": "ald",
         "langCode": ["es"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.3,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_MX-ald-medium-int8.tar.bz2",
         "modelName": "vits-piper-es_MX-ald-medium-int8"
@@ -3098,7 +2923,6 @@
         "name": "claude",
         "langCode": ["es"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_MX-claude-high-fp16.tar.bz2",
         "modelName": "vits-piper-es_MX-claude-high-fp16"
@@ -3108,7 +2932,6 @@
         "name": "claude",
         "langCode": ["es"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_MX-claude-high-int8.tar.bz2",
         "modelName": "vits-piper-es_MX-claude-high-int8"
@@ -3127,7 +2950,6 @@
         "name": "antton",
         "langCode": ["eu"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-eu_ES-antton-medium-fp16.tar.bz2",
         "modelName": "vits-piper-eu_ES-antton-medium-fp16"
@@ -3137,7 +2959,6 @@
         "name": "antton",
         "langCode": ["eu"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-eu_ES-antton-medium-int8.tar.bz2",
         "modelName": "vits-piper-eu_ES-antton-medium-int8"
@@ -3156,7 +2977,6 @@
         "name": "maider",
         "langCode": ["eu"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-eu_ES-maider-medium-fp16.tar.bz2",
         "modelName": "vits-piper-eu_ES-maider-medium-fp16"
@@ -3166,7 +2986,6 @@
         "name": "maider",
         "langCode": ["eu"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.94,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-eu_ES-maider-medium-int8.tar.bz2",
         "modelName": "vits-piper-eu_ES-maider-medium-int8"
@@ -3193,7 +3012,6 @@
         "name": "amir",
         "langCode": ["fa"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-amir-medium-fp16.tar.bz2",
         "modelName": "vits-piper-fa_IR-amir-medium-fp16"
@@ -3203,7 +3021,6 @@
         "name": "amir",
         "langCode": ["fa"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.71,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-amir-medium-int8.tar.bz2",
         "modelName": "vits-piper-fa_IR-amir-medium-int8"
@@ -3222,7 +3039,6 @@
         "name": "ganji",
         "langCode": ["fa"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-ganji-medium-fp16.tar.bz2",
         "modelName": "vits-piper-fa_IR-ganji-medium-fp16"
@@ -3232,7 +3048,6 @@
         "name": "ganji",
         "langCode": ["fa"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.69,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-ganji-medium-int8.tar.bz2",
         "modelName": "vits-piper-fa_IR-ganji-medium-int8"
@@ -3251,7 +3066,6 @@
         "name": "ganji_adabi",
         "langCode": ["fa"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-ganji_adabi-medium-fp16.tar.bz2",
         "modelName": "vits-piper-fa_IR-ganji_adabi-medium-fp16"
@@ -3261,7 +3075,6 @@
         "name": "ganji_adabi",
         "langCode": ["fa"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.79,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-ganji_adabi-medium-int8.tar.bz2",
         "modelName": "vits-piper-fa_IR-ganji_adabi-medium-int8"
@@ -3280,7 +3093,6 @@
         "name": "gyro",
         "langCode": ["fa"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-gyro-medium-fp16.tar.bz2",
         "modelName": "vits-piper-fa_IR-gyro-medium-fp16"
@@ -3290,7 +3102,6 @@
         "name": "gyro",
         "langCode": ["fa"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.99,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-gyro-medium-int8.tar.bz2",
         "modelName": "vits-piper-fa_IR-gyro-medium-int8"
@@ -3309,7 +3120,6 @@
         "name": "reza_ibrahim",
         "langCode": ["fa"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-reza_ibrahim-medium-fp16.tar.bz2",
         "modelName": "vits-piper-fa_IR-reza_ibrahim-medium-fp16"
@@ -3319,7 +3129,6 @@
         "name": "reza_ibrahim",
         "langCode": ["fa"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.08,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-reza_ibrahim-medium-int8.tar.bz2",
         "modelName": "vits-piper-fa_IR-reza_ibrahim-medium-int8"
@@ -3347,7 +3156,6 @@
         "name": "harri",
         "langCode": ["fi"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.19,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fi_FI-harri-low-fp16.tar.bz2",
         "modelName": "vits-piper-fi_FI-harri-low-fp16"
@@ -3357,7 +3165,6 @@
         "name": "harri",
         "langCode": ["fi"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.19,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fi_FI-harri-low-int8.tar.bz2",
         "modelName": "vits-piper-fi_FI-harri-low-int8"
@@ -3376,7 +3183,6 @@
         "name": "harri",
         "langCode": ["fi"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fi_FI-harri-medium-fp16.tar.bz2",
         "modelName": "vits-piper-fi_FI-harri-medium-fp16"
@@ -3386,7 +3192,6 @@
         "name": "harri",
         "langCode": ["fi"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.01,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fi_FI-harri-medium-int8.tar.bz2",
         "modelName": "vits-piper-fi_FI-harri-medium-int8"
@@ -3405,7 +3210,6 @@
         "name": "gilles",
         "langCode": ["fr"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.18,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-gilles-low-fp16.tar.bz2",
         "modelName": "vits-piper-fr_FR-gilles-low-fp16"
@@ -3415,7 +3219,6 @@
         "name": "gilles",
         "langCode": ["fr"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-gilles-low-int8.tar.bz2",
         "modelName": "vits-piper-fr_FR-gilles-low-int8"
@@ -3434,7 +3237,6 @@
         "name": "miro",
         "langCode": ["fr"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.21,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-miro-high-fp16.tar.bz2",
         "modelName": "vits-piper-fr_FR-miro-high-fp16"
@@ -3444,7 +3246,6 @@
         "name": "miro",
         "langCode": ["fr"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.28,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-miro-high-int8.tar.bz2",
         "modelName": "vits-piper-fr_FR-miro-high-int8"
@@ -3463,7 +3264,6 @@
         "name": "siwis",
         "langCode": ["fr"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 15.76,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-siwis-low-fp16.tar.bz2",
         "modelName": "vits-piper-fr_FR-siwis-low-fp16"
@@ -3473,7 +3273,6 @@
         "name": "siwis",
         "langCode": ["fr"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 12.7,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-siwis-low-int8.tar.bz2",
         "modelName": "vits-piper-fr_FR-siwis-low-int8"
@@ -3492,7 +3291,6 @@
         "name": "siwis",
         "langCode": ["fr"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.27,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-siwis-medium-fp16.tar.bz2",
         "modelName": "vits-piper-fr_FR-siwis-medium-fp16"
@@ -3502,7 +3300,6 @@
         "name": "siwis",
         "langCode": ["fr"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.95,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-siwis-medium-int8.tar.bz2",
         "modelName": "vits-piper-fr_FR-siwis-medium-int8"
@@ -3519,7 +3316,6 @@
         "engine": "piper",
         "name": "tjiho-model1",
         "langCode": ["fr"],
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-tjiho-model1-fp16.tar.bz2",
         "modelName": "vits-piper-fr_FR-tjiho-model1-fp16"
@@ -3528,7 +3324,6 @@
         "engine": "piper",
         "name": "tjiho-model1",
         "langCode": ["fr"],
-        "precision": "int8",
         "filesizeMb": 20.06,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-tjiho-model1-int8.tar.bz2",
         "modelName": "vits-piper-fr_FR-tjiho-model1-int8"
@@ -3545,7 +3340,6 @@
         "engine": "piper",
         "name": "tjiho-model2",
         "langCode": ["fr"],
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-tjiho-model2-fp16.tar.bz2",
         "modelName": "vits-piper-fr_FR-tjiho-model2-fp16"
@@ -3554,7 +3348,6 @@
         "engine": "piper",
         "name": "tjiho-model2",
         "langCode": ["fr"],
-        "precision": "int8",
         "filesizeMb": 20.06,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-tjiho-model2-int8.tar.bz2",
         "modelName": "vits-piper-fr_FR-tjiho-model2-int8"
@@ -3571,7 +3364,6 @@
         "engine": "piper",
         "name": "tjiho-model3",
         "langCode": ["fr"],
-        "precision": "fp16",
         "filesizeMb": 34.28,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-tjiho-model3-fp16.tar.bz2",
         "modelName": "vits-piper-fr_FR-tjiho-model3-fp16"
@@ -3580,7 +3372,6 @@
         "engine": "piper",
         "name": "tjiho-model3",
         "langCode": ["fr"],
-        "precision": "int8",
         "filesizeMb": 20.09,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-tjiho-model3-int8.tar.bz2",
         "modelName": "vits-piper-fr_FR-tjiho-model3-int8"
@@ -3599,7 +3390,6 @@
         "name": "tom",
         "langCode": ["fr"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-tom-medium-fp16.tar.bz2",
         "modelName": "vits-piper-fr_FR-tom-medium-fp16"
@@ -3609,7 +3399,6 @@
         "name": "tom",
         "langCode": ["fr"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.05,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-tom-medium-int8.tar.bz2",
         "modelName": "vits-piper-fr_FR-tom-medium-int8"
@@ -3628,7 +3417,6 @@
         "name": "upmc",
         "langCode": ["fr"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 39.81,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-upmc-medium-fp16.tar.bz2",
         "modelName": "vits-piper-fr_FR-upmc-medium-fp16"
@@ -3638,7 +3426,6 @@
         "name": "upmc",
         "langCode": ["fr"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 21.54,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-upmc-medium-int8.tar.bz2",
         "modelName": "vits-piper-fr_FR-upmc-medium-int8"
@@ -3657,7 +3444,6 @@
         "name": "pratham",
         "langCode": ["hi"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.29,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-pratham-medium-fp16.tar.bz2",
         "modelName": "vits-piper-hi_IN-pratham-medium-fp16"
@@ -3667,7 +3453,6 @@
         "name": "pratham",
         "langCode": ["hi"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.02,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-pratham-medium-int8.tar.bz2",
         "modelName": "vits-piper-hi_IN-pratham-medium-int8"
@@ -3686,7 +3471,6 @@
         "name": "priyamvada",
         "langCode": ["hi"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.29,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-priyamvada-medium-fp16.tar.bz2",
         "modelName": "vits-piper-hi_IN-priyamvada-medium-fp16"
@@ -3696,7 +3480,6 @@
         "name": "priyamvada",
         "langCode": ["hi"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.12,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-priyamvada-medium-int8.tar.bz2",
         "modelName": "vits-piper-hi_IN-priyamvada-medium-int8"
@@ -3715,7 +3498,6 @@
         "name": "rohan",
         "langCode": ["hi"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-rohan-medium-fp16.tar.bz2",
         "modelName": "vits-piper-hi_IN-rohan-medium-fp16"
@@ -3725,7 +3507,6 @@
         "name": "rohan",
         "langCode": ["hi"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.09,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-rohan-medium-int8.tar.bz2",
         "modelName": "vits-piper-hi_IN-rohan-medium-int8"
@@ -3744,7 +3525,6 @@
         "name": "anna",
         "langCode": ["hu"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hu_HU-anna-medium-fp16.tar.bz2",
         "modelName": "vits-piper-hu_HU-anna-medium-fp16"
@@ -3754,7 +3534,6 @@
         "name": "anna",
         "langCode": ["hu"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.14,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hu_HU-anna-medium-int8.tar.bz2",
         "modelName": "vits-piper-hu_HU-anna-medium-int8"
@@ -3773,7 +3552,6 @@
         "name": "berta",
         "langCode": ["hu"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hu_HU-berta-medium-fp16.tar.bz2",
         "modelName": "vits-piper-hu_HU-berta-medium-fp16"
@@ -3783,7 +3561,6 @@
         "name": "berta",
         "langCode": ["hu"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.1,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hu_HU-berta-medium-int8.tar.bz2",
         "modelName": "vits-piper-hu_HU-berta-medium-int8"
@@ -3802,7 +3579,6 @@
         "name": "imre",
         "langCode": ["hu"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hu_HU-imre-medium-fp16.tar.bz2",
         "modelName": "vits-piper-hu_HU-imre-medium-fp16"
@@ -3812,7 +3588,6 @@
         "name": "imre",
         "langCode": ["hu"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hu_HU-imre-medium-int8.tar.bz2",
         "modelName": "vits-piper-hu_HU-imre-medium-int8"
@@ -3831,7 +3606,6 @@
         "name": "news_tts",
         "langCode": ["id"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-id_ID-news_tts-medium-fp16.tar.bz2",
         "modelName": "vits-piper-id_ID-news_tts-medium-fp16"
@@ -3841,7 +3615,6 @@
         "name": "news_tts",
         "langCode": ["id"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.07,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-id_ID-news_tts-medium-int8.tar.bz2",
         "modelName": "vits-piper-id_ID-news_tts-medium-int8"
@@ -3860,7 +3633,6 @@
         "name": "bui",
         "langCode": ["is"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.33,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-is_IS-bui-medium-fp16.tar.bz2",
         "modelName": "vits-piper-is_IS-bui-medium-fp16"
@@ -3870,7 +3642,6 @@
         "name": "bui",
         "langCode": ["is"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.64,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-is_IS-bui-medium-int8.tar.bz2",
         "modelName": "vits-piper-is_IS-bui-medium-int8"
@@ -3889,7 +3660,6 @@
         "name": "salka",
         "langCode": ["is"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.41,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-is_IS-salka-medium-fp16.tar.bz2",
         "modelName": "vits-piper-is_IS-salka-medium-fp16"
@@ -3899,7 +3669,6 @@
         "name": "salka",
         "langCode": ["is"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-is_IS-salka-medium-int8.tar.bz2",
         "modelName": "vits-piper-is_IS-salka-medium-int8"
@@ -3918,7 +3687,6 @@
         "name": "steinn",
         "langCode": ["is"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.41,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-is_IS-steinn-medium-fp16.tar.bz2",
         "modelName": "vits-piper-is_IS-steinn-medium-fp16"
@@ -3928,7 +3696,6 @@
         "name": "steinn",
         "langCode": ["is"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.12,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-is_IS-steinn-medium-int8.tar.bz2",
         "modelName": "vits-piper-is_IS-steinn-medium-int8"
@@ -3947,7 +3714,6 @@
         "name": "ugla",
         "langCode": ["is"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.43,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-is_IS-ugla-medium-fp16.tar.bz2",
         "modelName": "vits-piper-is_IS-ugla-medium-fp16"
@@ -3957,7 +3723,6 @@
         "name": "ugla",
         "langCode": ["is"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.44,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-is_IS-ugla-medium-int8.tar.bz2",
         "modelName": "vits-piper-is_IS-ugla-medium-int8"
@@ -3976,7 +3741,6 @@
         "name": "dii",
         "langCode": ["it"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-it_IT-dii-high-fp16.tar.bz2",
         "modelName": "vits-piper-it_IT-dii-high-fp16"
@@ -3986,7 +3750,6 @@
         "name": "dii",
         "langCode": ["it"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.03,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-it_IT-dii-high-int8.tar.bz2",
         "modelName": "vits-piper-it_IT-dii-high-int8"
@@ -4005,7 +3768,6 @@
         "name": "miro",
         "langCode": ["it"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.21,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-it_IT-miro-high-fp16.tar.bz2",
         "modelName": "vits-piper-it_IT-miro-high-fp16"
@@ -4015,7 +3777,6 @@
         "name": "miro",
         "langCode": ["it"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-it_IT-miro-high-int8.tar.bz2",
         "modelName": "vits-piper-it_IT-miro-high-int8"
@@ -4034,7 +3795,6 @@
         "name": "paola",
         "langCode": ["it"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.28,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-it_IT-paola-medium-fp16.tar.bz2",
         "modelName": "vits-piper-it_IT-paola-medium-fp16"
@@ -4044,7 +3804,6 @@
         "name": "paola",
         "langCode": ["it"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.16,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-it_IT-paola-medium-int8.tar.bz2",
         "modelName": "vits-piper-it_IT-paola-medium-int8"
@@ -4063,7 +3822,6 @@
         "name": "riccardo",
         "langCode": ["it"],
         "quality": "x_low",
-        "precision": "fp16",
         "filesizeMb": 15.74,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-it_IT-riccardo-x_low-fp16.tar.bz2",
         "modelName": "vits-piper-it_IT-riccardo-x_low-fp16"
@@ -4073,7 +3831,6 @@
         "name": "riccardo",
         "langCode": ["it"],
         "quality": "x_low",
-        "precision": "int8",
         "filesizeMb": 12.71,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-it_IT-riccardo-x_low-int8.tar.bz2",
         "modelName": "vits-piper-it_IT-riccardo-x_low-int8"
@@ -4092,7 +3849,6 @@
         "name": "natia",
         "langCode": ["ka"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ka_GE-natia-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ka_GE-natia-medium-fp16"
@@ -4102,7 +3858,6 @@
         "name": "natia",
         "langCode": ["ka"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.12,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ka_GE-natia-medium-int8.tar.bz2",
         "modelName": "vits-piper-ka_GE-natia-medium-int8"
@@ -4121,7 +3876,6 @@
         "name": "iseke",
         "langCode": ["kk"],
         "quality": "x_low",
-        "precision": "fp16",
         "filesizeMb": 15.72,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-kk_KZ-iseke-x_low-fp16.tar.bz2",
         "modelName": "vits-piper-kk_KZ-iseke-x_low-fp16"
@@ -4131,7 +3885,6 @@
         "name": "iseke",
         "langCode": ["kk"],
         "quality": "x_low",
-        "precision": "int8",
         "filesizeMb": 12.77,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-kk_KZ-iseke-x_low-int8.tar.bz2",
         "modelName": "vits-piper-kk_KZ-iseke-x_low-int8"
@@ -4150,7 +3903,6 @@
         "name": "issai",
         "langCode": ["kk"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 61.7,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-kk_KZ-issai-high-fp16.tar.bz2",
         "modelName": "vits-piper-kk_KZ-issai-high-fp16"
@@ -4160,7 +3912,6 @@
         "name": "issai",
         "langCode": ["kk"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 34.33,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-kk_KZ-issai-high-int8.tar.bz2",
         "modelName": "vits-piper-kk_KZ-issai-high-int8"
@@ -4179,7 +3930,6 @@
         "name": "raya",
         "langCode": ["kk"],
         "quality": "x_low",
-        "precision": "fp16",
         "filesizeMb": 15.72,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-kk_KZ-raya-x_low-fp16.tar.bz2",
         "modelName": "vits-piper-kk_KZ-raya-x_low-fp16"
@@ -4189,7 +3939,6 @@
         "name": "raya",
         "langCode": ["kk"],
         "quality": "x_low",
-        "precision": "int8",
         "filesizeMb": 12.7,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-kk_KZ-raya-x_low-int8.tar.bz2",
         "modelName": "vits-piper-kk_KZ-raya-x_low-int8"
@@ -4208,7 +3957,6 @@
         "name": "berfin_renas",
         "langCode": ["ku"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 39.98,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ku_TR-berfin_renas-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ku_TR-berfin_renas-medium-fp16"
@@ -4218,7 +3966,6 @@
         "name": "berfin_renas",
         "langCode": ["ku"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.55,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ku_TR-berfin_renas-medium-int8.tar.bz2",
         "modelName": "vits-piper-ku_TR-berfin_renas-medium-int8"
@@ -4237,7 +3984,6 @@
         "name": "marylux",
         "langCode": ["lb"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-lb_LU-marylux-medium-fp16.tar.bz2",
         "modelName": "vits-piper-lb_LU-marylux-medium-fp16"
@@ -4247,7 +3993,6 @@
         "name": "marylux",
         "langCode": ["lb"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.16,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-lb_LU-marylux-medium-int8.tar.bz2",
         "modelName": "vits-piper-lb_LU-marylux-medium-int8"
@@ -4266,7 +4011,6 @@
         "name": "aivars",
         "langCode": ["lv"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-lv_LV-aivars-medium-fp16.tar.bz2",
         "modelName": "vits-piper-lv_LV-aivars-medium-fp16"
@@ -4276,7 +4020,6 @@
         "name": "aivars",
         "langCode": ["lv"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.02,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-lv_LV-aivars-medium-int8.tar.bz2",
         "modelName": "vits-piper-lv_LV-aivars-medium-int8"
@@ -4295,7 +4038,6 @@
         "name": "arjun",
         "langCode": ["ml"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.27,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ml_IN-arjun-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ml_IN-arjun-medium-fp16"
@@ -4305,7 +4047,6 @@
         "name": "arjun",
         "langCode": ["ml"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.87,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ml_IN-arjun-medium-int8.tar.bz2",
         "modelName": "vits-piper-ml_IN-arjun-medium-int8"
@@ -4324,7 +4065,6 @@
         "name": "meera",
         "langCode": ["ml"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ml_IN-meera-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ml_IN-meera-medium-fp16"
@@ -4334,7 +4074,6 @@
         "name": "meera",
         "langCode": ["ml"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.13,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ml_IN-meera-medium-int8.tar.bz2",
         "modelName": "vits-piper-ml_IN-meera-medium-int8"
@@ -4353,7 +4092,6 @@
         "name": "chitwan",
         "langCode": ["ne"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ne_NP-chitwan-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ne_NP-chitwan-medium-fp16"
@@ -4363,7 +4101,6 @@
         "name": "chitwan",
         "langCode": ["ne"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.19,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ne_NP-chitwan-medium-int8.tar.bz2",
         "modelName": "vits-piper-ne_NP-chitwan-medium-int8"
@@ -4382,7 +4119,6 @@
         "name": "google",
         "langCode": ["ne"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 40.13,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ne_NP-google-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ne_NP-google-medium-fp16"
@@ -4392,7 +4128,6 @@
         "name": "google",
         "langCode": ["ne"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.52,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ne_NP-google-medium-int8.tar.bz2",
         "modelName": "vits-piper-ne_NP-google-medium-int8"
@@ -4411,7 +4146,6 @@
         "name": "google",
         "langCode": ["ne"],
         "quality": "x_low",
-        "precision": "fp16",
         "filesizeMb": 18.75,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ne_NP-google-x_low-fp16.tar.bz2",
         "modelName": "vits-piper-ne_NP-google-x_low-fp16"
@@ -4421,7 +4155,6 @@
         "name": "google",
         "langCode": ["ne"],
         "quality": "x_low",
-        "precision": "int8",
         "filesizeMb": 14.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ne_NP-google-x_low-int8.tar.bz2",
         "modelName": "vits-piper-ne_NP-google-x_low-int8"
@@ -4440,7 +4173,6 @@
         "name": "nathalie",
         "langCode": ["nl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_BE-nathalie-medium-fp16.tar.bz2",
         "modelName": "vits-piper-nl_BE-nathalie-medium-fp16"
@@ -4450,7 +4182,6 @@
         "name": "nathalie",
         "langCode": ["nl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.16,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_BE-nathalie-medium-int8.tar.bz2",
         "modelName": "vits-piper-nl_BE-nathalie-medium-int8"
@@ -4469,7 +4200,6 @@
         "name": "nathalie",
         "langCode": ["nl"],
         "quality": "x_low",
-        "precision": "fp16",
         "filesizeMb": 15.73,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_BE-nathalie-x_low-fp16.tar.bz2",
         "modelName": "vits-piper-nl_BE-nathalie-x_low-fp16"
@@ -4479,7 +4209,6 @@
         "name": "nathalie",
         "langCode": ["nl"],
         "quality": "x_low",
-        "precision": "int8",
         "filesizeMb": 12.77,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_BE-nathalie-x_low-int8.tar.bz2",
         "modelName": "vits-piper-nl_BE-nathalie-x_low-int8"
@@ -4516,7 +4245,6 @@
         "name": "alex",
         "langCode": ["nl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-alex-medium-fp16.tar.bz2",
         "modelName": "vits-piper-nl_NL-alex-medium-fp16"
@@ -4526,7 +4254,6 @@
         "name": "alex",
         "langCode": ["nl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.21,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-alex-medium-int8.tar.bz2",
         "modelName": "vits-piper-nl_NL-alex-medium-int8"
@@ -4545,7 +4272,6 @@
         "name": "dii",
         "langCode": ["nl"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-dii-high-fp16.tar.bz2",
         "modelName": "vits-piper-nl_NL-dii-high-fp16"
@@ -4555,7 +4281,6 @@
         "name": "dii",
         "langCode": ["nl"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.15,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-dii-high-int8.tar.bz2",
         "modelName": "vits-piper-nl_NL-dii-high-int8"
@@ -4574,7 +4299,6 @@
         "name": "miro",
         "langCode": ["nl"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-miro-high-fp16.tar.bz2",
         "modelName": "vits-piper-nl_NL-miro-high-fp16"
@@ -4584,7 +4308,6 @@
         "name": "miro",
         "langCode": ["nl"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.37,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-miro-high-int8.tar.bz2",
         "modelName": "vits-piper-nl_NL-miro-high-int8"
@@ -4603,7 +4326,6 @@
         "name": "pim",
         "langCode": ["nl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-pim-medium-fp16.tar.bz2",
         "modelName": "vits-piper-nl_NL-pim-medium-fp16"
@@ -4613,7 +4335,6 @@
         "name": "pim",
         "langCode": ["nl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.15,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-pim-medium-int8.tar.bz2",
         "modelName": "vits-piper-nl_NL-pim-medium-int8"
@@ -4632,7 +4353,6 @@
         "name": "ronnie",
         "langCode": ["nl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-ronnie-medium-fp16.tar.bz2",
         "modelName": "vits-piper-nl_NL-ronnie-medium-fp16"
@@ -4642,7 +4362,6 @@
         "name": "ronnie",
         "langCode": ["nl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.18,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-ronnie-medium-int8.tar.bz2",
         "modelName": "vits-piper-nl_NL-ronnie-medium-int8"
@@ -4661,7 +4380,6 @@
         "name": "talesyntese",
         "langCode": ["no"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-no_NO-talesyntese-medium-fp16.tar.bz2",
         "modelName": "vits-piper-no_NO-talesyntese-medium-fp16"
@@ -4671,7 +4389,6 @@
         "name": "talesyntese",
         "langCode": ["no"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.1,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-no_NO-talesyntese-medium-int8.tar.bz2",
         "modelName": "vits-piper-no_NO-talesyntese-medium-int8"
@@ -4690,7 +4407,6 @@
         "name": "bass",
         "langCode": ["pl"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 55.8,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-bass-high-fp16.tar.bz2",
         "modelName": "vits-piper-pl_PL-bass-high-fp16"
@@ -4700,7 +4416,6 @@
         "name": "bass",
         "langCode": ["pl"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 33.69,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-bass-high-int8.tar.bz2",
         "modelName": "vits-piper-pl_PL-bass-high-int8"
@@ -4719,7 +4434,6 @@
         "name": "darkman",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.2,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-darkman-medium-fp16.tar.bz2",
         "modelName": "vits-piper-pl_PL-darkman-medium-fp16"
@@ -4729,7 +4443,6 @@
         "name": "darkman",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.1,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-darkman-medium-int8.tar.bz2",
         "modelName": "vits-piper-pl_PL-darkman-medium-int8"
@@ -4748,7 +4461,6 @@
         "name": "gosia",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-gosia-medium-fp16.tar.bz2",
         "modelName": "vits-piper-pl_PL-gosia-medium-fp16"
@@ -4758,7 +4470,6 @@
         "name": "gosia",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.13,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-gosia-medium-int8.tar.bz2",
         "modelName": "vits-piper-pl_PL-gosia-medium-int8"
@@ -4777,7 +4488,6 @@
         "name": "jarvis_wg_glos",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.27,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-jarvis_wg_glos-medium-fp16.tar.bz2",
         "modelName": "vits-piper-pl_PL-jarvis_wg_glos-medium-fp16"
@@ -4787,7 +4497,6 @@
         "name": "jarvis_wg_glos",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.09,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-jarvis_wg_glos-medium-int8.tar.bz2",
         "modelName": "vits-piper-pl_PL-jarvis_wg_glos-medium-int8"
@@ -4806,7 +4515,6 @@
         "name": "justyna_wg_glos",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.27,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-justyna_wg_glos-medium-fp16.tar.bz2",
         "modelName": "vits-piper-pl_PL-justyna_wg_glos-medium-fp16"
@@ -4816,7 +4524,6 @@
         "name": "justyna_wg_glos",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.09,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-justyna_wg_glos-medium-int8.tar.bz2",
         "modelName": "vits-piper-pl_PL-justyna_wg_glos-medium-int8"
@@ -4835,7 +4542,6 @@
         "name": "mc_speech",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.21,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-mc_speech-medium-fp16.tar.bz2",
         "modelName": "vits-piper-pl_PL-mc_speech-medium-fp16"
@@ -4845,7 +4551,6 @@
         "name": "mc_speech",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 19.97,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-mc_speech-medium-int8.tar.bz2",
         "modelName": "vits-piper-pl_PL-mc_speech-medium-int8"
@@ -4864,7 +4569,6 @@
         "name": "meski_wg_glos",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.27,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-meski_wg_glos-medium-fp16.tar.bz2",
         "modelName": "vits-piper-pl_PL-meski_wg_glos-medium-fp16"
@@ -4874,7 +4578,6 @@
         "name": "meski_wg_glos",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.13,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-meski_wg_glos-medium-int8.tar.bz2",
         "modelName": "vits-piper-pl_PL-meski_wg_glos-medium-int8"
@@ -4893,7 +4596,6 @@
         "name": "zenski_wg_glos",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.28,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-zenski_wg_glos-medium-fp16.tar.bz2",
         "modelName": "vits-piper-pl_PL-zenski_wg_glos-medium-fp16"
@@ -4903,7 +4605,6 @@
         "name": "zenski_wg_glos",
         "langCode": ["pl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.05,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-zenski_wg_glos-medium-int8.tar.bz2",
         "modelName": "vits-piper-pl_PL-zenski_wg_glos-medium-int8"
@@ -4922,7 +4623,6 @@
         "name": "cadu",
         "langCode": ["pt"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-cadu-medium-fp16.tar.bz2",
         "modelName": "vits-piper-pt_BR-cadu-medium-fp16"
@@ -4932,7 +4632,6 @@
         "name": "cadu",
         "langCode": ["pt"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.16,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-cadu-medium-int8.tar.bz2",
         "modelName": "vits-piper-pt_BR-cadu-medium-int8"
@@ -4951,7 +4650,6 @@
         "name": "dii",
         "langCode": ["pt"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-dii-high-fp16.tar.bz2",
         "modelName": "vits-piper-pt_BR-dii-high-fp16"
@@ -4961,7 +4659,6 @@
         "name": "dii",
         "langCode": ["pt"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.14,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-dii-high-int8.tar.bz2",
         "modelName": "vits-piper-pt_BR-dii-high-int8"
@@ -4980,7 +4677,6 @@
         "name": "edresson",
         "langCode": ["pt"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.13,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-edresson-low-fp16.tar.bz2",
         "modelName": "vits-piper-pt_BR-edresson-low-fp16"
@@ -4990,7 +4686,6 @@
         "name": "edresson",
         "langCode": ["pt"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-edresson-low-int8.tar.bz2",
         "modelName": "vits-piper-pt_BR-edresson-low-int8"
@@ -5009,7 +4704,6 @@
         "name": "faber",
         "langCode": ["pt"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-faber-medium-fp16.tar.bz2",
         "modelName": "vits-piper-pt_BR-faber-medium-fp16"
@@ -5019,7 +4713,6 @@
         "name": "faber",
         "langCode": ["pt"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.35,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-faber-medium-int8.tar.bz2",
         "modelName": "vits-piper-pt_BR-faber-medium-int8"
@@ -5038,7 +4731,6 @@
         "name": "jeff",
         "langCode": ["pt"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-jeff-medium-fp16.tar.bz2",
         "modelName": "vits-piper-pt_BR-jeff-medium-fp16"
@@ -5048,7 +4740,6 @@
         "name": "jeff",
         "langCode": ["pt"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-jeff-medium-int8.tar.bz2",
         "modelName": "vits-piper-pt_BR-jeff-medium-int8"
@@ -5067,7 +4758,6 @@
         "name": "miro",
         "langCode": ["pt"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.19,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-miro-high-fp16.tar.bz2",
         "modelName": "vits-piper-pt_BR-miro-high-fp16"
@@ -5077,7 +4767,6 @@
         "name": "miro",
         "langCode": ["pt"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.35,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-miro-high-int8.tar.bz2",
         "modelName": "vits-piper-pt_BR-miro-high-int8"
@@ -5096,7 +4785,6 @@
         "name": "dii",
         "langCode": ["pt"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_PT-dii-high-fp16.tar.bz2",
         "modelName": "vits-piper-pt_PT-dii-high-fp16"
@@ -5106,7 +4794,6 @@
         "name": "dii",
         "langCode": ["pt"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.1,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_PT-dii-high-int8.tar.bz2",
         "modelName": "vits-piper-pt_PT-dii-high-int8"
@@ -5125,7 +4812,6 @@
         "name": "miro",
         "langCode": ["pt"],
         "quality": "high",
-        "precision": "fp16",
         "filesizeMb": 34.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_PT-miro-high-fp16.tar.bz2",
         "modelName": "vits-piper-pt_PT-miro-high-fp16"
@@ -5135,7 +4821,6 @@
         "name": "miro",
         "langCode": ["pt"],
         "quality": "high",
-        "precision": "int8",
         "filesizeMb": 20.35,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_PT-miro-high-int8.tar.bz2",
         "modelName": "vits-piper-pt_PT-miro-high-int8"
@@ -5154,7 +4839,6 @@
         "name": "tugao",
         "langCode": ["pt"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_PT-tugao-medium-fp16.tar.bz2",
         "modelName": "vits-piper-pt_PT-tugao-medium-fp16"
@@ -5164,7 +4848,6 @@
         "name": "tugao",
         "langCode": ["pt"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.27,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_PT-tugao-medium-int8.tar.bz2",
         "modelName": "vits-piper-pt_PT-tugao-medium-int8"
@@ -5183,7 +4866,6 @@
         "name": "mihai",
         "langCode": ["ro"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ro_RO-mihai-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ro_RO-mihai-medium-fp16"
@@ -5193,7 +4875,6 @@
         "name": "mihai",
         "langCode": ["ro"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.11,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ro_RO-mihai-medium-int8.tar.bz2",
         "modelName": "vits-piper-ro_RO-mihai-medium-int8"
@@ -5212,7 +4893,6 @@
         "name": "denis",
         "langCode": ["ru"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ru_RU-denis-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ru_RU-denis-medium-fp16"
@@ -5222,7 +4902,6 @@
         "name": "denis",
         "langCode": ["ru"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.08,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ru_RU-denis-medium-int8.tar.bz2",
         "modelName": "vits-piper-ru_RU-denis-medium-int8"
@@ -5241,7 +4920,6 @@
         "name": "dmitri",
         "langCode": ["ru"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ru_RU-dmitri-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ru_RU-dmitri-medium-fp16"
@@ -5251,7 +4929,6 @@
         "name": "dmitri",
         "langCode": ["ru"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.15,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ru_RU-dmitri-medium-int8.tar.bz2",
         "modelName": "vits-piper-ru_RU-dmitri-medium-int8"
@@ -5270,7 +4947,6 @@
         "name": "irina",
         "langCode": ["ru"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.21,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ru_RU-irina-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ru_RU-irina-medium-fp16"
@@ -5280,7 +4956,6 @@
         "name": "irina",
         "langCode": ["ru"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.17,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ru_RU-irina-medium-int8.tar.bz2",
         "modelName": "vits-piper-ru_RU-irina-medium-int8"
@@ -5299,7 +4974,6 @@
         "name": "ruslan",
         "langCode": ["ru"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ru_RU-ruslan-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ru_RU-ruslan-medium-fp16"
@@ -5309,7 +4983,6 @@
         "name": "ruslan",
         "langCode": ["ru"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.15,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ru_RU-ruslan-medium-int8.tar.bz2",
         "modelName": "vits-piper-ru_RU-ruslan-medium-int8"
@@ -5328,7 +5001,6 @@
         "name": "lili",
         "langCode": ["sk"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.22,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sk_SK-lili-medium-fp16.tar.bz2",
         "modelName": "vits-piper-sk_SK-lili-medium-fp16"
@@ -5338,7 +5010,6 @@
         "name": "lili",
         "langCode": ["sk"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.3,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sk_SK-lili-medium-int8.tar.bz2",
         "modelName": "vits-piper-sk_SK-lili-medium-int8"
@@ -5357,7 +5028,6 @@
         "name": "artur",
         "langCode": ["sl"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.02,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sl_SI-artur-medium-fp16.tar.bz2",
         "modelName": "vits-piper-sl_SI-artur-medium-fp16"
@@ -5367,7 +5037,6 @@
         "name": "artur",
         "langCode": ["sl"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.41,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sl_SI-artur-medium-int8.tar.bz2",
         "modelName": "vits-piper-sl_SI-artur-medium-int8"
@@ -5386,7 +5055,6 @@
         "name": "edon",
         "langCode": ["sq"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sq_AL-edon-medium-fp16.tar.bz2",
         "modelName": "vits-piper-sq_AL-edon-medium-fp16"
@@ -5396,7 +5064,6 @@
         "name": "edon",
         "langCode": ["sq"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.29,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sq_AL-edon-medium-int8.tar.bz2",
         "modelName": "vits-piper-sq_AL-edon-medium-int8"
@@ -5415,7 +5082,6 @@
         "name": "serbski_institut",
         "langCode": ["sr"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 39.93,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sr_RS-serbski_institut-medium-fp16.tar.bz2",
         "modelName": "vits-piper-sr_RS-serbski_institut-medium-fp16"
@@ -5425,7 +5091,6 @@
         "name": "serbski_institut",
         "langCode": ["sr"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 22.36,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sr_RS-serbski_institut-medium-int8.tar.bz2",
         "modelName": "vits-piper-sr_RS-serbski_institut-medium-int8"
@@ -5444,7 +5109,6 @@
         "name": "alma",
         "langCode": ["sv"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sv_SE-alma-medium-fp16.tar.bz2",
         "modelName": "vits-piper-sv_SE-alma-medium-fp16"
@@ -5454,7 +5118,6 @@
         "name": "alma",
         "langCode": ["sv"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.04,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sv_SE-alma-medium-int8.tar.bz2",
         "modelName": "vits-piper-sv_SE-alma-medium-int8"
@@ -5473,7 +5136,6 @@
         "name": "lisa",
         "langCode": ["sv"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.23,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sv_SE-lisa-medium-fp16.tar.bz2",
         "modelName": "vits-piper-sv_SE-lisa-medium-fp16"
@@ -5483,7 +5145,6 @@
         "name": "lisa",
         "langCode": ["sv"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.14,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sv_SE-lisa-medium-int8.tar.bz2",
         "modelName": "vits-piper-sv_SE-lisa-medium-int8"
@@ -5502,7 +5163,6 @@
         "name": "nst",
         "langCode": ["sv"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sv_SE-nst-medium-fp16.tar.bz2",
         "modelName": "vits-piper-sv_SE-nst-medium-fp16"
@@ -5512,7 +5172,6 @@
         "name": "nst",
         "langCode": ["sv"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sv_SE-nst-medium-int8.tar.bz2",
         "modelName": "vits-piper-sv_SE-nst-medium-int8"
@@ -5531,7 +5190,6 @@
         "name": "lanfrica",
         "langCode": ["sw"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.26,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sw_CD-lanfrica-medium-fp16.tar.bz2",
         "modelName": "vits-piper-sw_CD-lanfrica-medium-fp16"
@@ -5541,7 +5199,6 @@
         "name": "lanfrica",
         "langCode": ["sw"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.11,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sw_CD-lanfrica-medium-int8.tar.bz2",
         "modelName": "vits-piper-sw_CD-lanfrica-medium-int8"
@@ -5560,7 +5217,6 @@
         "name": "dfki",
         "langCode": ["tr"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-tr_TR-dfki-medium-fp16.tar.bz2",
         "modelName": "vits-piper-tr_TR-dfki-medium-fp16"
@@ -5570,7 +5226,6 @@
         "name": "dfki",
         "langCode": ["tr"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.16,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-tr_TR-dfki-medium-int8.tar.bz2",
         "modelName": "vits-piper-tr_TR-dfki-medium-int8"
@@ -5589,7 +5244,6 @@
         "name": "fahrettin",
         "langCode": ["tr"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.27,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-tr_TR-fahrettin-medium-fp16.tar.bz2",
         "modelName": "vits-piper-tr_TR-fahrettin-medium-fp16"
@@ -5599,7 +5253,6 @@
         "name": "fahrettin",
         "langCode": ["tr"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.14,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-tr_TR-fahrettin-medium-int8.tar.bz2",
         "modelName": "vits-piper-tr_TR-fahrettin-medium-int8"
@@ -5618,7 +5271,6 @@
         "name": "fettah",
         "langCode": ["tr"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.21,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-tr_TR-fettah-medium-fp16.tar.bz2",
         "modelName": "vits-piper-tr_TR-fettah-medium-fp16"
@@ -5628,7 +5280,6 @@
         "name": "fettah",
         "langCode": ["tr"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.2,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-tr_TR-fettah-medium-int8.tar.bz2",
         "modelName": "vits-piper-tr_TR-fettah-medium-int8"
@@ -5647,7 +5298,6 @@
         "name": "lada",
         "langCode": ["uk"],
         "quality": "x_low",
-        "precision": "fp16",
         "filesizeMb": 15.75,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-uk_UA-lada-x_low-fp16.tar.bz2",
         "modelName": "vits-piper-uk_UA-lada-x_low-fp16"
@@ -5657,7 +5307,6 @@
         "name": "lada",
         "langCode": ["uk"],
         "quality": "x_low",
-        "precision": "int8",
         "filesizeMb": 12.72,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-uk_UA-lada-x_low-int8.tar.bz2",
         "modelName": "vits-piper-uk_UA-lada-x_low-int8"
@@ -5676,7 +5325,6 @@
         "name": "ukrainian_tts",
         "langCode": ["uk"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 39.91,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-uk_UA-ukrainian_tts-medium-fp16.tar.bz2",
         "modelName": "vits-piper-uk_UA-ukrainian_tts-medium-fp16"
@@ -5686,7 +5334,6 @@
         "name": "ukrainian_tts",
         "langCode": ["uk"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 21.71,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-uk_UA-ukrainian_tts-medium-int8.tar.bz2",
         "modelName": "vits-piper-uk_UA-ukrainian_tts-medium-int8"
@@ -5705,7 +5352,6 @@
         "name": "fasih",
         "langCode": ["ur"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.25,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ur_PK-fasih-medium-fp16.tar.bz2",
         "modelName": "vits-piper-ur_PK-fasih-medium-fp16"
@@ -5715,7 +5361,6 @@
         "name": "fasih",
         "langCode": ["ur"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.19,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ur_PK-fasih-medium-int8.tar.bz2",
         "modelName": "vits-piper-ur_PK-fasih-medium-int8"
@@ -5734,7 +5379,6 @@
         "name": "25hours_single",
         "langCode": ["vi"],
         "quality": "low",
-        "precision": "fp16",
         "filesizeMb": 34.14,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-vi_VN-25hours_single-low-fp16.tar.bz2",
         "modelName": "vits-piper-vi_VN-25hours_single-low-fp16"
@@ -5744,7 +5388,6 @@
         "name": "25hours_single",
         "langCode": ["vi"],
         "quality": "low",
-        "precision": "int8",
         "filesizeMb": 20.24,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-vi_VN-25hours_single-low-int8.tar.bz2",
         "modelName": "vits-piper-vi_VN-25hours_single-low-int8"
@@ -5763,7 +5406,6 @@
         "name": "vais1000",
         "langCode": ["vi"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 34.2,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-vi_VN-vais1000-medium-fp16.tar.bz2",
         "modelName": "vits-piper-vi_VN-vais1000-medium-fp16"
@@ -5773,7 +5415,6 @@
         "name": "vais1000",
         "langCode": ["vi"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 20.58,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-vi_VN-vais1000-medium-int8.tar.bz2",
         "modelName": "vits-piper-vi_VN-vais1000-medium-int8"
@@ -5792,7 +5433,6 @@
         "name": "vivos",
         "langCode": ["vi"],
         "quality": "x_low",
-        "precision": "fp16",
         "filesizeMb": 18.9,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-vi_VN-vivos-x_low-fp16.tar.bz2",
         "modelName": "vits-piper-vi_VN-vivos-x_low-fp16"
@@ -5802,7 +5442,6 @@
         "name": "vivos",
         "langCode": ["vi"],
         "quality": "x_low",
-        "precision": "int8",
         "filesizeMb": 14,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-vi_VN-vivos-x_low-int8.tar.bz2",
         "modelName": "vits-piper-vi_VN-vivos-x_low-int8"
@@ -5821,7 +5460,6 @@
         "name": "chaowen",
         "langCode": ["zh"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 27.8,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-zh_CN-chaowen-medium-fp16.tar.bz2",
         "modelName": "vits-piper-zh_CN-chaowen-medium-fp16"
@@ -5831,7 +5469,6 @@
         "name": "chaowen",
         "langCode": ["zh"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 13.36,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-zh_CN-chaowen-medium-int8.tar.bz2",
         "modelName": "vits-piper-zh_CN-chaowen-medium-int8"
@@ -5859,7 +5496,6 @@
         "name": "xiao_ya",
         "langCode": ["zh"],
         "quality": "medium",
-        "precision": "fp16",
         "filesizeMb": 27.8,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-zh_CN-xiao_ya-medium-fp16.tar.bz2",
         "modelName": "vits-piper-zh_CN-xiao_ya-medium-fp16"
@@ -5869,7 +5505,6 @@
         "name": "xiao_ya",
         "langCode": ["zh"],
         "quality": "medium",
-        "precision": "int8",
         "filesizeMb": 13.37,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-zh_CN-xiao_ya-medium-int8.tar.bz2",
         "modelName": "vits-piper-zh_CN-xiao_ya-medium-int8"

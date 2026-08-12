@@ -332,7 +332,6 @@ export class SherpaProvider implements TtsProvider {
                 installed: installedSet.has(entry.modelName),
                 engine: entry.engine,
                 quality: entry.quality,
-                precision: entry.precision,
                 filesizeMb: entry.filesizeMb,
             };
         });

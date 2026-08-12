@@ -85,18 +85,13 @@ describe('parseSherpaAsset', () => {
         expect(parse('vits-coqui-bg-cv.tar.bz2')?.quality).toBeUndefined();
     });
 
-    it('keeps weight precision apart from the voice tier', () => {
+    it('reads the tier past a weight format, and never mistakes one for the other', () => {
+        // How the weights were stored says nothing about how the voice was trained, and is
+        // recorded nowhere: the download size already tells the reader what it would.
         const quantised = parse('vits-piper-ar_JO-SA_dii-high-fp16.tar.bz2');
 
         expect(quantised?.quality).toBe('high');
-        expect(quantised?.precision).toBe('fp16');
-    });
-
-    it('reports precision alone when the name carries no tier', () => {
-        const kitten = parse('kitten-nano-en-v0_2-fp16.tar.bz2');
-
-        expect(kitten?.quality).toBeUndefined();
-        expect(kitten?.precision).toBe('fp16');
+        expect(parse('kitten-nano-en-v0_2-fp16.tar.bz2')?.quality).toBeUndefined();
     });
 
     it('keeps a speaker name that happens to read as a language code', () => {

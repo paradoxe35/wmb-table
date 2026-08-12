@@ -1,16 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-    Button,
-    Input,
-    List,
-    message,
-    Progress,
-    Select,
-    Space,
-    Tag,
-    Tooltip,
-    Typography,
-} from 'antd';
+import { Button, Input, List, message, Progress, Select, Space, Tag, Typography } from 'antd';
 import { DownloadOutlined, SearchOutlined, SoundOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
@@ -19,7 +8,6 @@ import { intlLanguageName, LANG_LABELS_FR } from '@shared/tts.types';
 import type {
     TtsModelDownloadProgress,
     TtsModelInfo,
-    TtsModelPrecision,
     TtsProviderInfo,
     TtsVoiceQuality,
 } from '@shared/tts.types';
@@ -73,55 +61,25 @@ const QUALITY_META: Record<TtsVoiceQuality, { label: string; color: string }> = 
     x_low: { label: 'Qualité minimale', color: 'default' },
 };
 
-/**
- * Lighter builds of one and the same voice, named after what the reader gains rather than
- * after the way the weights are stored. `fp32` is the plain full build and gets no tag.
- */
-const PRECISION_META: Partial<Record<TtsModelPrecision, { label: string; hint: string }>> = {
-    fp16: {
-        label: 'Version compacte',
-        hint: 'Téléchargement plus léger et lecture plus rapide, pour une voix quasi identique.',
-    },
-    int8: {
-        label: 'Version très compacte',
-        hint: 'Le téléchargement le plus léger et la lecture la plus rapide, avec une voix un peu moins nette.',
-    },
-};
-
 function qualityMeta(model: TtsModelInfo) {
     return model.quality ? QUALITY_META[model.quality] : undefined;
 }
 
-function precisionMeta(model: TtsModelInfo) {
-    return model.precision ? PRECISION_META[model.precision] : undefined;
+/** The words on a model's tag, so searching matches what the reader actually sees. */
+function qualityLabel(model: TtsModelInfo, t: (key: string) => string): string {
+    const quality = qualityMeta(model);
+    return quality ? t(quality.label) : '';
 }
 
-/** The words shown on a model's tags, so searching matches what the reader actually sees. */
-function tagLabels(model: TtsModelInfo, t: (key: string) => string): string {
-    return [qualityMeta(model)?.label, precisionMeta(model)?.label]
-        .filter((label) => label !== undefined)
-        .map((label) => t(label))
-        .join(' ');
-}
-
-function ModelTags({ model }: { model: TtsModelInfo }) {
+function QualityTag({ model }: { model: TtsModelInfo }) {
     const { t } = useTranslation();
     const quality = qualityMeta(model);
-    const precision = precisionMeta(model);
+    if (!quality) return null;
 
     return (
-        <>
-            {quality && (
-                <Tag color={quality.color} style={TAG_STYLE}>
-                    {t(quality.label)}
-                </Tag>
-            )}
-            {precision && (
-                <Tooltip title={t(precision.hint)}>
-                    <Tag style={TAG_STYLE}>{t(precision.label)}</Tag>
-                </Tooltip>
-            )}
-        </>
+        <Tag color={quality.color} style={TAG_STYLE}>
+            {t(quality.label)}
+        </Tag>
     );
 }
 
@@ -342,7 +300,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             .filter((m) => {
                 const names = m.langCode.map(nameOf).join(' ');
                 const haystack = strNormalize(
-                    `${m.voiceName} ${names} ${m.langCode.join(' ')} ${tagLabels(m, t)}`,
+                    `${m.voiceName} ${names} ${m.langCode.join(' ')} ${qualityLabel(m, t)}`,
                 );
                 return terms.every((term) => haystack.includes(term));
             })
@@ -436,10 +394,12 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                             onChange={(modelName) => selectVoice(`${modelName}:0`)}
                             options={installed.map((m) => ({
                                 value: m.modelName,
+                                // The size is what tells two builds of one voice apart.
                                 label: [
                                     m.voiceName,
                                     labelOf(m.langCode),
-                                    precisionMeta(m)?.label && t(precisionMeta(m)!.label),
+                                    m.filesizeMb != null &&
+                                        `~${Math.round(m.filesizeMb)} ${t('Mo')}`,
                                 ]
                                     .filter(Boolean)
                                     .join(' · '),
@@ -505,7 +465,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                                 · ~{Math.round(m.filesizeMb)} {t('Mo')}
                                             </Text>
                                         )}{' '}
-                                        <ModelTags model={m} />
+                                        <QualityTag model={m} />
                                     </Text>
                                     {m.langCode.length > 1 && (
                                         <div>
@@ -575,7 +535,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                             {m.filesizeMb != null &&
                                                 ` · ~${Math.round(m.filesizeMb)} ${t('Mo')}`}
                                         </Text>{' '}
-                                        <ModelTags model={m} />
+                                        <QualityTag model={m} />
                                         {m.langCode.length > 1 && (
                                             <div style={{ marginTop: 2 }}>
                                                 <Text

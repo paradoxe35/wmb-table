@@ -1,6 +1,5 @@
 import {
     isLanguageCode,
-    isModelPrecision,
     isVoiceQuality,
     normalizeLanguageCode,
     TTS_MODEL_PRECISIONS,
@@ -216,14 +215,12 @@ export function parseSherpaAsset(
 
     const tokens = modelName.split('-').filter(Boolean);
     const quality = lastToken(tokens, isVoiceQuality);
-    const precision = lastToken(tokens, isModelPrecision);
 
     return {
         engine,
         name: detectVoiceName(prefix, modelName, languages),
         langCode: languages,
         ...(quality ? { quality } : {}),
-        ...(precision ? { precision } : {}),
         filesizeMb: toMegabytes(sizeBytes),
         url,
         modelName,

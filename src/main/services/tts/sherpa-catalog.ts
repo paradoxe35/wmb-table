@@ -1,5 +1,5 @@
 import { normalizeLanguageCode } from '@shared/tts.types';
-import type { TtsModelPrecision, TtsVoiceQuality } from '@shared/tts.types';
+import type { TtsVoiceQuality } from '@shared/tts.types';
 
 // ── Types ──
 
@@ -8,7 +8,6 @@ export interface SherpaCatalogEntry {
     name: string;
     langCode: string[];
     quality?: TtsVoiceQuality;
-    precision?: TtsModelPrecision;
     filesizeMb: number;
     url: string;
     modelName: string;
