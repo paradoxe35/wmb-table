@@ -104,24 +104,43 @@ jobs:
               if: matrix.platform == 'linux'
               run: sudo apt-get update && sudo apt-get install -y rpm libarchive-tools
 
-            # Only exported for macOS: Windows falls back to CSC_LINK when
-            # WIN_CSC_LINK is unset and would sign the installer with this
-            # untrusted cert, which makes electron-updater reject every Windows
-            # update. Exported only when non-empty: macPackager checks for null,
-            # not "", so an empty value fails the build. See .github/variables.md
+            # Imported for afterPack.cjs, not for electron-builder: electron-builder wants a
+            # "Developer ID Application" identity and skips signing when it finds only a
+            # self-signed one. CSC_LINK stays unexported — Windows would sign with it too, and
+            # electron-updater then rejects every Windows update. See .github/variables.md
             - name: Configure macOS signing
               if: matrix.platform == 'mac'
               env:
                   MAC_CSC_LINK: ${{ secrets.CSC_LINK }}
                   MAC_CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
               run: |
-                  if [ -n "$MAC_CSC_LINK" ]; then
-                    echo "CSC_LINK=$MAC_CSC_LINK" >> "$GITHUB_ENV"
-                    echo "CSC_KEY_PASSWORD=$MAC_CSC_KEY_PASSWORD" >> "$GITHUB_ENV"
-                    echo "Signing with the configured certificate"
-                  else
+                  if [ -z "$MAC_CSC_LINK" ]; then
                     echo "No CSC_LINK secret: ad-hoc signing, macOS auto-update will not work"
+                    exit 0
                   fi
+
+                  KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+                  KEYCHAIN_PASSWORD="$(uuidgen)"
+                  CERTIFICATE="$RUNNER_TEMP/certificate.p12"
+
+                  echo "$MAC_CSC_LINK" | base64 --decode > "$CERTIFICATE"
+                  security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+                  security set-keychain-settings -lut 21600 "$KEYCHAIN"
+                  security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+                  security import "$CERTIFICATE" -k "$KEYCHAIN" -P "$MAC_CSC_KEY_PASSWORD" -T /usr/bin/codesign
+                  security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+                  security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+                  rm -f "$CERTIFICATE"
+
+                  IDENTITY="$(security find-identity -p codesigning "$KEYCHAIN" | awk -F'"' '/^[[:space:]]*[0-9]+\)/ { print $2; exit }')"
+                  if [ -z "$IDENTITY" ]; then
+                    echo "::error::CSC_LINK imported but it holds no code-signing identity"
+                    exit 1
+                  fi
+
+                  echo "Signing as \"$IDENTITY\""
+                  echo "MAC_SIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+                  echo "MAC_SIGN_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
 
             - name: Install dependencies
               run: pnpm install --frozen-lockfile

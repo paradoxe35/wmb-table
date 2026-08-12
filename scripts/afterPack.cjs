@@ -58,20 +58,13 @@ function pruneBetterSqlitePayload(appOutDir) {
 }
 
 /**
- * Re-sign the entire .app bundle with a consistent ad-hoc identity after packing.
+ * Sign the whole .app bundle, always. Unsigned, Apple Silicon reports it as damaged and gives
+ * no way past; on macOS 26+ dyld also refuses a bundle whose binaries disagree on Team ID.
  *
- * On macOS 26+, dyld strictly enforces that all binaries in a process share the
- * same Team ID. Without a signing certificate, electron-builder produces a bundle
- * where the main binary is ad-hoc signed (no Team ID) but the embedded Electron
- * Framework retains Electron's original signature (different Team ID). This causes
- * a SIGABRT at launch with "different Team IDs".
- *
- * This hook re-signs everything with `codesign --force --deep --sign -` so all
- * binaries share the same (empty) ad-hoc Team ID. The app launches, but macOS
- * auto-update cannot work: an ad-hoc designated requirement pins the cdhash, which
- * changes every build, so Squirrel.Mac rejects the update. Setting CSC_LINK/CSC_NAME
- * hands signing to electron-builder instead; the certificate does not have to come
- * from Apple, only stay the same across releases. See .github/variables.md
+ * Signed here rather than by electron-builder, which skips signing when it finds only a
+ * self-signed identity (`CSSMERR_TP_NOT_TRUSTED`) — `codesign` accepts one. Without a
+ * certificate this falls back to ad-hoc, which launches but pins the cdhash, so Squirrel.Mac
+ * rejects every update. See .github/variables.md
  */
 exports.default = async function afterPack(context) {
     pruneChromiumLocales(context.appOutDir);
@@ -82,23 +75,24 @@ exports.default = async function afterPack(context) {
 
     if (process.platform !== 'darwin') return;
 
-    // Skip if a real signing identity is configured via electron-builder
-    if (process.env.CSC_LINK || process.env.CSC_NAME) {
-        console.log('afterPack: Skipping ad-hoc re-signing (CSC_LINK/CSC_NAME is set)');
-        return;
-    }
-
     const appName = context.packager.appInfo.productFilename;
     const appPath = path.join(context.appOutDir, `${appName}.app`);
+    const entitlements = path.resolve(__dirname, '../resources/entitlements.mac.plist');
 
-    console.log(
-        `afterPack: Re-signing "${appPath}" with ad-hoc identity for Team ID consistency...`,
-    );
+    const identity = process.env.MAC_SIGN_IDENTITY;
+    const keychain = process.env.MAC_SIGN_KEYCHAIN;
+    const signWith = identity ? `--sign "${identity}"` : '--sign -';
+    const fromKeychain = identity && keychain ? ` --keychain "${keychain}"` : '';
+
+    console.log(`afterPack: signing "${appPath}" as ${identity ? `"${identity}"` : 'ad-hoc'}`);
 
     execSync(
-        `codesign --force --deep --sign - --entitlements "${path.resolve(__dirname, '../resources/entitlements.mac.plist')}" "${appPath}"`,
+        `codesign --force --deep ${signWith}${fromKeychain} --entitlements "${entitlements}" "${appPath}"`,
         { stdio: 'inherit' },
     );
 
-    console.log('afterPack: Ad-hoc re-signing complete');
+    // Fail the release rather than publish a bundle macOS will refuse to open.
+    execSync(`codesign --verify --deep --strict --verbose=2 "${appPath}"`, { stdio: 'inherit' });
+
+    console.log('afterPack: signature verified');
 };
