@@ -14,9 +14,10 @@ export interface SherpaCatalogEntry {
 }
 
 /**
- * Engines sherpa-onnx ships but `initialize()` in sherpa.worker.ts builds no config for.
- * A voice from one of these downloads hundreds of megabytes and then fails to load, so it
- * is never offered. Keep this in step with the branches in that function.
+ * Zero-shot cloning engines: they load and speak, but only when handed a recording of the
+ * voice to imitate, which this app never asks a reader for. ZipVoice also wants a vocoder
+ * from a second release and the transcript of that recording. Offering them would download
+ * hundreds of megabytes for a voice that cannot say a word on its own.
  */
 const UNSUPPORTED_ENGINES = new Set(['pocket', 'zipvoice']);
 
