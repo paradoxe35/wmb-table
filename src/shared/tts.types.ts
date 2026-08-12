@@ -209,6 +209,27 @@ export const TTS_REFERENCE_VOICES: TtsReferenceVoice[] = [
     },
 ];
 
+// ── Voice quality and model precision ──
+
+/** How the voice was trained. A higher tier sounds better and weighs more. */
+export const TTS_VOICE_QUALITIES = ['x_low', 'low', 'medium', 'high'] as const;
+export type TtsVoiceQuality = (typeof TTS_VOICE_QUALITIES)[number];
+
+/**
+ * How the model weights were stored. A smaller precision means a smaller download and a
+ * faster voice, not a voice trained to a lower tier.
+ */
+export const TTS_MODEL_PRECISIONS = ['fp32', 'fp16', 'int8'] as const;
+export type TtsModelPrecision = (typeof TTS_MODEL_PRECISIONS)[number];
+
+export function isVoiceQuality(token: string): token is TtsVoiceQuality {
+    return (TTS_VOICE_QUALITIES as readonly string[]).includes(token);
+}
+
+export function isModelPrecision(token: string): token is TtsModelPrecision {
+    return (TTS_MODEL_PRECISIONS as readonly string[]).includes(token);
+}
+
 // ── Per-language model info (for providers with multiple downloadable models) ──
 export interface TtsModelInfo {
     langCode: string[];
@@ -216,9 +237,9 @@ export interface TtsModelInfo {
     voiceName: string;
     installed: boolean;
     engine?: string;
-    quality?: string;
+    quality?: TtsVoiceQuality;
+    precision?: TtsModelPrecision;
     filesizeMb?: number;
-    numSpeakers?: number;
 }
 
 // ── Language compatibility ──

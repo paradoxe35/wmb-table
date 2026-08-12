@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { normalizeLanguageCode } from '@shared/tts.types';
 import type { SherpaCatalogEntry } from './sherpa-catalog';
-import { entrySupportsLang } from './sherpa-catalog';
+import { entrySupportsLang, isPlayableEntry } from './sherpa-catalog';
 import { getRemoteCatalogEntries } from './sherpa-catalog-remote';
 import { getTtsResourceDir } from '@main/lib/app-paths';
 
@@ -29,7 +29,9 @@ function loadCatalog(): SherpaCatalogEntry[] {
     if (merged && merged.remoteCount === remote.length) return merged.entries;
 
     const known = new Set(base.map((entry) => entry.modelName));
-    const entries = [...base, ...remote.filter((entry) => !known.has(entry.modelName))];
+    const entries = [...base, ...remote.filter((entry) => !known.has(entry.modelName))].filter(
+        isPlayableEntry,
+    );
 
     merged = { entries, remoteCount: remote.length };
     return entries;

@@ -573,7 +573,7 @@ export interface InvokeChannelMap {
     [TtsChannels.getReferenceVoiceAudio]: { args: [string]; return: TtsReferenceVoiceAudio };
     [TtsChannels.getProviderModels]: { args: [TtsProviderType]; return: TtsModelInfo[] };
     [TtsChannels.deleteProviderModel]: { args: [TtsProviderType, string]; return: void };
-    [TtsChannels.previewVoice]: { args: [string]; return: TtsSynthesizeResult };
+    [TtsChannels.previewVoice]: { args: [string, string?]; return: TtsSynthesizeResult };
     [TtsChannels.resolveConfigForLanguage]: { args: [string]; return: TtsSettings | null };
 
     // AI assistant

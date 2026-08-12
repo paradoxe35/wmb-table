@@ -382,6 +382,9 @@ const en: Record<string, string> = {
     'Recherchez une langue ou un nom de voix.': 'Search for a language or voice name.',
     'Ex: arabe, portugais, swahili…': 'E.g.: Arabic, Portuguese, Swahili…',
     'Voix installée': 'Voice installed',
+    'Voix {{number}}': 'Voice {{number}}',
+    '{{count}} voix dans ce pack': '{{count}} voices in this pack',
+    'Choisir une voix': 'Choose a voice',
     'Voix supprimée': 'Voice removed',
     Télécharger: 'Download',
     Téléchargement: 'Downloading',
@@ -393,6 +396,13 @@ const en: Record<string, string> = {
     'Haute qualité': 'High quality',
     'Qualité moyenne': 'Medium quality',
     'Qualité légère': 'Light quality',
+    'Qualité minimale': 'Minimal quality',
+    'Version compacte': 'Compact version',
+    'Version très compacte': 'Very compact version',
+    'Téléchargement plus léger et lecture plus rapide, pour une voix quasi identique.':
+        'A lighter download and faster playback, for a nearly identical voice.',
+    'Le téléchargement le plus léger et la lecture la plus rapide, avec une voix un peu moins nette.':
+        'The lightest download and the fastest playback, with a slightly less crisp voice.',
     Multilingue: 'Multilingual',
 
     // ── TTS provider ElevenLabs ──

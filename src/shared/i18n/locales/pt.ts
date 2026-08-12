@@ -373,6 +373,9 @@ const pt: Record<string, string> = {
     'Recherchez une langue ou un nom de voix.': 'Pesquise um idioma ou um nome de voz.',
     'Ex: arabe, portugais, swahili…': 'Ex.: árabe, português, suaíli…',
     'Voix installée': 'Voz instalada',
+    'Voix {{number}}': 'Voz {{number}}',
+    '{{count}} voix dans ce pack': '{{count}} vozes neste pacote',
+    'Choisir une voix': 'Escolher uma voz',
     'Voix supprimée': 'Voz removida',
     Télécharger: 'Baixar',
     Téléchargement: 'Baixando',
@@ -384,6 +387,13 @@ const pt: Record<string, string> = {
     'Haute qualité': 'Alta qualidade',
     'Qualité moyenne': 'Qualidade média',
     'Qualité légère': 'Qualidade leve',
+    'Qualité minimale': 'Qualidade mínima',
+    'Version compacte': 'Versão compacta',
+    'Version très compacte': 'Versão muito compacta',
+    'Téléchargement plus léger et lecture plus rapide, pour une voix quasi identique.':
+        'Descarregamento mais leve e leitura mais rápida, para uma voz quase idêntica.',
+    'Le téléchargement le plus léger et la lecture la plus rapide, avec une voix un peu moins nette.':
+        'O descarregamento mais leve e a leitura mais rápida, com uma voz um pouco menos nítida.',
     Multilingue: 'Multilíngue',
 
     // ── TTS provider ElevenLabs ──

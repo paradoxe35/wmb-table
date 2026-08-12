@@ -79,10 +79,45 @@ describe('parseSherpaAsset', () => {
         expect(intlLanguageName('cy', 'sw')).toBe('Kiwelisi');
     });
 
-    it('reads the quality out of the name', () => {
+    it('reads the voice tier, and omits it when the name has none', () => {
         expect(parse('vits-piper-ar_JO-kareem-low.tar.bz2')?.quality).toBe('low');
-        expect(parse('kitten-nano-en-v0_2-fp16.tar.bz2')?.quality).toBe('fp16');
-        expect(parse('vits-coqui-bg-cv.tar.bz2')?.quality).toBe('unknown');
+        expect(parse('vits-piper-ca_ES-upc_ona-x_low.tar.bz2')?.quality).toBe('x_low');
+        expect(parse('vits-coqui-bg-cv.tar.bz2')?.quality).toBeUndefined();
+    });
+
+    it('keeps weight precision apart from the voice tier', () => {
+        const quantised = parse('vits-piper-ar_JO-SA_dii-high-fp16.tar.bz2');
+
+        expect(quantised?.quality).toBe('high');
+        expect(quantised?.precision).toBe('fp16');
+    });
+
+    it('reports precision alone when the name carries no tier', () => {
+        const kitten = parse('kitten-nano-en-v0_2-fp16.tar.bz2');
+
+        expect(kitten?.quality).toBeUndefined();
+        expect(kitten?.precision).toBe('fp16');
+    });
+
+    it('keeps a speaker name that happens to read as a language code', () => {
+        // `SA_dii` parses as Sanskrit and `sam` as Samaritan Aramaic, but neither model
+        // speaks those: dropping them would leave nothing to name the voice by.
+        expect(parse('vits-piper-ar_JO-SA_dii-high-fp16.tar.bz2')?.name).toBe('SA_dii');
+        expect(parse('vits-piper-en_US-sam-medium-int8.tar.bz2')?.name).toBe('sam');
+    });
+
+    it('never leaves a technical suffix in a name the reader sees', () => {
+        const names = [
+            'vits-piper-ca_ES-upc_pau-x_low-int8.tar.bz2',
+            'vits-piper-fr_FR-gilles-low-fp16.tar.bz2',
+            'kitten-nano-en-v0_2-fp16.tar.bz2',
+        ].map((asset) => parse(asset)?.name);
+
+        expect(names).toEqual(['upc_pau', 'gilles', 'nano-v0_2']);
+    });
+
+    it('rejects an asset whose language cannot be determined rather than guessing', () => {
+        expect(parse('mystery-model-v1.tar.bz2')).toBeNull();
     });
 
     it('reports the download size in megabytes', () => {

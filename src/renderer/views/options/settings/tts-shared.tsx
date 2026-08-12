@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { LANG_LABELS_FR, PROVIDER_CATALOG } from '@shared/tts.types';
 import type {
-    TtsModelInfo,
     TtsProviderLocality,
     TtsProviderMeta,
     TtsProviderType,
@@ -57,11 +56,7 @@ export function providerUpdate(
     };
 }
 
-export function groupVoicesByLanguage(
-    voices: TtsVoice[],
-    contentLanguage?: string,
-    models?: TtsModelInfo[],
-) {
+export function groupVoicesByLanguage(voices: TtsVoice[], contentLanguage?: string) {
     const langPrefix = contentLanguage?.split('-')[0].toLowerCase() ?? '';
     const filtered = langPrefix
         ? voices.filter((v) =>
@@ -69,12 +64,6 @@ export function groupVoicesByLanguage(
           )
         : voices;
     const list = filtered.length > 0 ? filtered : voices;
-
-    // Build a modelName → TtsModelInfo lookup for enriched labels
-    const modelMap = new Map<string, TtsModelInfo>();
-    if (models) {
-        for (const m of models) modelMap.set(m.modelName, m);
-    }
 
     const groups = new Map<string, TtsVoice[]>();
     for (const v of list) {
@@ -91,15 +80,10 @@ export function groupVoicesByLanguage(
 
     return Array.from(groups.entries()).map(([lang, items]) => ({
         label: LANG_LABELS_FR[lang] ?? lang,
-        options: items.map((v) => {
-            const modelName = v.id.split(':')[0];
-            const model = modelMap.get(modelName);
-            const engine = model?.engine ? ` · ${model.engine}` : '';
-            return {
-                label: `${v.name}${engine}`,
-                value: v.id,
-            };
-        }),
+        options: items.map((v) => ({
+            label: v.name,
+            value: v.id,
+        })),
     }));
 }
 

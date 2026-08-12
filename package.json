@@ -40,6 +40,7 @@
         "rebuild:electron": "electron-rebuild -f",
         "format": "prettier --write \"**/*.{ts,tsx,jsx,json,css,md}\" --log-level warn",
         "format:check": "prettier --check \"**/*.{ts,tsx,jsx,json,css,md}\"",
+        "catalog:sherpa": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/ts-aliases.mjs scripts/build-sherpa-catalog.mjs",
         "mirror:release": "bash scripts/mirror-to-github-release.sh",
         "docs:dev": "vitepress dev docs",
         "docs:build": "vitepress build docs",

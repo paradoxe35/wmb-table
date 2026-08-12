@@ -419,7 +419,7 @@ export class TtsService {
         return provider.listClonedVoices();
     }
 
-    async previewVoice(language: string): Promise<TtsSynthesizeResult> {
+    async previewVoice(language: string, voiceId?: string): Promise<TtsSynthesizeResult> {
         await this.reloadSettings();
         const providerType = this.settings.activeProvider;
         if (providerType === 'browser') {
@@ -435,8 +435,8 @@ export class TtsService {
         return provider.previewVoice({
             text,
             language,
-            voiceId: cfg?.voiceId,
-            model: cfg?.model,
+            voiceId: voiceId ?? cfg?.voiceId,
+            model: (voiceId ?? cfg?.voiceId)?.split(':')[0] || cfg?.model,
             rate: 1,
         });
     }

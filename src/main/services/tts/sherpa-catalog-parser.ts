@@ -1,4 +1,11 @@
-import { isLanguageCode, normalizeLanguageCode } from '@shared/tts.types';
+import {
+    isLanguageCode,
+    isModelPrecision,
+    isVoiceQuality,
+    normalizeLanguageCode,
+    TTS_MODEL_PRECISIONS,
+    TTS_VOICE_QUALITIES,
+} from '@shared/tts.types';
 import type { SherpaCatalogEntry } from './sherpa-catalog';
 
 /**
@@ -10,8 +17,6 @@ import type { SherpaCatalogEntry } from './sherpa-catalog';
 const TARBALL_SUFFIX = '.tar.bz2';
 
 const NON_MODEL_NAMES = /^(espeak-ng-data|lexicon|checksum|prompt)/;
-
-const QUALITY_SUFFIXES = ['x_low', 'x-low', 'low', 'medium', 'high', 'fp16', 'fp32', 'int8'];
 
 /** Prefix -> engine, longest prefix first so `vits-melo` beats `vits`. */
 const ENGINE_PREFIXES: [string, string][] = [
@@ -112,11 +117,9 @@ function detectEngine(modelName: string): { engine: string; prefix: string } {
         : { engine: 'vits', prefix: framework ?? '' };
 }
 
-function detectQuality(tokens: string[]): string {
-    for (const token of [...tokens].reverse()) {
-        if (QUALITY_SUFFIXES.includes(token)) return token;
-    }
-    return 'unknown';
+/** Last match wins: the tail of an asset name is where these suffixes live. */
+function lastToken<T extends string>(tokens: string[], is: (t: string) => t is T): T | undefined {
+    return [...tokens].reverse().find(is);
 }
 
 /** `en_US` and `zh_en` both appear; the first is a locale, the second a language pair. */
@@ -156,19 +159,44 @@ function detectLanguages(engine: string, prefix: string, modelName: string): str
         if (codes.length > 0) return codes;
     }
 
-    return ['en'];
+    return [];
 }
 
+const TECHNICAL_TOKENS = new Set([
+    ...TTS_VOICE_QUALITIES,
+    ...TTS_MODEL_PRECISIONS,
+    'tts',
+    'hf',
+    'v2',
+]);
+
+/**
+ * What is left of the asset name once the parts shown elsewhere in the interface — the
+ * language, the quality tier, the file format — are taken out. A speaker name can itself
+ * read as a language code (`SA_dii` as Sanskrit, `sam` as Samaritan Aramaic), so a locale
+ * token is only treated as one when it names a language this very model speaks.
+ */
 function detectVoiceName(prefix: string, modelName: string, languages: string[]): string {
     const rest = modelName.slice(prefix.length).replace(/^-/, '');
-    const dropped = new Set([...languages, ...QUALITY_SUFFIXES, 'tts', 'hf', 'v2']);
+    const spoken = new Set(languages);
+
+    const namesSpokenLanguage = (token: string) => {
+        if (spoken.has(token)) return true;
+        const codes = parseLocaleToken(token);
+        return codes.length > 0 && codes.every((code) => spoken.has(code));
+    };
 
     const tokens = rest
         .split('-')
         .filter(Boolean)
-        .filter((token) => !dropped.has(token) && parseLocaleToken(token).length === 0);
+        .filter((token) => !TECHNICAL_TOKENS.has(token) && !namesSpokenLanguage(token));
 
-    return tokens.join('-') || rest || modelName;
+    return tokens.join('-') || modelName;
+}
+
+/** Download sizes are quoted to the reader in megabytes, to two decimals. */
+export function toMegabytes(bytes: number): number {
+    return Math.round((bytes / 1024 / 1024) * 100) / 100;
 }
 
 export function parseSherpaAsset(
@@ -183,17 +211,20 @@ export function parseSherpaAsset(
 
     const { engine, prefix } = detectEngine(modelName);
     const languages = detectLanguages(engine, prefix, modelName);
-    const quality = detectQuality(modelName.split('-').filter(Boolean));
-    const name = detectVoiceName(prefix, modelName, languages);
+    // Everything is matched and listed by language; an entry without one is unusable.
+    if (languages.length === 0) return null;
+
+    const tokens = modelName.split('-').filter(Boolean);
+    const quality = lastToken(tokens, isVoiceQuality);
+    const precision = lastToken(tokens, isModelPrecision);
 
     return {
-        id: modelName,
         engine,
-        name,
+        name: detectVoiceName(prefix, modelName, languages),
         langCode: languages,
-        quality,
-        numSpeakers: 1,
-        filesizeMb: Math.round((sizeBytes / 1024 / 1024) * 100) / 100,
+        ...(quality ? { quality } : {}),
+        ...(precision ? { precision } : {}),
+        filesizeMb: toMegabytes(sizeBytes),
         url,
         modelName,
     };
