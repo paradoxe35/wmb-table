@@ -2,7 +2,7 @@ import { Tag, Typography } from 'antd';
 import { CloudOutlined, LaptopOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { languageLabel, PROVIDER_CATALOG } from '@shared/tts.types';
+import { languageLabel, PROVIDER_CATALOG, voiceLanguageCode } from '@shared/tts.types';
 import type {
     TtsProviderLocality,
     TtsProviderMeta,
@@ -61,7 +61,7 @@ export function groupVoicesByLanguage(
     uiLanguage: string,
     contentLanguage?: string,
 ) {
-    const langPrefix = contentLanguage?.split('-')[0].toLowerCase() ?? '';
+    const langPrefix = contentLanguage ? voiceLanguageCode(contentLanguage) : '';
     const filtered = langPrefix
         ? voices.filter((v) =>
               v.languageCodes.some((languageCode) => languageCode.startsWith(langPrefix)),

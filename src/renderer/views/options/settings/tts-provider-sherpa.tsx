@@ -4,7 +4,7 @@ import { DownloadOutlined, SearchOutlined, SoundOutlined } from '@ant-design/ico
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
-import { languageLabel, normalizeLanguageCode } from '@shared/tts.types';
+import { languageLabel, normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
 import type {
     TtsModelDownloadProgress,
     TtsModelInfo,
@@ -145,7 +145,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
     const cfg = settings.providers.sherpa;
     const setProviders = useTtsStore((s) => s.setProviders);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const langCode = contentLanguage?.split('-')[0].toLowerCase() ?? '';
+    const langCode = contentLanguage ? voiceLanguageCode(contentLanguage) : '';
 
     const [models, setModels] = useState<TtsModelInfo[]>([]);
     const { nameOf, labelOf } = useLanguageNames(models);

@@ -14,13 +14,23 @@ function entry(engine: string): SherpaCatalogEntry {
 
 describe('isPlayableEntry', () => {
     it('offers the engines the worker builds a config for', () => {
-        for (const engine of ['piper', 'mms', 'coqui', 'vits', 'kokoro', 'matcha']) {
+        const engines = [
+            'piper',
+            'mms',
+            'coqui',
+            'vits',
+            'kokoro',
+            'matcha',
+            'kitten',
+            'supertonic',
+        ];
+        for (const engine of engines) {
             expect(isPlayableEntry(entry(engine))).toBe(true);
         }
     });
 
     it('withholds engines the worker cannot load, rather than failing after the download', () => {
-        for (const engine of ['kitten', 'pocket', 'supertonic', 'zipvoice']) {
+        for (const engine of ['pocket', 'zipvoice']) {
             expect(isPlayableEntry(entry(engine))).toBe(false);
         }
     });

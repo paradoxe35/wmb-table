@@ -8,7 +8,7 @@ import type {
     TtsSynthesizeResult,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
-import { normalizeLanguageCode } from '@shared/tts.types';
+import { voiceLanguageCode } from '@shared/tts.types';
 import { fetchTtsWithRetry } from './network-retry';
 
 const OPENAI_VOICES = [
@@ -112,7 +112,7 @@ export class OpenAiProvider implements TtsProvider {
         if (!this.apiKey) {
             return { supported: false, reason: 'not_configured' };
         }
-        const code = normalizeLanguageCode(langCode);
+        const code = voiceLanguageCode(langCode);
         if (!SUPPORTED_LANGUAGES.includes(code)) {
             return { supported: false, reason: 'unsupported_language' };
         }

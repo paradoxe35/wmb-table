@@ -13,7 +13,7 @@ import type {
     TtsVoice,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
-import { normalizeLanguageCode } from '@shared/tts.types';
+import { normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
 import { entrySupportsLang, normalizeLangCodes, resolveSpeakerCount } from './sherpa-catalog';
 import { SimpleCache } from '@main/lib/simple-cache';
 import { getAllCatalogModels, findCatalogModelByModelName } from './sherpa-catalog-data';
@@ -66,6 +66,11 @@ function findAcousticModelFile(dir: string): string | null {
 }
 
 function isModelInstalled(modelDir: string): boolean {
+    // Supertonic splits the voice across four models and ships no `tokens.txt`.
+    if (existsSync(join(modelDir, 'tts.json')) && existsSync(join(modelDir, 'voice.bin'))) {
+        return findOnnxFiles(modelDir).length >= 4;
+    }
+
     if (!existsSync(join(modelDir, 'tokens.txt'))) {
         return false;
     }
@@ -220,7 +225,7 @@ export class SherpaProvider implements TtsProvider {
         langCode: string,
         cfg?: TtsProviderSettings,
     ): Promise<TtsCompatibilityResult> {
-        const code = normalizeLanguageCode(langCode);
+        const code = voiceLanguageCode(langCode);
         const installed = getInstalledModelNames();
 
         if (installed.length === 0) {
@@ -338,14 +343,16 @@ export class SherpaProvider implements TtsProvider {
     }
 
     async deleteModel(modelName: string): Promise<void> {
-        const dir = join(getSherpaModelsDir(), modelName);
-        if (existsSync(dir)) {
-            await rm(dir, { recursive: true, force: true });
-        }
+        // The engine holds the model files open, and Windows refuses to unlink an open file.
         if (this.activeModel === modelName) {
             this.initialized = false;
             this.activeModel = '';
-            this.rpc.call('dispose').catch(() => {});
+            await this.rpc.call('dispose').catch(() => {});
+        }
+
+        const dir = join(getSherpaModelsDir(), modelName);
+        if (existsSync(dir)) {
+            await rm(dir, { recursive: true, force: true });
         }
     }
 
@@ -364,7 +371,7 @@ export class SherpaProvider implements TtsProvider {
         langCode: string,
         cfg?: TtsProviderSettings,
     ): Partial<TtsProviderSettings> | null {
-        const code = normalizeLanguageCode(langCode);
+        const code = voiceLanguageCode(langCode);
         const installed = getInstalledModelNames();
 
         // If the configured voiceId already points to an installed model for this language, no change needed
@@ -420,7 +427,7 @@ export class SherpaProvider implements TtsProvider {
 
     private findModelForLanguage(language?: string): string | undefined {
         if (!language) return undefined;
-        const code = normalizeLanguageCode(language);
+        const code = voiceLanguageCode(language);
         const installed = getInstalledModelNames();
 
         // Prefer non-MMS model (typically higher quality)
@@ -438,7 +445,8 @@ export class SherpaProvider implements TtsProvider {
         if (!isModelInstalled(modelDir)) {
             throw new Error(`Modèle Sherpa-ONNX non trouvé: ${modelName}`);
         }
-        const ok = await this.rpc.call<boolean>('initialize', modelDir, language);
+        const engine = findCatalogModelByModelName(modelName)?.engine;
+        const ok = await this.rpc.call<boolean>('initialize', modelDir, language, engine);
         if (!ok) throw new Error(`Échec d'initialisation du modèle: ${modelName}`);
         this.activeModel = modelName;
         this.initialized = true;

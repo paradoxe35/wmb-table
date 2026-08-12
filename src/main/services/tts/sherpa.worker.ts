@@ -3,7 +3,7 @@ import { createReadStream, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { rename, rm, stat, unlink } from 'node:fs/promises';
 import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { join, extname } from 'node:path';
+import { basename, join, extname } from 'node:path';
 import { extract as tarExtract } from 'tar';
 import unbzip2 from 'unbzip2-stream';
 import { pcmToWav } from './utils.worker';
@@ -88,7 +88,41 @@ function buildKokoroLexiconArg(dir: string): string {
     return lexicons.join(',');
 }
 
+/**
+ * Supertonic splits the voice across four models and carries no `tokens.txt`, so it is the
+ * one engine that cannot be recognised by the files every other engine shares.
+ */
+function findSupertonicConfig(modelDir: string): Record<string, string> | null {
+    const files = {
+        durationPredictor: 'duration_predictor',
+        textEncoder: 'text_encoder',
+        vectorEstimator: 'vector_estimator',
+        vocoder: 'vocoder',
+    };
+
+    if (!existsSync(join(modelDir, 'tts.json'))) return null;
+
+    const onnxFiles = findOnnxFiles(modelDir);
+    const config: Record<string, string> = {
+        ttsJson: join(modelDir, 'tts.json'),
+        unicodeIndexer: join(modelDir, 'unicode_indexer.bin'),
+        voiceStyle: join(modelDir, 'voice.bin'),
+    };
+
+    for (const [key, prefix] of Object.entries(files)) {
+        const file = onnxFiles.find((path) => basename(path).startsWith(prefix));
+        if (!file) return null;
+        config[key] = file;
+    }
+
+    return existsSync(config.unicodeIndexer) && existsSync(config.voiceStyle) ? config : null;
+}
+
 function hasValidModelAssets(modelDir: string): boolean {
+    if (findSupertonicConfig(modelDir)) {
+        return true;
+    }
+
     if (!existsSync(join(modelDir, 'tokens.txt'))) {
         return false;
     }
@@ -159,7 +193,7 @@ function createProgressTransform(
     });
 }
 
-function initialize(modelDir: string, _language?: string): boolean {
+function initialize(modelDir: string, _language?: string, engine?: string): boolean {
     const kokoroLexiconArg = buildKokoroLexiconArg(modelDir);
     const kokoroConfigKey = `${modelDir}|${kokoroLexiconArg}`;
     // Skip if already initialized with this model
@@ -175,6 +209,19 @@ function initialize(modelDir: string, _language?: string): boolean {
         ttsInstance = null;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const offlineTtsModelConfig: any = {
+        numThreads: 1,
+        debug: 0,
+        provider: 'cpu',
+    };
+
+    const supertonic = findSupertonicConfig(modelDir);
+    if (supertonic) {
+        offlineTtsModelConfig.offlineTtsSupertonicModelConfig = supertonic;
+        return createTts(offlineTtsModelConfig, modelDir, kokoroConfigKey);
+    }
+
     const tokens = join(modelDir, 'tokens.txt');
     if (!existsSync(tokens)) return false;
 
@@ -184,14 +231,20 @@ function initialize(modelDir: string, _language?: string): boolean {
     const vocoder = findVocoderFile(modelDir);
     const onnxFiles = findOnnxFiles(modelDir);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const offlineTtsModelConfig: any = {
-        numThreads: 1,
-        debug: 0,
-        provider: 'cpu',
-    };
+    if (hasVoicesBin && engine === 'kitten') {
+        // Kitten ships a `voices.bin` like Kokoro but reads its speaker styles differently;
+        // loaded as Kokoro it aborts the process with `style_dim should be 3-d`.
+        const modelOnnx = onnxFiles[0];
+        if (!modelOnnx) return false;
 
-    if (hasVoicesBin) {
+        offlineTtsModelConfig.offlineTtsKittenModelConfig = {
+            model: modelOnnx,
+            voices: join(modelDir, 'voices.bin'),
+            tokens,
+            dataDir: hasDataDir ? join(modelDir, 'espeak-ng-data') : '',
+            lengthScale: 1.0,
+        };
+    } else if (hasVoicesBin) {
         // Kokoro engine
         const modelOnnx = onnxFiles.find((f) => !/vocos|vocoder|hifigan/i.test(f));
         if (!modelOnnx) {
@@ -235,16 +288,19 @@ function initialize(modelDir: string, _language?: string): boolean {
         };
     }
 
-    const config = {
+    return createTts(offlineTtsModelConfig, modelDir, kokoroConfigKey);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function createTts(offlineTtsModelConfig: any, modelDir: string, configKey: string): boolean {
+    ttsInstance = sherpaModule.createOfflineTts({
         offlineTtsModelConfig,
         maxNumSentences: 2,
         ruleFsts: '',
         ruleFars: '',
-    };
-
-    ttsInstance = sherpaModule.createOfflineTts(config);
+    });
     currentModelDir = modelDir;
-    currentKokoroConfigKey = kokoroConfigKey;
+    currentKokoroConfigKey = configKey;
     return true;
 }
 

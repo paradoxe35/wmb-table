@@ -12,7 +12,7 @@ import type {
     TtsVoiceCloneResult,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
-import { normalizeLanguageCode } from '@shared/tts.types';
+import { normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
 import { fetchTtsWithRetry } from './network-retry';
 
 const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
@@ -250,7 +250,7 @@ export class ElevenLabsProvider implements TtsProvider {
         if (!this.apiKey) {
             return { supported: false, reason: 'not_configured' };
         }
-        const code = normalizeLanguageCode(langCode);
+        const code = voiceLanguageCode(langCode);
         const model = cfg?.model ?? this.model;
         const modelLangs = MODEL_LANGUAGES[model] ?? V3_LANGUAGES;
         if (!modelLangs.includes(code)) {

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { normalizeLanguageCode } from '@shared/tts.types';
+import { voiceLanguageCode } from '@shared/tts.types';
 import type { SherpaCatalogEntry } from './sherpa-catalog';
 import { entrySupportsLang, isPlayableEntry } from './sherpa-catalog';
 import { getRemoteCatalogEntries } from './sherpa-catalog-remote';
@@ -46,6 +46,6 @@ export function findCatalogModelByModelName(modelName: string): SherpaCatalogEnt
 }
 
 export function findCatalogModelsByLangCode(langCode: string): SherpaCatalogEntry[] {
-    const code = normalizeLanguageCode(langCode);
+    const code = voiceLanguageCode(langCode);
     return loadCatalog().filter((m) => entrySupportsLang(m, code));
 }

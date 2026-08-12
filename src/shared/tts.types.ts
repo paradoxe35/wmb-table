@@ -357,6 +357,27 @@ const ISO3_TO_ISO1: Record<string, string> = {
     che: 'ce',
     chv: 'cv',
     oss: 'os',
+    tsn: 'tn',
+    twi: 'tw',
+    xho: 'xh',
+    zul: 'zu',
+    ssw: 'ss',
+    ven: 've',
+    hye: 'hy',
+};
+
+/**
+ * Content languages no voice names the same way. `ua` and `cre` are the app's own spellings
+ * of Ukrainian and Haitian Creole; the rest name the nearest language a voice exists for.
+ * Kept apart from the codes above, which normalise a language rather than substitute one.
+ */
+const VOICE_LANGUAGE_FALLBACKS: Record<string, string> = {
+    ua: 'uk',
+    cre: 'ht',
+    nn: 'no',
+    tw: 'ak',
+    kya: 'nyy',
+    emk: 'vmw',
 };
 
 export function iso3ToIso1LanguageCode(code: string): string {
@@ -365,6 +386,12 @@ export function iso3ToIso1LanguageCode(code: string): string {
 
 export function normalizeLanguageCode(code: string): string {
     return iso3ToIso1LanguageCode(code.split('-')[0]);
+}
+
+/** The code to look a voice up under, for a language the app can open a document in. */
+export function voiceLanguageCode(code: string): string {
+    const normalized = normalizeLanguageCode(code);
+    return VOICE_LANGUAGE_FALLBACKS[normalized] ?? normalized;
 }
 
 function resolveLanguageLabel(
@@ -505,10 +532,19 @@ export function intlLanguageName(languageCode: string, locale = 'fr'): string | 
     }
 }
 
-/** A language named in the reader's own language, capitalised to head a list or a row. */
+/**
+ * A language named in the reader's own language, capitalised to head a list or a row.
+ *
+ * Only where a capital belongs: `isiZulu` and `chiShona` carry a noun-class prefix that is
+ * lowercase on purpose, and Georgian capitals are a separate script nobody writes a name in.
+ */
 export function languageLabel(languageCode: string, locale: string): string {
     const name = intlLanguageName(languageCode, locale) ?? languageCode;
-    return name.charAt(0).toUpperCase() + name.slice(1);
+    const [firstWord] = name.split(' ');
+    const casedScript = /^(?=\p{Ll})[\p{Script=Latin}\p{Script=Cyrillic}\p{Script=Greek}]/u;
+    const capitalise = casedScript.test(name) && !/\p{Lu}/u.test(firstWord);
+
+    return capitalise ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
 
 /** Whether a token is a language subtag ICU recognises, rather than part of a model name. */

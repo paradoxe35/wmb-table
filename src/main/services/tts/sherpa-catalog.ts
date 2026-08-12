@@ -18,7 +18,7 @@ export interface SherpaCatalogEntry {
  * A voice from one of these downloads hundreds of megabytes and then fails to load, so it
  * is never offered. Keep this in step with the branches in that function.
  */
-const UNSUPPORTED_ENGINES = new Set(['kitten', 'pocket', 'supertonic', 'zipvoice']);
+const UNSUPPORTED_ENGINES = new Set(['pocket', 'zipvoice']);
 
 export function isPlayableEntry(entry: SherpaCatalogEntry): boolean {
     return !UNSUPPORTED_ENGINES.has(entry.engine);
