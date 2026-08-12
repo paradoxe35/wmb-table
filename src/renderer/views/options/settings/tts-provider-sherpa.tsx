@@ -87,6 +87,12 @@ function qualityMeta(model: TtsModelInfo) {
     return model.quality ? QUALITY_META[model.quality] : undefined;
 }
 
+/** The engine that speaks it and how much it weighs — what separates two builds of a voice. */
+function modelDetails(model: TtsModelInfo, t: (key: string) => string): string {
+    const size = model.filesizeMb != null && `~${Math.round(model.filesizeMb)} ${t('Mo')}`;
+    return [model.engine, size].filter(Boolean).join(' · ');
+}
+
 /** The words on a model's tag, so searching matches what the reader actually sees. */
 function qualityLabel(model: TtsModelInfo, t: (key: string) => string): string {
     const quality = qualityMeta(model);
@@ -321,7 +327,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             .filter((m) => {
                 const names = m.langCode.map(nameOf).join(' ');
                 const haystack = strNormalize(
-                    `${m.voiceName} ${names} ${m.langCode.join(' ')} ${qualityLabel(m, t)}`,
+                    `${m.voiceName} ${names} ${m.langCode.join(' ')} ${m.engine ?? ''} ${qualityLabel(m, t)}`,
                 );
                 return terms.every((term) => haystack.includes(term));
             })
@@ -415,13 +421,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                             onChange={(modelName) => selectVoice(`${modelName}:0`)}
                             options={installed.map((m) => ({
                                 value: m.modelName,
-                                // The size tells two builds of one voice apart.
-                                label: [
-                                    m.voiceName,
-                                    labelOf(m.langCode),
-                                    m.filesizeMb != null &&
-                                        `~${Math.round(m.filesizeMb)} ${t('Mo')}`,
-                                ]
+                                label: [m.voiceName, labelOf(m.langCode), modelDetails(m, t)]
                                     .filter(Boolean)
                                     .join(' · '),
                             }))}
@@ -477,15 +477,13 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                     <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
                                         {m.voiceName}{' '}
                                         <Text type="secondary">({labelOf(m.langCode)})</Text>
-                                        {m.filesizeMb != null && (
-                                            <Text
-                                                type="secondary"
-                                                style={{ fontSize: 'var(--fs-rel-xl)' }}
-                                            >
-                                                {' '}
-                                                · ~{Math.round(m.filesizeMb)} {t('Mo')}
-                                            </Text>
-                                        )}{' '}
+                                        <Text
+                                            type="secondary"
+                                            style={{ fontSize: 'var(--fs-rel-xl)' }}
+                                        >
+                                            {' '}
+                                            · {modelDetails(m, t)}
+                                        </Text>{' '}
                                         <QualityTag model={m} />
                                     </Text>
                                     {m.langCode.length > 1 && (
@@ -552,9 +550,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                             type="secondary"
                                             style={{ fontSize: 'var(--fs-base)' }}
                                         >
-                                            {m.voiceName}
-                                            {m.filesizeMb != null &&
-                                                ` · ~${Math.round(m.filesizeMb)} ${t('Mo')}`}
+                                            {m.voiceName} · {modelDetails(m, t)}
                                         </Text>{' '}
                                         <QualityTag model={m} />
                                         {m.langCode.length > 1 && (
