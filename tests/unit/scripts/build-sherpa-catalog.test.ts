@@ -67,6 +67,29 @@ describe('buildMmsEntries', () => {
         expect(entries.map((entry) => entry.langCode)).toEqual([['de'], ['quc']]);
     });
 
+    it('tells apart voices of one language written in different scripts', () => {
+        const files = [...voiceFiles('bcc-script_arabic'), ...voiceFiles('bcc-script_latin')];
+        const languages = [
+            languageRow('bcc-script_arabic', 'Balochi, Southern'),
+            languageRow('bcc-script_latin', 'Balochi, Southern'),
+        ];
+
+        // A script has a standard subtag, so the interface names it in the reader's language.
+        expect(buildMmsEntries(files, languages).map((entry) => entry.langCode)).toEqual([
+            ['bcc-Arab'],
+            ['bcc-Latn'],
+        ]);
+    });
+
+    it('tells apart dialects, which have no code to carry them', () => {
+        const files = voiceFiles('quc-dialect_north');
+        const languages = [languageRow('quc-dialect_north', 'K’iche’')];
+        const [entry] = buildMmsEntries(files, languages);
+
+        expect(entry.name).toBe('K’iche’ (north)');
+        expect(entry.langCode).toEqual(['quc']);
+    });
+
     it('names a voice by its directory when the language table has no row for it', () => {
         expect(buildMmsEntries(voiceFiles('zzz'), [])[0].name).toBe('zzz');
     });

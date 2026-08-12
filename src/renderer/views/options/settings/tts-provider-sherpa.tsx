@@ -4,7 +4,7 @@ import { DownloadOutlined, SearchOutlined, SoundOutlined } from '@ant-design/ico
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
-import { intlLanguageName, LANG_LABELS_FR } from '@shared/tts.types';
+import { languageLabel, normalizeLanguageCode } from '@shared/tts.types';
 import type {
     TtsModelDownloadProgress,
     TtsModelInfo,
@@ -21,21 +21,43 @@ import type { TtsVoice } from '@shared/tts.types';
 
 const { Text } = Typography;
 
+/** A model's codes can carry a region or a script; the language alone decides a match. */
 function matchesLang(langCode: string[], target: string): boolean {
-    return langCode.includes(target);
+    return langCode.some((code) => normalizeLanguageCode(code) === target);
 }
 
 /**
- * Model languages are stored as codes and named at render time, so the list reads in the
- * interface language rather than the language the catalog happened to be written in.
+ * Languages are stored as codes and named at render time, so the list reads in the interface
+ * language. A region or script is spelled out only where a language ships more than one:
+ * "portugais brésilien" against "portugais européen" earns its words, "français (France)"
+ * does not.
  */
-function useLanguageNames() {
+function useLanguageNames(models: TtsModelInfo[]) {
     const uiLanguage = useResolvedUiLanguage();
     const { t } = useTranslation();
 
+    const distinguishing = useMemo(() => {
+        const variants = new Map<string, Set<string>>();
+
+        for (const model of models) {
+            for (const code of model.langCode) {
+                const [, variant] = code.split('-');
+                if (!variant) continue;
+
+                const base = normalizeLanguageCode(code);
+                variants.set(base, (variants.get(base) ?? new Set()).add(variant));
+            }
+        }
+
+        return new Set([...variants].filter(([, seen]) => seen.size > 1).map(([base]) => base));
+    }, [models]);
+
     const nameOf = useCallback(
-        (code: string) => intlLanguageName(code, uiLanguage) ?? LANG_LABELS_FR[code] ?? code,
-        [uiLanguage],
+        (code: string) => {
+            const base = normalizeLanguageCode(code);
+            return languageLabel(distinguishing.has(base) ? code : base, uiLanguage);
+        },
+        [distinguishing, uiLanguage],
     );
 
     const labelOf = useCallback(
@@ -114,13 +136,13 @@ function getDownloadPhaseLabel(
 
 export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigProps) {
     const { t } = useTranslation();
-    const { nameOf, labelOf } = useLanguageNames();
     const cfg = settings.providers.sherpa;
     const setProviders = useTtsStore((s) => s.setProviders);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const langCode = contentLanguage?.split('-')[0].toLowerCase() ?? '';
 
     const [models, setModels] = useState<TtsModelInfo[]>([]);
+    const { nameOf, labelOf } = useLanguageNames(models);
     // Per-model download progress: modelName → percentage
     const [downloads, setDownloads] = useState<Map<string, DownloadState>>(new Map());
     const [search, setSearch] = useState('');
@@ -273,8 +295,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
         [onUpdate, settings.providers],
     );
 
-    // Best available model for content language: prefer quality (≥30MB), fallback to largest
-    // Skip if the language already has an installed model
+    // Prefer quality (≥30MB), falling back to the largest; skip if one is already installed.
     const suggestedModel = useMemo(() => {
         const hasInstalled = models.some((m) => matchesLang(m.langCode, langCode) && m.installed);
         if (hasInstalled) return undefined;
@@ -394,7 +415,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                             onChange={(modelName) => selectVoice(`${modelName}:0`)}
                             options={installed.map((m) => ({
                                 value: m.modelName,
-                                // The size is what tells two builds of one voice apart.
+                                // The size tells two builds of one voice apart.
                                 label: [
                                     m.voiceName,
                                     labelOf(m.langCode),

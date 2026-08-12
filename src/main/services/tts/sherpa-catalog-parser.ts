@@ -121,15 +121,22 @@ function lastToken<T extends string>(tokens: string[], is: (t: string) => t is T
     return [...tokens].reverse().find(is);
 }
 
-/** `en_US` and `zh_en` both appear; the first is a locale, the second a language pair. */
+/**
+ * `en_US` and `zh_en` both appear; the first is a locale, the second a language pair. The
+ * region is kept: pt_BR and pt_PT would otherwise be two identical rows. Anything matching
+ * a model to a language folds it back away.
+ */
 function parseLocaleToken(token: string): string[] {
     const parts = token.split(/[_-]/).filter(Boolean);
     if (parts.length === 0) return [];
 
-    const looksLikeRegion = parts.length === 2 && /^[A-Z]{2}$/.test(parts[1]);
-    const codes = looksLikeRegion ? [parts[0]] : parts;
+    const [language, region] = parts;
+    if (parts.length === 2 && /^[A-Z]{2}$/.test(region)) {
+        const base = normalizeLanguageCode(language);
+        return isLanguageCode(base) ? [`${base}-${region}`] : [];
+    }
 
-    return [...new Set(codes.map(normalizeLanguageCode))].filter(isLanguageCode);
+    return [...new Set(parts.map(normalizeLanguageCode))].filter(isLanguageCode);
 }
 
 function detectLanguages(engine: string, prefix: string, modelName: string): string[] {
@@ -149,7 +156,9 @@ function detectLanguages(engine: string, prefix: string, modelName: string): str
     }
 
     if (engine === 'zipvoice' || engine === 'matcha') {
-        const codes = tokens.flatMap(parseLocaleToken).filter((code) => code.length === 2);
+        const codes = tokens
+            .flatMap(parseLocaleToken)
+            .filter((code) => normalizeLanguageCode(code).length === 2);
         return codes.length > 0 ? [...new Set(codes)] : ['en'];
     }
 
@@ -170,18 +179,17 @@ const TECHNICAL_TOKENS = new Set([
 ]);
 
 /**
- * What is left of the asset name once the parts shown elsewhere in the interface — the
- * language, the quality tier, the file format — are taken out. A speaker name can itself
- * read as a language code (`SA_dii` as Sanskrit, `sam` as Samaritan Aramaic), so a locale
- * token is only treated as one when it names a language this very model speaks.
+ * What is left of the asset name once the parts shown elsewhere — language, quality tier,
+ * file format — are taken out. A speaker name can itself read as a language code (`SA_dii`
+ * as Sanskrit), so a token only counts as one when this model actually speaks it.
  */
 function detectVoiceName(prefix: string, modelName: string, languages: string[]): string {
     const rest = modelName.slice(prefix.length).replace(/^-/, '');
-    const spoken = new Set(languages);
+    const spoken = new Set(languages.map(normalizeLanguageCode));
 
     const namesSpokenLanguage = (token: string) => {
         if (spoken.has(token)) return true;
-        const codes = parseLocaleToken(token);
+        const codes = parseLocaleToken(token).map(normalizeLanguageCode);
         return codes.length > 0 && codes.every((code) => spoken.has(code));
     };
 
@@ -193,7 +201,6 @@ function detectVoiceName(prefix: string, modelName: string, languages: string[])
     return tokens.join('-') || modelName;
 }
 
-/** Download sizes are quoted to the reader in megabytes, to two decimals. */
 export function toMegabytes(bytes: number): number {
     return Math.round((bytes / 1024 / 1024) * 100) / 100;
 }

@@ -14,12 +14,12 @@ function languagesOf(assetName: string): string[] {
 
 describe('parseSherpaAsset', () => {
     it.each([
-        ['vits-piper-ar_JO-kareem-low', 'piper', 'ar'],
-        ['vits-piper-en_GB-sweetbbak-amy', 'piper', 'en'],
+        ['vits-piper-ar_JO-kareem-low', 'piper', 'ar-JO'],
+        ['vits-piper-en_GB-sweetbbak-amy', 'piper', 'en-GB'],
         ['vits-coqui-bg-cv', 'coqui', 'bg'],
-        ['vits-mimic3-af_ZA-google-nwu_low', 'mimic3', 'af'],
+        ['vits-mimic3-af_ZA-google-nwu_low', 'mimic3', 'af-ZA'],
         ['vits-mms-deu', 'mms', 'de'],
-        ['vits-icefall-en_US-ljspeech-low', 'icefall', 'en'],
+        ['vits-icefall-en_US-ljspeech-low', 'icefall', 'en-US'],
         ['matcha-icefall-zh-baker', 'icefall', 'zh'],
         ['vits-melo-tts-zh_en', 'melo', 'zh'],
         ['vits-cantonese-hf-xiaomaiiwn', 'cantonese', 'yue'],
@@ -59,7 +59,7 @@ describe('parseSherpaAsset', () => {
     });
 
     it('finds the language of a model from an unknown engine', () => {
-        expect(languagesOf('vits-newengine-sq_AL-blerim-high.tar.bz2')).toEqual(['sq']);
+        expect(languagesOf('vits-newengine-sq_AL-blerim-high.tar.bz2')).toEqual(['sq-AL']);
         expect(languagesOf('sherpa-onnx-futuretts-ja-alpha.tar.bz2')).toEqual(['ja']);
     });
 
@@ -69,8 +69,22 @@ describe('parseSherpaAsset', () => {
     });
 
     it('always reports languages as an array, single or multilingual', () => {
-        expect(parse('vits-piper-cy_GB-gwryw-medium.tar.bz2')?.langCode).toEqual(['cy']);
+        expect(parse('vits-piper-cy_GB-gwryw-medium.tar.bz2')?.langCode).toEqual(['cy-GB']);
         expect(parse('kokoro-multi-lang-v1_1.tar.bz2')?.langCode).toEqual(['en', 'zh']);
+    });
+
+    it('keeps the region, so two voices of one language are told apart', () => {
+        // pt_BR and pt_PT are the same name, language and size; without the region the
+        // reader sees the same row twice.
+        expect(languagesOf('vits-piper-pt_BR-miro-high.tar.bz2')).toEqual(['pt-BR']);
+        expect(languagesOf('vits-piper-pt_PT-miro-high.tar.bz2')).toEqual(['pt-PT']);
+        expect(intlLanguageName('pt-BR', 'fr')).toBe('portugais brésilien');
+        expect(intlLanguageName('pt-PT', 'fr')).toBe('portugais européen');
+    });
+
+    it('never leaves the region in a name, having shown it as the language', () => {
+        expect(parse('vits-mimic3-ne_NP-ne-google_low.tar.bz2')?.name).toBe('google_low');
+        expect(parse('vits-piper-pt_BR-miro-high.tar.bz2')?.name).toBe('miro');
     });
 
     it('leaves naming to the interface, which knows the reader language', () => {

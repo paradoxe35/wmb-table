@@ -1,16 +1,9 @@
 /**
  * Rebuilds `resources/tts/sherpa-catalog.json` from the places the voices actually live.
  *
- * The bundled catalog is only a head start: at runtime the app refreshes it from the same
- * sherpa-onnx release. The two must therefore agree, so this script calls the app's own
- * fetcher and parser rather than re-deriving anything — a bundled entry and a refreshed one
- * differ only in when they were fetched.
- *
- * MMS voices sit outside that release, one directory per language in a HuggingFace repo,
- * and are read here alone: nothing in the app discovers them at runtime.
- *
- * Every field written here is stated by the host. What a download URL cannot tell us — how
- * many voices a model holds, how well it was trained — is left out rather than guessed.
+ * The app refreshes the same sherpa-onnx release at runtime, so this calls the app's own
+ * fetcher and parser rather than re-deriving anything. MMS voices sit outside that release,
+ * in a HuggingFace repo, and are read here alone.
  *
  * Usage: pnpm catalog:sherpa [--dry-run]
  */
@@ -28,8 +21,21 @@ const MMS_TREE_URL = `https://huggingface.co/api/models/${MMS_REPO}/tree/main`;
 const MMS_FILES_URL = `https://huggingface.co/${MMS_REPO}/resolve/main`;
 const MMS_LANGUAGES_URL = `${MMS_FILES_URL}/languages-supported.json`;
 
-/** The files the worker downloads for an MMS voice; the sample recordings are never fetched. */
+/** What the worker downloads for an MMS voice; the sample recordings are not fetched. */
 const MMS_VOICE_FILES = ['model.onnx', 'tokens.txt'];
+
+/** ISO 15924 subtags for the writing systems MMS spells out, so the interface can name them. */
+const MMS_SCRIPTS = {
+    arabic: 'Arab',
+    cyrillic: 'Cyrl',
+    devanagari: 'Deva',
+    ethiopic: 'Ethi',
+    khmer: 'Khmr',
+    latin: 'Latn',
+    syllabics: 'Cans',
+    telugu: 'Telu',
+    tifinagh: 'Tfng',
+};
 
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 20;
@@ -47,7 +53,6 @@ async function fetchJson(url) {
     return { data: await response.json(), nextUrl: nextPage?.[1] ?? null };
 }
 
-/** Every file in the MMS repo, walked page by page the way HuggingFace hands them over. */
 async function fetchMmsFiles() {
     const files = [];
     let url = `${MMS_TREE_URL}?recursive=true&limit=${PAGE_SIZE}`;
@@ -62,10 +67,26 @@ async function fetchMmsFiles() {
 }
 
 /**
- * One entry per directory holding a complete voice. The size is what the app will really
- * download, and the name comes from the repo's own language table; only the language code
- * is read off the directory name, by the same rule the app applies to an installed model.
+ * `bcc-script_arabic`, `cac-dialect_sanmateoixtatán`: without the suffix, several voices of
+ * one language look identical. A script has a subtag the interface can name; a dialect has
+ * none, so its own name is all there is to show.
  */
+function describeVariant(directory, languageName) {
+    const [code, variant] = directory.split('-');
+    const langCode = normalizeLanguageCode(code);
+    const [kind, value] = variant?.split('_') ?? [];
+
+    if (kind === 'script' && MMS_SCRIPTS[value]) {
+        return { name: languageName, langCode: [`${langCode}-${MMS_SCRIPTS[value]}`] };
+    }
+
+    return {
+        name: value ? `${languageName} (${value})` : languageName,
+        langCode: [langCode],
+    };
+}
+
+/** One entry per directory holding a complete voice. */
 export function buildMmsEntries(files, languages) {
     const voiceFiles = new Map();
 
@@ -84,8 +105,7 @@ export function buildMmsEntries(files, languages) {
         .filter(([, sizes]) => MMS_VOICE_FILES.every((fileName) => sizes.has(fileName)))
         .map(([directory, sizes]) => ({
             engine: 'mms',
-            name: names.get(directory) ?? directory,
-            langCode: [normalizeLanguageCode(directory)],
+            ...describeVariant(directory, names.get(directory) ?? directory),
             filesizeMb: toMegabytes([...sizes.values()].reduce((total, size) => total + size, 0)),
             url: `${MMS_FILES_URL}/${directory}`,
             modelName: `mms-${directory}`,
@@ -93,7 +113,7 @@ export function buildMmsEntries(files, languages) {
         .sort(byField('name'));
 }
 
-/** Plain code-point order, so a rebuild on another machine produces the very same file. */
+/** Code-point order, so a rebuild on another machine produces the same file. */
 function byField(field) {
     return (left, right) => {
         if (left[field] === right[field]) return 0;
@@ -101,7 +121,7 @@ function byField(field) {
     };
 }
 
-/** Release models first, then MMS, each in a fixed order so a rebuild only shows real news. */
+/** A fixed order, so a rebuild only shows what really moved. */
 export function mergeCatalog(releaseEntries, mmsEntries) {
     return [...releaseEntries].sort(byField('modelName')).concat([...mmsEntries]);
 }
@@ -141,8 +161,7 @@ async function main({ dryRun }) {
 
     const mmsEntries = buildMmsEntries(mmsFiles, mmsLanguages);
 
-    // An empty list means a host answered but told us nothing; overwriting would strip the
-    // app of every voice it can offer.
+    // A host that answers with nothing would otherwise strip the app of every voice.
     if (releaseEntries.length === 0) throw new Error('The sherpa-onnx release listed no models');
     if (mmsEntries.length === 0) throw new Error('The MMS repository listed no voices');
 

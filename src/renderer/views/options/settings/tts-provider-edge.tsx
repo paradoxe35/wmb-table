@@ -1,6 +1,7 @@
 import { Select, Space } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores/app.store';
+import { useResolvedUiLanguage } from '@renderer/hooks';
 import type { TtsProviderInfo } from '@shared/tts.types';
 import {
     Field,
@@ -17,7 +18,12 @@ export default function EdgeConfig({ settings, info, onUpdate }: EdgeConfigProps
     const { t } = useTranslation();
     const cfg = settings.providers.edge;
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const voiceGroups = groupVoicesByLanguage(info?.voices ?? [], contentLanguage ?? undefined);
+    const uiLanguage = useResolvedUiLanguage();
+    const voiceGroups = groupVoicesByLanguage(
+        info?.voices ?? [],
+        uiLanguage,
+        contentLanguage ?? undefined,
+    );
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="small">

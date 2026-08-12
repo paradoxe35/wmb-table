@@ -215,10 +215,7 @@ export const TTS_REFERENCE_VOICES: TtsReferenceVoice[] = [
 export const TTS_VOICE_QUALITIES = ['x_low', 'low', 'medium', 'high'] as const;
 export type TtsVoiceQuality = (typeof TTS_VOICE_QUALITIES)[number];
 
-/**
- * How the model weights were stored. Never shown: it says nothing a reader can act on that
- * the download size does not already say. Listed so the tokens can be kept out of a name.
- */
+/** Never shown — the download size already says it. Listed to keep it out of a voice name. */
 export const TTS_MODEL_PRECISIONS = ['fp32', 'fp16', 'int8'] as const;
 
 export function isVoiceQuality(token: string): token is TtsVoiceQuality {
@@ -378,131 +375,6 @@ function resolveLanguageLabel(
     return labels[languageCode] ?? labels[normalizedCode];
 }
 
-// ── French language labels (shared across main + renderer) ──
-export const LANG_LABELS_FR: Record<string, string> = {
-    en: 'Anglais',
-    fr: 'Français',
-    de: 'Allemand',
-    es: 'Espagnol',
-    it: 'Italien',
-    pt: 'Portugais',
-    ru: 'Russe',
-    zh: 'Chinois',
-    nl: 'Néerlandais',
-    pl: 'Polonais',
-    uk: 'Ukrainien',
-    sv: 'Suédois',
-    da: 'Danois',
-    no: 'Norvégien',
-    fi: 'Finnois',
-    tr: 'Turc',
-    cs: 'Tchèque',
-    ro: 'Roumain',
-    hu: 'Hongrois',
-    el: 'Grec',
-    ar: 'Arabe',
-    hi: 'Hindi',
-    vi: 'Vietnamien',
-    id: 'Indonésien',
-    ka: 'Géorgien',
-    sk: 'Slovaque',
-    sr: 'Serbe',
-    ca: 'Catalan',
-    sw: 'Swahili',
-    is: 'Islandais',
-    bg: 'Bulgare',
-    bn: 'Bengali',
-    fa: 'Persan',
-    ja: 'Japonais',
-    ko: 'Coréen',
-    th: 'Thaï',
-    he: 'Hébreu',
-    ms: 'Malais',
-    ta: 'Tamoul',
-    te: 'Télougou',
-    ml: 'Malayalam',
-    mr: 'Marathi',
-    ne: 'Népalais',
-    si: 'Cingalais',
-    lb: 'Luxembourgeois',
-    mk: 'Macédonien',
-    lt: 'Lituanien',
-    lv: 'Letton',
-    et: 'Estonien',
-    gl: 'Galicien',
-    eu: 'Basque',
-    gu: 'Gujarati',
-    kn: 'Kannada',
-    ha: 'Haoussa',
-    am: 'Amharique',
-    cy: 'Gallois',
-    be: 'Biélorusse',
-    sl: 'Slovène',
-    hr: 'Croate',
-    sq: 'Albanais',
-    yue: 'Cantonais',
-    my: 'Birman',
-    ur: 'Ourdou',
-    pa: 'Pendjabi',
-    af: 'Afrikaans',
-    az: 'Azerbaïdjanais',
-    bs: 'Bosnien',
-    fil: 'Filipino',
-    ga: 'Irlandais',
-    jv: 'Javanais',
-    km: 'Khmer',
-    lo: 'Lao',
-    mn: 'Mongol',
-    mt: 'Maltais',
-    nb: 'Norvégien bokmål',
-    ps: 'Pachto',
-    so: 'Somali',
-    su: 'Soundanais',
-    uz: 'Ouzbek',
-    zu: 'Zoulou',
-    wuu: 'Chinois wu',
-    // Additional languages
-    hy: 'Arménien',
-    kk: 'Kazakh',
-    ky: 'Kirghize',
-    tg: 'Tadjik',
-    tk: 'Turkmène',
-    tt: 'Tatar',
-    yo: 'Yoruba',
-    ig: 'Igbo',
-    xh: 'Xhosa',
-    sn: 'Shona',
-    rw: 'Kinyarwanda',
-    mg: 'Malgache',
-    eo: 'Espéranto',
-    la: 'Latin',
-    tl: 'Tagalog',
-    ht: 'Créole haïtien',
-    ku: 'Kurde',
-    sd: 'Sindhi',
-    or: 'Odia',
-    as: 'Assamais',
-    fy: 'Frison',
-    gd: 'Gaélique écossais',
-    mi: 'Maori',
-    sm: 'Samoan',
-    to: 'Tongien',
-    haw: 'Hawaïen',
-    ceb: 'Cebuano',
-    ny: 'Chichewa',
-    co: 'Corse',
-    hmn: 'Hmong',
-    st: 'Sotho',
-    ts: 'Tsonga',
-    tn: 'Tswana',
-    ak: 'Akan',
-    ln: 'Lingala',
-    om: 'Oromo',
-    ti: 'Tigrinya',
-    wo: 'Wolof',
-    ii: 'Yi',
-};
-
 // ── Native language labels (each language name in its own script) ──
 export const LANG_LABELS_NATIVE: Record<string, string> = {
     en: 'English',
@@ -615,15 +487,14 @@ export function getLanguageLabelNative(languageCode: string): string {
 export function getLanguageDisplayName(languageCode: string): string {
     return (
         resolveLanguageLabel(LANG_LABELS_NATIVE, languageCode) ??
-        resolveLanguageLabel(LANG_LABELS_FR, languageCode) ??
         intlLanguageName(languageCode) ??
         languageCode
     );
 }
 
 /**
- * Language name from the platform's own ICU data, so a model for a language nobody has
- * translated a label for still shows a real name instead of a bare code.
+ * Language name from the platform's own ICU data, which knows every code the catalog can
+ * hold — including a region or script tag — in every language the interface speaks.
  */
 export function intlLanguageName(languageCode: string, locale = 'fr'): string | undefined {
     try {
@@ -632,6 +503,12 @@ export function intlLanguageName(languageCode: string, locale = 'fr'): string | 
     } catch {
         return undefined;
     }
+}
+
+/** A language named in the reader's own language, capitalised to head a list or a row. */
+export function languageLabel(languageCode: string, locale: string): string {
+    const name = intlLanguageName(languageCode, locale) ?? languageCode;
+    return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 /** Whether a token is a language subtag ICU recognises, rather than part of a model name. */

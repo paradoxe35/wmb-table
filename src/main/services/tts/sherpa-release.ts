@@ -2,12 +2,8 @@ import type { SherpaCatalogEntry } from './sherpa-catalog';
 import { parseSherpaAsset } from './sherpa-catalog-parser';
 
 /**
- * Reads the model list out of the sherpa-onnx release, which is the only machine-readable
- * list upstream publishes: every TTS model is an asset on one release, so the asset list is
- * the model list.
- *
- * Deliberately free of Electron so the catalog build script can call this very function. A
- * rebuilt bundled catalog then cannot disagree with what the app discovers at runtime.
+ * Every TTS model is an asset on one sherpa-onnx release, so the asset list is the model
+ * list. Kept free of Electron so the catalog build script can call this very function.
  */
 
 const RELEASE_ASSETS_URL =

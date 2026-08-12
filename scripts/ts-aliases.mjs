@@ -1,10 +1,9 @@
 /**
- * Lets a script import the app's TypeScript modules directly instead of restating their
- * logic: it resolves the `@main/*` and `@shared/*` aliases, and supplies the `.ts` extension
- * the sources leave off. Node strips the types itself; nothing is compiled.
+ * Lets a script import the app's TypeScript directly instead of restating its logic: it
+ * resolves `@main/*` and `@shared/*`, and supplies the `.ts` extension the sources leave
+ * off. Node strips the types itself.
  *
- * Load it ahead of the script:
- * `node --import ./scripts/ts-aliases.mjs scripts/<name>.mjs`.
+ * Load it first: `node --import ./scripts/ts-aliases.mjs scripts/<name>.mjs`.
  */
 
 import { statSync } from 'node:fs';
@@ -32,7 +31,7 @@ function isFile(path) {
     }
 }
 
-/** `tts.types` reads as an extension to `path`, so ask the disk rather than the file name. */
+/** `tts.types` reads as an extension to `path`, so ask the disk, not the file name. */
 function asModuleUrl(file) {
     return pathToFileURL(isFile(file) ? file : `${file}.ts`).href;
 }
