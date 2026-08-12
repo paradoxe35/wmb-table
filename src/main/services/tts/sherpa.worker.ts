@@ -330,6 +330,8 @@ function dispose(): void {
     currentKokoroConfigKey = '';
 }
 
+/** sherpa throws a raw pointer when it refuses a model, which reaches the reader as
+ * `Error: 15029440`. Nothing is recoverable from the number, so say what happened instead. */
 function serializeWorkerError(err: unknown): string {
     if (err instanceof Error) {
         return err.message;
@@ -339,11 +341,7 @@ function serializeWorkerError(err: unknown): string {
         return err;
     }
 
-    try {
-        return JSON.stringify(err);
-    } catch {
-        return String(err);
-    }
+    return 'Cette voix ne peut pas être lue sur cet ordinateur.';
 }
 
 // ---------------------------------------------------------------------------

@@ -189,7 +189,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                     next.delete(model);
                     return next;
                 });
-                message.error(t('Erreur: {{error}}', { error: p.error }));
+                message.error(t('Erreur: {{error}}', { error: t(p.error ?? '') }));
             } else {
                 setDownloads((prev) => {
                     const next = new Map(prev);
@@ -421,7 +421,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                             onChange={(modelName) => selectVoice(`${modelName}:0`)}
                             options={installed.map((m) => ({
                                 value: m.modelName,
-                                label: [m.voiceName, labelOf(m.langCode), modelDetails(m, t)]
+                                label: [m.voiceName, labelOf(m.langCode), m.engine]
                                     .filter(Boolean)
                                     .join(' · '),
                             }))}

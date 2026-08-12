@@ -25,6 +25,25 @@ export function isPlayableEntry(entry: SherpaCatalogEntry): boolean {
     return !UNSUPPORTED_ENGINES.has(entry.engine);
 }
 
+function isHalfPrecision(entry: SherpaCatalogEntry): boolean {
+    return entry.modelName.endsWith('-fp16');
+}
+
+function voiceKey(entry: SherpaCatalogEntry): string {
+    return `${entry.engine}|${entry.name}|${entry.langCode.join(',')}`;
+}
+
+/**
+ * sherpa's runtime refuses most half-precision builds — `vits-piper-fr_FR-gilles-low-fp16`
+ * throws where its standard twin plays — and they only repeat a voice already listed, more
+ * lightly. One with no standard twin stays: it is the only way to reach that voice.
+ */
+export function withoutRedundantHalfPrecision(entries: SherpaCatalogEntry[]): SherpaCatalogEntry[] {
+    const standard = new Set(entries.filter((entry) => !isHalfPrecision(entry)).map(voiceKey));
+
+    return entries.filter((entry) => !isHalfPrecision(entry) || !standard.has(voiceKey(entry)));
+}
+
 /** Fold a catalog entry's codes to ISO 639-1 so they compare against app language codes. */
 export function normalizeLangCodes(langCode: string[]): string[] {
     return langCode.map(normalizeLanguageCode);

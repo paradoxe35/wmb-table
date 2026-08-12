@@ -22,6 +22,16 @@ async function fileExists(path: string): Promise<boolean> {
     }
 }
 
+/**
+ * A voice id carries its speaker after a colon (`…-tom-medium-int8:0`), which Windows reads as
+ * a drive separator and refuses to `mkdir`. Every segment is folded: any provider's voice name
+ * can hold one of these.
+ */
+export function pathSafe(segment: string): string {
+     
+    return segment.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_') || '_';
+}
+
 export class TtsCache {
     private maxSizeMb: number;
 
@@ -62,7 +72,10 @@ export class TtsCache {
 
     /** Store a synthesis result to disk cache. */
     async set(key: TtsCacheKey, result: TtsSynthesizeResult): Promise<CacheHit> {
-        const dir = join(getTtsCacheDir(), key.provider, key.model, key.voiceId, key.language);
+        const dir = join(
+            getTtsCacheDir(),
+            ...[key.provider, key.model, key.voiceId, key.language].map(pathSafe),
+        );
         await mkdir(dir, { recursive: true });
         const ext = result.mimeType.split('/')[1] || 'bin';
         const filePath = join(dir, `${key.textHash}.${ext}`);

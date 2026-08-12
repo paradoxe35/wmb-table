@@ -131,6 +131,8 @@ const sw: Record<string, string> = {
     'Le nom du modèle est requis pour le téléchargement Sherpa.':
         'Jina la mfano linahitajika kwa upakuaji wa Sherpa.',
     'Modèle Sherpa inconnu.': 'Mfano wa Sherpa haujulikani.',
+    'Cette voix ne peut pas être lue sur cet ordinateur.':
+        'Sauti hii haiwezi kuchezwa kwenye kompyuta hii.',
 
     // ── AI errors ──
     "L'assistant IA est désactivé dans les paramètres.":

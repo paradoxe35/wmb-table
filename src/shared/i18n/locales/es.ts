@@ -131,6 +131,8 @@ const es: Record<string, string> = {
     'Le nom du modèle est requis pour le téléchargement Sherpa.':
         'Se requiere un nombre de modelo para la descarga de Sherpa.',
     'Modèle Sherpa inconnu.': 'Modelo Sherpa desconocido.',
+    'Cette voix ne peut pas être lue sur cet ordinateur.':
+        'Esta voz no se puede reproducir en este ordenador.',
 
     // ── AI errors ──
     "L'assistant IA est désactivé dans les paramètres.":
