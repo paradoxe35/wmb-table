@@ -38,6 +38,8 @@ vi.mock('@main/database/repositories/ai.repository', () => ({
     touchConversation: touchConversationMock,
     syncMessage: vi.fn(),
     getMessages: vi.fn().mockReturnValue([]),
+    deleteConversation: vi.fn(),
+    getConversations: vi.fn().mockReturnValue([]),
 }));
 
 vi.mock('@main/database/repositories/config.repository', () => ({
@@ -424,7 +426,58 @@ describe('AiService', () => {
         ]);
     });
 
-    it('cancels a pending title generation when the conversation is stopped', async () => {
+    it('still titles the conversation when the user sends the next message', async () => {
+        runnerRunMock.mockResolvedValue(undefined);
+        // Only the first completed turn asks for a title; the next send must not cancel it.
+        shouldGenerateTitleMock.mockReturnValueOnce(true).mockReturnValue(false);
+        getRecentMessagesMock.mockReturnValue([
+            { id: 'm1', role: 'user', content: 'question' },
+            { id: 'm2', role: 'assistant', content: 'answer' },
+        ]);
+
+        let resolveTitle: (value: string | null) => void = () => {};
+        let titleStarted = () => {};
+        const titleRunning = new Promise<void>((resolve) => {
+            titleStarted = resolve;
+        });
+        generateConversationTitleMock.mockImplementation(
+            () =>
+                new Promise((resolve) => {
+                    resolveTitle = resolve;
+                    titleStarted();
+                }),
+        );
+
+        const service = new AiService();
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+        await titleRunning;
+
+        createMessageMock.mockReturnValue({
+            id: 'user-2',
+            conversationId: 'conv-1',
+            role: 'user',
+            content: 'follow up',
+        });
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['follow up'],
+            generationId: 'gen-2',
+        });
+
+        resolveTitle('Recent title');
+        await flushAsync();
+
+        expect(updateConversationMock).toHaveBeenCalledWith('conv-1', {
+            title: 'Recent title',
+            aiTitle: true,
+        });
+    });
+
+    it('cancels a pending title generation when the conversation is deleted', async () => {
         runnerRunMock.mockResolvedValue(undefined);
         shouldGenerateTitleMock.mockReturnValue(true);
         getRecentMessagesMock.mockReturnValue([
@@ -453,7 +506,7 @@ describe('AiService', () => {
 
         expect(capturedSignal?.aborted).toBe(false);
 
-        service.stopGeneration('conv-1');
+        service.deleteConversation('conv-1');
         expect(capturedSignal?.aborted).toBe(true);
 
         resolveTitle('Late title');
@@ -517,6 +570,12 @@ describe('AiService', () => {
             generationId: 'gen-1',
         });
 
+        await flushAsync();
+
+        expect(updateConversationMock).toHaveBeenCalledWith('conv-1', {
+            title: 'Recent title',
+            aiTitle: true,
+        });
         expect(getRecentMessagesMock).toHaveBeenCalledWith('conv-1', 20);
         expect(generateConversationTitleMock).toHaveBeenCalledWith(
             { id: 'model' },

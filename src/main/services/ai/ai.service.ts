@@ -162,6 +162,7 @@ export class AiService {
 
     deleteConversation(conversationId: string): void {
         this.stopGeneration(conversationId);
+        this.abortPendingTitle(conversationId);
         aiRepo.deleteConversation(conversationId);
     }
 
@@ -191,6 +192,7 @@ export class AiService {
     clearConversations(): void {
         for (const conversation of aiRepo.getConversations()) {
             this.stopGeneration(conversation.id);
+            this.abortPendingTitle(conversation.id);
         }
         aiRepo.clearAllConversations();
     }
@@ -202,8 +204,6 @@ export class AiService {
     // ── Generation control ──
 
     stopGeneration(conversationId: string): void {
-        this.abortPendingTitle(conversationId);
-
         const activeRun = this.activeRuns.get(conversationId);
         if (!activeRun) {
             return;
