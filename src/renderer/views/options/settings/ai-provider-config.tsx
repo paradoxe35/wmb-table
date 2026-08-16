@@ -139,7 +139,7 @@ function ModelContextWarning({
             type="warning"
             showIcon
             style={{ marginBlockStart: 8 }}
-            message={t(
+            title={t(
                 "Ce modèle a une mémoire limitée : lors des longues conversations, l'assistant peut oublier le début. Si possible, choisissez un autre modèle.",
             )}
         />
