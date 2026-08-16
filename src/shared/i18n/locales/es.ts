@@ -190,6 +190,8 @@ const es: Record<string, string> = {
     'Aucune conversation': 'Sin conversaciones',
     'Aucun sujet': 'Sin temas',
     'Sélectionner ou saisir un modèle': 'Seleccionar o escribir un modelo',
+    "Ce modèle a une mémoire limitée : lors des longues conversations, l'assistant peut oublier le début. Si possible, choisissez un autre modèle.":
+        'Este modelo tiene una memoria limitada: en conversaciones largas, el asistente puede olvidar el principio. Si es posible, elija otro modelo.',
     'Voir le raisonnement': 'Ver razonamiento',
     'Masquer le raisonnement': 'Ocultar razonamiento',
     '{{count}} dernières lignes': 'últimas {{count}} líneas',

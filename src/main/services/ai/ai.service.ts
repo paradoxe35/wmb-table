@@ -26,6 +26,7 @@ import type {
     AiSendMessageRequest,
     AiSendMessageResult,
     AiSettings,
+    AiModelLimits,
     AiRemoteModel,
 } from '@shared/ai.types';
 import type { InstalledLanguage } from '@shared/types';
@@ -261,6 +262,16 @@ export class AiService {
         baseUrl?: string;
     }): Promise<AiRemoteModel[]> {
         return fetchProviderModels(this.getSettings(), input);
+    }
+
+    async resolveModelLimits(input: {
+        providerId: string;
+        model: string;
+        baseUrl?: string;
+    }): Promise<AiModelLimits> {
+        const baseUrl =
+            input.baseUrl ?? resolveProviderBaseUrl(this.getSettings(), input.providerId);
+        return getModelLimits(input.providerId, input.model, baseUrl);
     }
 
     // ── Message sending ──

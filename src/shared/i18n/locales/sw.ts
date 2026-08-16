@@ -189,6 +189,8 @@ const sw: Record<string, string> = {
     'Aucune conversation': 'Hakuna mazungumzo',
     'Aucun sujet': 'Hakuna mada',
     'Sélectionner ou saisir un modèle': 'Chagua au andika mfano',
+    "Ce modèle a une mémoire limitée : lors des longues conversations, l'assistant peut oublier le début. Si possible, choisissez un autre modèle.":
+        'Mfano huu una kumbukumbu ndogo: katika mazungumzo marefu, msaidizi anaweza kusahau mwanzo. Ikiwezekana, chagua mfano mwingine.',
     'Voir le raisonnement': 'Onyesha hoja',
     'Masquer le raisonnement': 'Ficha hoja',
     '{{count}} dernières lignes': 'mistari {{count}} ya mwisho',

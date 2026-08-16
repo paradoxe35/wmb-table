@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AutoComplete, Button, Card, Divider, Popconfirm, Space, Tag } from 'antd';
+import { Alert, AutoComplete, Button, Card, Divider, Popconfirm, Space, Tag } from 'antd';
 import {
     CheckCircleOutlined,
     CloudOutlined,
@@ -12,9 +12,11 @@ import {
     DEFAULT_MODELS,
     DEFAULT_PROVIDER_BASE_URLS,
     BUILTIN_PROVIDER_REQUIRES_API_KEY,
+    RECOMMENDED_MIN_CONTEXT_WINDOW,
     type AiBuiltinProviderId,
     type AiCustomProviderConfig,
     type AiProviderDefinition,
+    type AiRemoteModel,
     type AiSettings,
 } from '@shared/ai.types';
 import { useAiChatStore } from '@renderer/stores';
@@ -93,6 +95,57 @@ function TestButton({
     );
 }
 
+function ModelContextWarning({
+    providerId,
+    model,
+    baseUrl,
+    listedContextWindow,
+}: {
+    providerId: string;
+    model: string;
+    baseUrl?: string;
+    listedContextWindow?: number;
+}) {
+    const { t } = useTranslation();
+    const [contextWindow, setContextWindow] = useState<number>();
+
+    useEffect(() => {
+        if (!model) {
+            setContextWindow(undefined);
+            return;
+        }
+        if (listedContextWindow) {
+            setContextWindow(listedContextWindow);
+            return;
+        }
+
+        let active = true;
+        window.api.ai
+            .getModelLimits({ providerId, model, baseUrl })
+            .then((limits) => active && setContextWindow(limits.contextWindow))
+            .catch(() => active && setContextWindow(undefined));
+
+        return () => {
+            active = false;
+        };
+    }, [providerId, model, baseUrl, listedContextWindow]);
+
+    if (!contextWindow || contextWindow >= RECOMMENDED_MIN_CONTEXT_WINDOW) {
+        return null;
+    }
+
+    return (
+        <Alert
+            type="warning"
+            showIcon
+            style={{ marginBlockStart: 8 }}
+            message={t(
+                "Ce modèle a une mémoire limitée : lors des longues conversations, l'assistant peut oublier le début. Si possible, choisissez un autre modèle.",
+            )}
+        />
+    );
+}
+
 // ── Model select with fetch + custom entry ──
 
 function ModelSelect({
@@ -112,7 +165,7 @@ function ModelSelect({
 }) {
     const { t } = useTranslation();
     const [localValue, setLocalValue] = useState(value ?? '');
-    const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
+    const [models, setModels] = useState<AiRemoteModel[]>([]);
     const [fetched, setFetched] = useState(false);
 
     // Sync local state when external value changes (e.g. settings reload)
@@ -154,16 +207,7 @@ function ModelSelect({
 
     const fetchModels = useCallback(async () => {
         try {
-            const models = await window.api.ai.fetchProviderModels({
-                providerId,
-                apiKey,
-                baseUrl,
-            });
-            const opts = models.map((m) => ({
-                value: m.id,
-                label: m.name !== m.id ? `${m.name} (${m.id})` : m.id,
-            }));
-            setOptions(opts);
+            setModels(await window.api.ai.fetchProviderModels({ providerId, apiKey, baseUrl }));
             setFetched(true);
         } catch {
             // Fetch failed — user can still type a custom model
@@ -180,34 +224,47 @@ function ModelSelect({
     // Reset when provider/apiKey/baseUrl changes
     useEffect(() => {
         setFetched(false);
-        setOptions([]);
+        setModels([]);
     }, [providerId, apiKey, baseUrl]);
 
     // Ensure the current value is always in the options list
-    const allOptions = [...options];
+    const allOptions = models.map((m) => ({
+        value: m.id,
+        label: m.name !== m.id ? `${m.name} (${m.id})` : m.id,
+    }));
     if (localValue && !allOptions.some((o) => o.value === localValue)) {
         allOptions.unshift({ value: localValue, label: localValue });
     }
 
     return (
-        <AutoComplete
-            value={localValue}
-            placeholder={t('Sélectionner ou saisir un modèle')}
-            onChange={handleChange}
-            onSelect={handleSelect}
-            onBlur={handleBlur}
-            options={allOptions}
-            filterOption={(input, option) => {
-                return (
-                    ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase()) ||
-                    (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
-                );
-            }}
-            onDropdownVisibleChange={(open) => {
-                if (open && !fetched && (apiKey || baseUrl)) fetchModels();
-            }}
-            style={{ width: '100%' }}
-        />
+        <>
+            <AutoComplete
+                value={localValue}
+                placeholder={t('Sélectionner ou saisir un modèle')}
+                onChange={handleChange}
+                onSelect={handleSelect}
+                onBlur={handleBlur}
+                options={allOptions}
+                filterOption={(input, option) => {
+                    return (
+                        ((option?.label as string) ?? '')
+                            .toLowerCase()
+                            .includes(input.toLowerCase()) ||
+                        (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
+                    );
+                }}
+                onDropdownVisibleChange={(open) => {
+                    if (open && !fetched && (apiKey || baseUrl)) fetchModels();
+                }}
+                style={{ width: '100%' }}
+            />
+            <ModelContextWarning
+                providerId={providerId}
+                model={value ?? ''}
+                baseUrl={baseUrl}
+                listedContextWindow={models.find((m) => m.id === value)?.contextWindow}
+            />
+        </>
     );
 }
 

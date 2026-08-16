@@ -10,6 +10,8 @@ export type AiLanguagePreference = 'active' | 'explicit-only';
 export const AI_CONVERSATION_HISTORY_PAGE_SIZE = 30;
 export const AI_MESSAGE_HISTORY_PAGE_SIZE = 30;
 
+export const RECOMMENDED_MIN_CONTEXT_WINDOW = 32_000;
+
 // ---------------------------------------------------------------------------
 // Provider configuration
 // ---------------------------------------------------------------------------
@@ -51,11 +53,14 @@ export interface AiProviderDefinition {
     configurableFields: AiProviderFieldDefinition[];
 }
 
-export interface AiRemoteModel {
-    id: string;
-    name: string;
+export interface AiModelLimits {
     contextWindow?: number;
     maxOutputTokens?: number;
+}
+
+export interface AiRemoteModel extends AiModelLimits {
+    id: string;
+    name: string;
 }
 
 // ---------------------------------------------------------------------------
