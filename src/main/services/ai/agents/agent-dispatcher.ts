@@ -29,6 +29,7 @@ export function dispatchAgentToolComplete(
     agentName: string,
     toolName: string,
     toolCallId: string,
+    error?: unknown,
 ): void {
     sendToRenderer(dispatch.browserWindow, PushChannels.aiToolCallComplete, {
         conversationId: dispatch.conversationId,
@@ -36,6 +37,9 @@ export function dispatchAgentToolComplete(
         messageId: dispatch.assistantMessageId,
         toolName: `${agentName}:${toolName}`,
         toolCallId,
-        payload: {},
+        payload:
+            error === undefined
+                ? {}
+                : { error: error instanceof Error ? error.message : String(error) },
     });
 }

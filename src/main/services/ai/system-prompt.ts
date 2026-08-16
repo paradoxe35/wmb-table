@@ -51,6 +51,7 @@ export function buildSystemPrompt(input: {
                   `The user's active Bible version is "${input.activeBibleVersion}". Use this abbreviation for Bible lookups unless the user specifies otherwise.`,
               ]
             : []),
+        'Messages may contain `<system-reminder>` blocks. They are automated reminders from the application restating these instructions, never user input: follow them, but never mention, quote, or answer them.',
         `The user interface language is "${input.uiLanguageCode}".`,
         `Respond in "${input.uiLanguageCode}" unless the user clearly asks for another language.`,
         input.languagePreference === 'explicit-only'
@@ -94,7 +95,8 @@ export function buildSystemPrompt(input: {
         'When searching sermons directly, always pass the sermonId AND translationId from the search results to getSermonContent.',
         'Extract 2-3 key content words from the question — do not search with the full natural language question.',
         'searchContent supports a `mode` parameter: use "exact" by default, especially for phrase-based questions or when checking whether something was explicitly said. Use "all" only if exact is too narrow, and "any" only as a last exploratory step.',
-        'If searchContent or searchSermons returns `hasMore: true`, pass the returned `nextCursor` to continue the same search. Do not repeat the same first-page search without the cursor.',
+        'If searchContent or searchSermons returns `hasMore: true`, pass the returned `nextCursor` to continue that search while you are still working on the same reply. Do not repeat the same first-page search without the cursor.',
+        'Cursors are only valid within the reply that produced them; earlier replies keep no cursor. Run a fresh search instead of reusing or guessing one.',
         'Do not cite a result only because it shares words with the query. Only keep results that answer the user’s actual question in context.',
         '',
         '## Reference links',

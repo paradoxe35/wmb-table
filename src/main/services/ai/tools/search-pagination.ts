@@ -72,26 +72,24 @@ function normalizeRequiredQuery(
     return normalized.length >= minimumLength ? normalized : undefined;
 }
 
-function encodeCursorPayload(payload: SermonSearchCursor | ContentSearchCursor): string {
+export function encodeSearchCursor(payload: Record<string, unknown>): string {
     return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
 }
 
-function decodeCursorPayload(cursor: string): unknown {
-    return JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'));
-}
-
-function parseCursor<T>(
+export function parseSearchCursor<T>(
     cursor: string,
     schema: z.ZodSchema<T>,
-): { value: T } | { error: { error: string } } {
+): { value: T } | { error: string } {
     try {
-        const parsed = schema.safeParse(decodeCursorPayload(cursor));
+        const parsed = schema.safeParse(
+            JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')),
+        );
         if (!parsed.success) {
-            return { error: { error: 'Invalid pagination cursor.' } };
+            return { error: 'Invalid pagination cursor.' };
         }
         return { value: parsed.data };
     } catch {
-        return { error: { error: 'Invalid pagination cursor.' } };
+        return { error: 'Invalid pagination cursor.' };
     }
 }
 
@@ -129,8 +127,8 @@ export function resolveSermonSearchPage(input: {
         };
     }
 
-    const parsed = parseCursor(input.cursor, sermonSearchCursorSchema);
-    if ('error' in parsed) return parsed.error;
+    const parsed = parseSearchCursor(input.cursor, sermonSearchCursorSchema);
+    if ('error' in parsed) return { error: parsed.error };
 
     const cursor = parsed.value;
     const queryError = ensureSameField(
@@ -179,8 +177,8 @@ export function resolveContentSearchPage(input: {
         };
     }
 
-    const parsed = parseCursor(input.cursor, contentSearchCursorSchema);
-    if ('error' in parsed) return parsed.error;
+    const parsed = parseSearchCursor(input.cursor, contentSearchCursorSchema);
+    if ('error' in parsed) return { error: parsed.error };
 
     const cursor = parsed.value;
     const queryError = ensureSameField(
@@ -209,25 +207,27 @@ export function buildNextSermonSearchCursor(
     page: ResolvedSermonSearchPage,
     returned: number,
 ): string {
-    return encodeCursorPayload({
+    const cursor: SermonSearchCursor = {
         kind: 'searchSermons',
         query: page.query,
         languageCode: page.languageCode,
         limit: page.limit,
         offset: page.offset + returned,
-    });
+    };
+    return encodeSearchCursor(cursor);
 }
 
 export function buildNextContentSearchCursor(
     page: ResolvedContentSearchPage,
     returned: number,
 ): string {
-    return encodeCursorPayload({
+    const cursor: ContentSearchCursor = {
         kind: 'searchContent',
         query: page.query,
         languageCode: page.languageCode,
         mode: page.mode,
         limit: page.limit,
         offset: page.offset + returned,
-    });
+    };
+    return encodeSearchCursor(cursor);
 }

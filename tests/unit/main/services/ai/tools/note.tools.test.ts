@@ -16,7 +16,7 @@ vi.mock('@main/database/repositories/notes.repository', () => ({
 
 const { buildNoteTools } = await import('@main/services/ai/tools/note.tools');
 
-const tools = buildNoteTools('fr');
+const tools = buildNoteTools();
 
 const NOTE_HTML =
     '<h1>Etude</h1><p>Premier paragraphe.</p><p>Deuxieme paragraphe.</p><ul><li>Alpha</li><li>Beta</li></ul>';

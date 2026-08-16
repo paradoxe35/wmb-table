@@ -12,6 +12,72 @@ import type {
     BibleVersionOption,
 } from './types';
 import { validateLanguage } from './shared';
+import { encodeSearchCursor, parseSearchCursor } from './search-pagination';
+
+const BIBLE_SEARCH_LIMIT_SCHEMA = z.number().int().min(1).max(40);
+
+const bibleSearchCursorSchema = z.object({
+    kind: z.literal('searchBible'),
+    query: z.string().min(3),
+    languageCode: z.string().min(1),
+    abbreviation: z.string().min(1),
+    testament: z.enum(['O', 'N']).optional(),
+    limit: BIBLE_SEARCH_LIMIT_SCHEMA,
+    offset: z.number().int().min(0),
+});
+
+type BibleSearchPage = z.infer<typeof bibleSearchCursorSchema>;
+
+function resolveBibleSearchPage(input: {
+    query?: string;
+    testament?: 'O' | 'N';
+    limit?: number;
+    cursor?: string;
+    languageCode: string;
+    abbreviation: string;
+}): BibleSearchPage | { error: string } {
+    const limit = input.limit ?? 20;
+
+    if (!input.cursor) {
+        const query = input.query?.trim();
+        if (!query || query.length < 3) {
+            return {
+                error: 'A query of at least 3 characters is required when no cursor is provided.',
+            };
+        }
+        return {
+            kind: 'searchBible',
+            query,
+            languageCode: input.languageCode,
+            abbreviation: input.abbreviation,
+            testament: input.testament,
+            limit,
+            offset: 0,
+        };
+    }
+
+    const parsed = parseSearchCursor(input.cursor, bibleSearchCursorSchema);
+    if ('error' in parsed) {
+        return { error: parsed.error };
+    }
+
+    const page = parsed.value;
+    const explicitQuery = input.query?.trim();
+    if (explicitQuery && explicitQuery !== page.query) {
+        return { error: 'The provided query does not match the pagination cursor.' };
+    }
+    if (input.testament && input.testament !== page.testament) {
+        return { error: 'The provided testament does not match the pagination cursor.' };
+    }
+    if (input.limit && input.limit !== page.limit) {
+        return { error: 'The provided limit does not match the pagination cursor.' };
+    }
+    if (input.abbreviation !== page.abbreviation) {
+        return { error: 'The provided Bible version does not match the pagination cursor.' };
+    }
+
+    return page;
+}
 
 function resolveBibleVersion(
     languageCode: string,
@@ -152,24 +218,31 @@ export function buildBibleTools(
             description:
                 'Full-text search across Bible verses. Returns matching verses ranked by relevance. ' +
                 'Use this to find verses containing specific words or phrases. ' +
-                'Returns clean citation fields and wmbUrl for markdown reference links.',
-            inputSchema: z.object({
-                query: z.string().min(3).describe('Search query (min 3 characters)'),
-                testament: z
-                    .enum(['O', 'N'])
-                    .optional()
-                    .describe('Filter by testament: "O" (Old) or "N" (New)'),
-                abbreviation: z.string().optional().describe('Bible version abbreviation'),
-                languageCode: z.string().optional(),
-                limit: z
-                    .number()
-                    .int()
-                    .min(1)
-                    .max(40)
-                    .optional()
-                    .describe('Max results (default 20, max 40)'),
-            }),
-            execute: async ({ languageCode, abbreviation, ...rest }) => {
+                'Returns clean citation fields and wmbUrl for markdown reference links. ' +
+                'If nextCursor is returned, pass it back to continue from the next page instead of repeating page one.',
+            inputSchema: z
+                .object({
+                    query: z.string().min(3).optional().describe('Search query (min 3 characters)'),
+                    testament: z
+                        .enum(['O', 'N'])
+                        .optional()
+                        .describe('Filter by testament: "O" (Old) or "N" (New)'),
+                    abbreviation: z.string().optional().describe('Bible version abbreviation'),
+                    languageCode: z.string().optional(),
+                    limit: BIBLE_SEARCH_LIMIT_SCHEMA.optional().describe(
+                        'Max results (default 20, max 40)',
+                    ),
+                    cursor: z
+                        .string()
+                        .min(1)
+                        .optional()
+                        .describe('Pagination cursor returned by a previous searchBible call'),
+                })
+                .refine((value) => Boolean(value.query || value.cursor), {
+                    message: 'Either query or cursor is required.',
+                    path: ['query'],
+                }),
+            execute: async ({ languageCode, abbreviation, query, testament, limit, cursor }) => {
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) {
@@ -184,8 +257,23 @@ export function buildBibleTools(
                     return resolvedVersion;
                 }
 
+                const page = resolveBibleSearchPage({
+                    query,
+                    testament,
+                    limit,
+                    cursor,
+                    languageCode: lang,
+                    abbreviation: resolvedVersion.abbreviation,
+                });
+                if ('error' in page) {
+                    return page;
+                }
+
                 const result = aiBibleRepo.searchVerses({
-                    ...rest,
+                    query: page.query,
+                    testament: page.testament,
+                    limit: page.limit,
+                    offset: page.offset,
                     abbreviation: resolvedVersion.abbreviation,
                     languageCode: resolvedVersion.languageCode,
                 });
@@ -196,14 +284,21 @@ export function buildBibleTools(
                 const results = result.data.map((entry) =>
                     toBibleVerseResult(entry.item, resolvedVersion.abbreviation),
                 );
+                // An empty page never advances the offset, so it must not hand back a cursor.
+                const hasMore = results.length > 0 && page.offset + results.length < result.total;
+                const nextPage: BibleSearchPage = {
+                    ...page,
+                    offset: page.offset + results.length,
+                };
 
                 const response: BibleSearchToolResponse = {
                     query: result.query,
                     bibleVersionAbbreviation: resolvedVersion.abbreviation,
                     total: result.total,
                     returned: results.length,
-                    hasMore: result.total > results.length,
+                    hasMore,
                     results,
+                    nextCursor: hasMore ? encodeSearchCursor(nextPage) : undefined,
                 };
 
                 return response;

@@ -7,8 +7,8 @@ export type AiBuiltinProviderId = (typeof BUILTIN_PROVIDER_IDS)[number];
 export type AiProviderId = AiBuiltinProviderId | string;
 export type AiMessageRole = 'system' | 'user' | 'assistant' | 'tool';
 export type AiLanguagePreference = 'active' | 'explicit-only';
-export const AI_CONVERSATION_HISTORY_PAGE_SIZE = 40;
-export const AI_MESSAGE_HISTORY_PAGE_SIZE = 40;
+export const AI_CONVERSATION_HISTORY_PAGE_SIZE = 30;
+export const AI_MESSAGE_HISTORY_PAGE_SIZE = 30;
 
 // ---------------------------------------------------------------------------
 // Provider configuration

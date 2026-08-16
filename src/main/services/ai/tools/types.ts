@@ -121,11 +121,9 @@ export interface BiblePassageToolResponse {
     verses: BibleVerseResult[];
 }
 
-export interface BibleSearchToolResponse {
+export interface BibleSearchToolResponse extends PaginatedToolResult {
     query: string;
     bibleVersionAbbreviation: string;
     total: number;
-    returned: number;
-    hasMore: boolean;
     results: BibleVerseResult[];
 }

@@ -203,6 +203,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                                     AGENT_NAME,
                                     event.toolCall.toolName,
                                     event.toolCall.toolCallId,
+                                    event.success ? undefined : event.error,
                                 );
                             }
                         },

@@ -65,7 +65,3 @@ export function getAiProviderCatalog(): AiProviderDefinition[] {
         configurableFields: provider.configurableFields.map((field) => ({ ...field })),
     }));
 }
-
-export function findProviderDefinition(providerId: string): AiProviderDefinition | undefined {
-    return PROVIDER_DEFINITIONS.find((provider) => provider.id === providerId);
-}

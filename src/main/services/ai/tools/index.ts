@@ -33,7 +33,7 @@ export function buildToolExecutors(
         ...buildBibleTools(defaultContentLanguage, defaultBibleAbbreviation),
         ...buildSermonTools(defaultContentLanguage),
         ...buildSubjectTools(defaultContentLanguage),
-        ...buildNoteTools(defaultContentLanguage),
+        ...buildNoteTools(),
     };
 }
 

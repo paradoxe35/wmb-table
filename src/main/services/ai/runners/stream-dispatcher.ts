@@ -6,27 +6,6 @@ import { sendToRenderer } from '@main/ipc/register';
 
 export type RunDispatchGuard = (generationId: string, assistantMessageId: string) => boolean;
 
-export function dispatchTextDelta(
-    browserWindow: BrowserWindow,
-    conversationId: string,
-    generationId: string,
-    assistantMessageId: string,
-    delta: string,
-    isCurrentRun: RunDispatchGuard,
-): void {
-    if (!isCurrentRun(generationId, assistantMessageId)) {
-        return;
-    }
-
-    aiRepo.appendAssistantContent(assistantMessageId, delta);
-    sendToRenderer(browserWindow, PushChannels.aiStreamChunk, {
-        conversationId,
-        generationId,
-        messageId: assistantMessageId,
-        delta,
-    });
-}
-
 export function dispatchToolCallStart(
     browserWindow: BrowserWindow,
     conversationId: string,

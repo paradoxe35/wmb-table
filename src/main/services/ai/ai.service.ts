@@ -1,4 +1,5 @@
 import { generateText } from 'ai';
+import { isAbortError } from '@ai-sdk/provider-utils';
 import { BrowserWindow } from 'electron';
 import log from '@main/lib/logger';
 import { exportHtmlToPdf } from '@main/lib/pdf-export';
@@ -33,6 +34,11 @@ import { buildAiTools } from './tools';
 import { sendToRenderer } from '@main/ipc/register';
 import { buildConversationContext } from './context-memory';
 import {
+    buildContextReminder,
+    shouldInjectContextReminder,
+    withContextReminder,
+} from './context-reminder';
+import {
     calculateRemoteTokenBudget,
     MIN_REMOTE_CONTEXT_WINDOW,
     measurePromptTokens,
@@ -56,8 +62,7 @@ interface RunGenerationOptions {
     systemPrompt: string;
     history: ReturnType<typeof buildConversationContext>['recentMessages'];
     tools: ReturnType<typeof buildAiTools>;
-    abortSignal: AbortSignal;
-    remoteTokenBudget?: number;
+    abortController: AbortController;
     contextWindow?: number;
     maxOutputTokens?: number;
     toolTokens: number;
@@ -99,6 +104,7 @@ interface BufferedAssistantText {
 
 export class AiService {
     private activeRuns = new Map<string, ActiveRun>();
+    private pendingTitleRuns = new Map<string, AbortController>();
     private bufferedAssistantText = new Map<string, BufferedAssistantText>();
     private static readonly TEXT_FLUSH_INTERVAL_MS = 40;
     private static readonly TEXT_FLUSH_THRESHOLD_CHARS = 160;
@@ -197,6 +203,8 @@ export class AiService {
     // ── Generation control ──
 
     stopGeneration(conversationId: string): void {
+        this.abortPendingTitle(conversationId);
+
         const activeRun = this.activeRuns.get(conversationId);
         if (!activeRun) {
             return;
@@ -368,6 +376,9 @@ export class AiService {
         for (const conversationId of this.activeRuns.keys()) {
             this.stopGeneration(conversationId);
         }
+        for (const conversationId of this.pendingTitleRuns.keys()) {
+            this.abortPendingTitle(conversationId);
+        }
         for (const messageId of this.bufferedAssistantText.keys()) {
             this.clearAssistantTextTimer(messageId);
         }
@@ -511,32 +522,31 @@ export class AiService {
         });
         const toolTokens = measureToolTokens(tools);
         const baseSystemPromptTokens = measurePromptTokens(system);
-        const initialRemoteTokenBudget = calculateRemoteTokenBudget({
+        // Reserved unconditionally so an injected reminder can never push the request over.
+        const reminder = buildContextReminder(environment.hasAgents);
+        const historyTokenBudget = calculateRemoteTokenBudget({
             modelLimits: {
                 contextWindow: environment.contextWindow,
                 maxOutputTokens: environment.maxOutputTokens,
             },
             prompt: {
                 toolTokens,
-                systemPromptTokens: baseSystemPromptTokens,
+                systemPromptTokens: baseSystemPromptTokens + measurePromptTokens(reminder),
             },
         });
-        const { recentMessages, historyTokenCount, summary } = buildConversationContext(
-            conversation.id,
-            initialRemoteTokenBudget,
-        );
+        const { recentMessages, historyTokenCount, recentTokenCount, summary } =
+            buildConversationContext(conversation.id, historyTokenBudget);
         const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
         const systemPromptTokens = measurePromptTokens(systemPrompt);
-        const remoteTokenBudget = calculateRemoteTokenBudget({
-            modelLimits: {
-                contextWindow: environment.contextWindow,
-                maxOutputTokens: environment.maxOutputTokens,
-            },
-            prompt: {
-                toolTokens,
-                systemPromptTokens,
-            },
+        const promptTokens = systemPromptTokens + toolTokens + recentTokenCount;
+        const needsReminder = shouldInjectContextReminder({
+            compacted: summary != null,
+            promptTokens,
+            contextWindow: environment.contextWindow,
         });
+        const history = needsReminder
+            ? withContextReminder(recentMessages, reminder)
+            : recentMessages;
         const runner = new GenerationRunnerImpl();
 
         this.activeRuns.set(conversation.id, {
@@ -553,10 +563,12 @@ export class AiService {
             conversationId: conversation.id,
             modelContextWindow: environment.contextWindow ?? 'unknown',
             modelMaxOutputTokens: environment.maxOutputTokens ?? 'unknown',
-            maxTokenBudget: remoteTokenBudget,
-            historyTokenCount: historyTokenCount + systemPromptTokens + toolTokens,
+            historyTokenBudget,
+            historyTokenCount,
+            promptTokens,
             toolTokens,
             systemPromptTokens,
+            contextReminder: needsReminder,
         });
 
         void this.runGeneration({
@@ -567,10 +579,9 @@ export class AiService {
             assistantMessage,
             model: environment.model,
             systemPrompt,
-            history: recentMessages,
+            history,
             tools,
-            abortSignal: controller.signal,
-            remoteTokenBudget,
+            abortController: controller,
             contextWindow: environment.contextWindow,
             maxOutputTokens: environment.maxOutputTokens,
             toolTokens,
@@ -591,8 +602,7 @@ export class AiService {
             systemPrompt,
             history,
             tools,
-            abortSignal,
-            remoteTokenBudget,
+            abortController,
             contextWindow,
             maxOutputTokens,
             toolTokens,
@@ -600,6 +610,7 @@ export class AiService {
             contentLanguageCode,
             uiLanguageCode,
         } = opts;
+        const abortSignal = abortController.signal;
         const isCurrentRun = () =>
             this.isCurrentRun(conversation.id, generationId, assistantMessage.id);
 
@@ -614,16 +625,18 @@ export class AiService {
                 history,
                 tools,
                 abortSignal,
-                isCurrentRun: (_generationId, assistantMessageId) =>
-                    this.isCurrentRun(conversation.id, generationId, assistantMessageId),
-                dispatchTextDelta: (delta) =>
-                    this.queueAssistantText(
+                isCurrentRun: (_generationId, assistantMessageId) => {
+                    return this.isCurrentRun(conversation.id, generationId, assistantMessageId);
+                },
+                dispatchTextDelta: (delta) => {
+                    return this.queueAssistantText(
                         browserWindow,
                         conversation.id,
                         generationId,
                         assistantMessage.id,
                         delta,
-                    ),
+                    );
+                },
                 contextWindow,
                 maxOutputTokens,
                 toolTokens,
@@ -635,10 +648,8 @@ export class AiService {
                 return;
             }
 
-            const nextContext = buildConversationContext(conversation.id, remoteTokenBudget);
-            aiRepo.updateConversation(conversation.id, {
-                summary: nextContext.summary,
-            });
+            // Orders the conversation list by when its last reply finished, not when it started.
+            aiRepo.touchConversation(conversation.id);
             this.releaseRun(conversation.id, generationId);
             sendToRenderer(browserWindow, PushChannels.aiStreamComplete, {
                 conversationId: conversation.id,
@@ -649,35 +660,28 @@ export class AiService {
             const current = aiRepo.getConversation(conversation.id);
 
             const MAX_TITLE_INPUT_MESSAGES = 20;
-            const recentMessages = aiRepo.getRecentMessages(
+            const titleMessages = aiRepo.getRecentMessages(
                 conversation.id,
                 MAX_TITLE_INPUT_MESSAGES,
             );
-            if (current && shouldGenerateTitle(recentMessages.length, current.aiTitle)) {
-                const title = await generateConversationTitle(
+            if (current && shouldGenerateTitle(titleMessages.length, current.aiTitle)) {
+                await this.runTitleGeneration({
+                    browserWindow,
+                    conversationId: conversation.id,
+                    abortController,
                     model,
                     uiLanguageCode,
                     contentLanguageCode,
-                    recentMessages.map((message) => ({
+                    messages: titleMessages.map((message) => ({
                         role: message.role,
                         content: message.content,
                     })),
-                );
-
-                if (title) {
-                    const updated = aiRepo.updateConversation(conversation.id, {
-                        title,
-                        aiTitle: true,
-                    });
-                    sendToRenderer(browserWindow, PushChannels.aiConversationUpdated, {
-                        conversation: updated,
-                    });
-                }
+                });
             }
         } catch (error) {
             this.flushAssistantText(assistantMessage.id);
             const message = error instanceof Error ? error.message : 'AI generation failed.';
-            const wasAborted = abortSignal.aborted || this.isAbortError(error);
+            const wasAborted = abortSignal.aborted || isAbortError(error);
             if (wasAborted || !isCurrentRun()) {
                 return;
             }
@@ -722,6 +726,54 @@ export class AiService {
         const activeRun = this.activeRuns.get(conversationId);
         if (activeRun?.generationId === generationId) {
             this.activeRuns.delete(conversationId);
+        }
+    }
+
+    private abortPendingTitle(conversationId: string): void {
+        this.pendingTitleRuns.get(conversationId)?.abort();
+        this.pendingTitleRuns.delete(conversationId);
+    }
+
+    /**
+     * Runs after the generation is released, so it is tracked separately to stay cancellable
+     * and to avoid writing a title to a conversation deleted while it was in flight.
+     */
+    private async runTitleGeneration(opts: {
+        browserWindow: BrowserWindow;
+        conversationId: string;
+        abortController: AbortController;
+        model: ReturnType<typeof resolveLanguageModel>;
+        uiLanguageCode: string;
+        contentLanguageCode: string;
+        messages: { role: string; content: string }[];
+    }): Promise<void> {
+        const { conversationId, abortController } = opts;
+        this.pendingTitleRuns.set(conversationId, abortController);
+
+        try {
+            const title = await generateConversationTitle(
+                opts.model,
+                opts.uiLanguageCode,
+                opts.contentLanguageCode,
+                opts.messages,
+                abortController.signal,
+            );
+
+            if (
+                !title ||
+                abortController.signal.aborted ||
+                !aiRepo.getConversation(conversationId)
+            ) {
+                return;
+            }
+
+            sendToRenderer(opts.browserWindow, PushChannels.aiConversationUpdated, {
+                conversation: aiRepo.updateConversation(conversationId, { title, aiTitle: true }),
+            });
+        } finally {
+            if (this.pendingTitleRuns.get(conversationId) === abortController) {
+                this.pendingTitleRuns.delete(conversationId);
+            }
         }
     }
 
@@ -829,17 +881,5 @@ export class AiService {
 
         clearTimeout(current.timer);
         current.timer = null;
-    }
-
-    private isAbortError(error: unknown): boolean {
-        if (error instanceof DOMException) {
-            return error.name === 'AbortError';
-        }
-
-        if (!(error instanceof Error)) {
-            return false;
-        }
-
-        return /abort(ed)?/i.test(error.message);
     }
 }

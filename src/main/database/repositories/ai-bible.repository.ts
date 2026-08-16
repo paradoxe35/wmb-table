@@ -185,8 +185,10 @@ export function searchVerses(input: {
     languageCode?: string;
     testament?: string;
     limit?: number;
+    offset?: number;
 }): BibleSearchResult | { error: string } {
-    const maxResults = Math.min(input.limit ?? 20, 40);
+    const maxResults = Math.max(1, Math.min(input.limit ?? 20, 40));
+    const offset = Math.max(0, input.offset ?? 0);
 
     const source = resolveVersionSource(input.abbreviation, input.languageCode);
     if (!source) {
@@ -198,11 +200,11 @@ export function searchVerses(input: {
     const db = new Database(source.dbPath, { readonly: true });
     try {
         // Try FTS first
-        const ftsResult = searchWithFts(db, input.query, input.testament, maxResults);
+        const ftsResult = searchWithFts(db, input.query, input.testament, maxResults, offset);
         if (ftsResult.total > 0) return ftsResult;
 
         // Fallback: normalize and filter with LIKE (accent-insensitive)
-        return searchWithNormalize(db, input.query, input.testament, maxResults);
+        return searchWithNormalize(db, input.query, input.testament, maxResults, offset);
     } catch (err) {
         return {
             error: `Bible search failed: ${err instanceof Error ? err.message : String(err)}. Try simplifying your query.`,
@@ -217,6 +219,7 @@ function searchWithFts(
     query: string,
     testament: string | undefined,
     limit: number,
+    offset: number,
 ): BibleSearchResult {
     const testamentFilter = testament ? ` AND bv.testament = ?` : '';
     const params: (string | number)[] = [query];
@@ -238,16 +241,16 @@ function searchWithFts(
              FROM bible_verses_fts
              JOIN bible_verses bv ON bv.rowid = bible_verses_fts.rowid
              WHERE bible_verses_fts MATCH ?${testamentFilter}
-             ORDER BY rank
-             LIMIT ?`,
+             ORDER BY rank, bv.rowid
+             LIMIT ? OFFSET ?`,
         )
-        .all(...params, limit) as BibleBook[];
+        .all(...params, limit, offset) as BibleBook[];
 
     return {
-        end: rows.length >= total,
+        end: offset + rows.length >= total,
         itemsPerPage: limit,
         query,
-        pageNumber: 1,
+        pageNumber: Math.floor(offset / limit) + 1,
         total,
         data: rows.map((item, i) => ({ item, matches: [], refIndex: i })),
     };
@@ -258,6 +261,7 @@ function searchWithNormalize(
     query: string,
     testament: string | undefined,
     limit: number,
+    offset: number,
 ): BibleSearchResult {
     const words = query
         .trim()
@@ -294,15 +298,16 @@ function searchWithNormalize(
             `SELECT id, book_name as bookName, book, testament, chapter, verse, content
              FROM bible_verses
              WHERE ${likeConditions}${testamentFilter}
-             LIMIT ?`,
+             ORDER BY rowid
+             LIMIT ? OFFSET ?`,
         )
-        .all(...params, limit) as BibleBook[];
+        .all(...params, limit, offset) as BibleBook[];
 
     return {
-        end: rows.length >= total,
+        end: offset + rows.length >= total,
         itemsPerPage: limit,
         query,
-        pageNumber: 1,
+        pageNumber: Math.floor(offset / limit) + 1,
         total,
         data: rows.map((item, i) => ({ item, matches: [], refIndex: i })),
     };

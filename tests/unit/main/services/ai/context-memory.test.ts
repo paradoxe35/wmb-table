@@ -15,6 +15,25 @@ vi.mock('tokenx', () => ({
     estimateTokenCount: (text: string) => Math.ceil(text.length / 4),
 }));
 
+const LARGE_BUDGET = 1_000_000;
+
+function textMessage(
+    id: string,
+    conversationId: string,
+    role: 'user' | 'assistant',
+    content: string,
+): AiMessage {
+    return {
+        id,
+        conversationId,
+        role,
+        content,
+        toolCalls: [],
+        toolResults: [],
+        createdAt: new Date().toISOString(),
+    };
+}
+
 describe('context-memory', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -24,9 +43,32 @@ describe('context-memory', () => {
         getRecentMessagesMock.mockReturnValue([]);
 
         const { buildConversationContext } = await import('@main/services/ai/context-memory');
-        buildConversationContext('conv-0', false);
+        buildConversationContext('conv-0', LARGE_BUDGET);
 
         expect(getRecentMessagesMock).toHaveBeenCalledWith('conv-0', 40);
+    });
+
+    it('keeps markdown line structure in recent messages', async () => {
+        const markdown = '# Titre\n\n- premier point\n- second point\n\nConclusion.';
+        getRecentMessagesMock.mockReturnValue([
+            textMessage('assistant-md', 'conv-md', 'assistant', markdown),
+        ]);
+
+        const { buildConversationContext } = await import('@main/services/ai/context-memory');
+        const context = buildConversationContext('conv-md', LARGE_BUDGET);
+
+        expect(context.recentMessages[0]?.content).toBe(markdown);
+    });
+
+    it('collapses repeated spacing without joining lines together', async () => {
+        getRecentMessagesMock.mockReturnValue([
+            textMessage('assistant-ws', 'conv-ws', 'assistant', 'Ligne   une  \n\n\n\nLigne deux'),
+        ]);
+
+        const { buildConversationContext } = await import('@main/services/ai/context-memory');
+        const context = buildConversationContext('conv-ws', LARGE_BUDGET);
+
+        expect(context.recentMessages[0]?.content).toBe('Ligne une\n\nLigne deux');
     });
 
     it('includes raw tool JSON for recent (non-compact) messages', async () => {
@@ -113,23 +155,48 @@ describe('context-memory', () => {
     });
 
     it('compacts older messages into summary when exceeding token budget', async () => {
-        const messages: AiMessage[] = Array.from({ length: 20 }, (_, i) => ({
-            id: `msg-${i}`,
-            conversationId: 'conv-3',
-            role: i % 2 === 0 ? ('user' as const) : ('assistant' as const),
-            content: 'A'.repeat(800),
-            toolCalls: [],
-            toolResults: [],
-            createdAt: new Date(Date.now() + i * 1000).toISOString(),
-        }));
-
-        getRecentMessagesMock.mockReturnValue(messages);
+        getRecentMessagesMock.mockReturnValue(buildLongConversation());
 
         const { buildConversationContext } = await import('@main/services/ai/context-memory');
-        const context = buildConversationContext('conv-3', true);
+        const context = buildConversationContext('conv-3', 3_000);
 
         expect(context.summary).not.toBeNull();
         expect(context.recentMessages.length).toBeGreaterThan(0);
-        expect(context.recentMessages.length).toBeLessThan(messages.length);
+        expect(context.recentMessages.length).toBeLessThan(20);
+    });
+
+    // Each message is 800 chars (200 mocked tokens); compacted user turns cost 100 and
+    // assistant turns 125. The summary ships in the system prompt of the same request, so
+    // compacting a message only frees the difference rather than its full cost.
+    it('charges the compacted summary against the same token budget', async () => {
+        getRecentMessagesMock.mockReturnValue(buildLongConversation());
+
+        const { buildConversationContext } = await import('@main/services/ai/context-memory');
+        const context = buildConversationContext('conv-4', 3_000);
+
+        expect(context.recentMessages).toHaveLength(8);
+        expect(context.recentTokenCount).toBe(1_600);
+        expect(context.historyTokenCount).toBe(4_000);
+    });
+
+    it('keeps the minimum recent turns even with no budget left', async () => {
+        getRecentMessagesMock.mockReturnValue(buildLongConversation());
+
+        const { buildConversationContext } = await import('@main/services/ai/context-memory');
+        const context = buildConversationContext('conv-5', 0);
+
+        expect(context.recentMessages).toHaveLength(8);
+        expect(context.summary).not.toBeNull();
     });
 });
+
+function buildLongConversation(): AiMessage[] {
+    return Array.from({ length: 20 }, (_, index) =>
+        textMessage(
+            `msg-${index}`,
+            'conv-long',
+            index % 2 === 0 ? 'user' : 'assistant',
+            'A'.repeat(800),
+        ),
+    );
+}
