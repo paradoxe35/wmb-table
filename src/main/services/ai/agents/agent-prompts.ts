@@ -1,5 +1,6 @@
 import {
     SHARED_BIBLE_REFERENCE_PROMPT_LINES,
+    SHARED_FAITHFULNESS_PROMPT_LINES,
     SHARED_DOCUMENT_REFERENCE_PROMPT_LINES,
     SHARED_SERMON_REFERENCE_PROMPT_LINES,
 } from '../prompt-fragments';
@@ -152,6 +153,7 @@ export function buildResearchAgentPrompt(
         'Search snippets are navigation hints only. Verify final sermon citations with `getSermonContent`, Bible citations with `getBiblePassage` or the returned verse text, and document quotations with `getCustomDocumentContent`.',
         '',
         '## Rules',
+        ...SHARED_FAITHFULNESS_PROMPT_LINES.map((line) => `- ${line}`),
         '- Use the tools provided to gather information. Do NOT invent content.',
         '- If custom documents disagree with sermons or Bible passages, follow the sermons and Bible passages.',
         '- Be concise by default, but include enough references and explanation for the parent assistant to answer well.',
@@ -198,6 +200,7 @@ export function buildSermonReaderAgentPrompt(
         'Use quotation marks only for wording you read in the cited paragraph(s); otherwise paraphrase and say it is a paraphrase.',
         '',
         '## Rules',
+        ...SHARED_FAITHFULNESS_PROMPT_LINES.map((line) => `- ${line}`),
         '- Use getSermonContent with maxParagraphs=20 and increment startParagraph to paginate.',
         '- Use searchSermons when the exact sermonId or translationId is missing.',
         '- Use searchContent to find specific phrases if needed. Start with "exact" in most cases, especially for phrase-based questions or when checking whether something was explicitly said. If it returns `hasMore: true`, pass `nextCursor` to continue instead of repeating page one.',

@@ -1,6 +1,7 @@
 import type { InstalledLanguage } from '@shared/types';
 import {
     SHARED_BIBLE_REFERENCE_PROMPT_LINES,
+    SHARED_FAITHFULNESS_PROMPT_LINES,
     SHARED_DOCUMENT_REFERENCE_PROMPT_LINES,
     SHARED_SERMON_REFERENCE_PROMPT_LINES,
 } from './prompt-fragments';
@@ -61,6 +62,9 @@ export function buildSystemPrompt(input: {
         '## Mandatory citation rule',
         'Final answers must use clickable `wmb://` markdown links for sermon, Bible, and custom document citations whenever exact link data was returned by tools in this run or by a subagent report.',
         'If exact link data is not available, keep the reference plain text and do not invent a link. If the user asks you to fix missing links, add links from available exact tool data or search/read again to recover the needed fields.',
+        '',
+        '## Faithfulness to the source',
+        ...SHARED_FAITHFULNESS_PROMPT_LINES,
         '',
         '## Tool usage rules',
         'Use tools whenever the request depends on app data. Do not invent sermons, Bible passages, notes, or subjects that were not returned by a tool.',

@@ -1,3 +1,9 @@
+/** Applies the "never interpret" rule to the two cases it does not cover on its own. */
+export const SHARED_FAITHFULNESS_PROMPT_LINES = [
+    'If sources appear to differ, give each one with its own context rather than reconciling them. Say plainly that they differ instead of deciding which is right.',
+    'Say when a sermon was preached whenever it bears on the answer, such as comparing what was said in different years. Keep the date in your own sentence, not inside the link label.',
+];
+
 export const SHARED_SERMON_REFERENCE_PROMPT_LINES = [
     '### Sermon references',
     'Format: `[Title, §N](wmb://sermon/{sermonId}/{languageCode}/{translationId}/{paragraphNumber})`',
