@@ -529,6 +529,7 @@ export interface ConversationContext {
  * Splits messages into recent (full detail) and older (compacted into summary), keeping at
  * least MIN_KEPT_TURNS recent turns. `tokenBudget` covers both, since the summary ships in the
  * system prompt of the same request: compacting trades a message's full cost for its short one.
+ * Recent turns that still overflow are then shrunk in place, so the result fits the budget.
  */
 function splitByTokenBudget(
     messages: AiMessage[],
@@ -566,10 +567,43 @@ function splitByTokenBudget(
         splitIndex++;
     }
 
-    if (splitIndex > 0) {
+    // The floor above stops compaction before the newest turns, so those can still exceed the
+    // budget on their own. Shrink them in place, oldest first, keeping the latest turn intact.
+    // A generation persists an empty assistant message before this runs, and that one formats
+    // to null, so the latest turn is the last non-empty entry rather than the last index.
+    let latestIndex = formatted.length - 1;
+    while (latestIndex >= 0 && formatted[latestIndex] == null) {
+        latestIndex--;
+    }
+
+    let trimmedCount = 0;
+    for (
+        let index = splitIndex;
+        recentTokens + summaryTokens > tokenBudget && index < latestIndex;
+        index++
+    ) {
+        const full = formatted[index];
+        const compacted = compactAt(index);
+        if (!full || !compacted) {
+            continue;
+        }
+
+        const fullTokens = estimateTokens(full.content);
+        const compactedTokens = estimateTokens(compacted.content);
+        if (compactedTokens >= fullTokens) {
+            continue;
+        }
+
+        recentTokens += compactedTokens - fullTokens;
+        formatted[index] = compacted;
+        trimmedCount++;
+    }
+
+    if (splitIndex > 0 || trimmedCount > 0) {
         log.info('Context compacted by token budget', {
             totalMessages: messages.length,
             compactedMessages: splitIndex,
+            trimmedRecentMessages: trimmedCount,
             recentMessages: messages.length - splitIndex,
             estimatedTokens: recentTokens + summaryTokens,
             tokenBudget,

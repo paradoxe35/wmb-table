@@ -179,6 +179,41 @@ describe('context-memory', () => {
         expect(context.historyTokenCount).toBe(4_000);
     });
 
+    it('shrinks recent turns that overflow instead of sending them whole', async () => {
+        getRecentMessagesMock.mockReturnValue(buildToolHeavyConversation());
+
+        const { buildConversationContext } = await import('@main/services/ai/context-memory');
+        const context = buildConversationContext('conv-heavy', 4_000);
+
+        expect(context.recentTokenCount).toBeLessThanOrEqual(4_000);
+        expect(context.recentMessages.length).toBeGreaterThan(0);
+    });
+
+    it('never shrinks the latest turn', async () => {
+        getRecentMessagesMock.mockReturnValue(buildToolHeavyConversation());
+
+        const { buildConversationContext } = await import('@main/services/ai/context-memory');
+        const context = buildConversationContext('conv-heavy', 4_000);
+        const latest = context.recentMessages[context.recentMessages.length - 1];
+
+        expect(latest.content).toContain(LATEST_QUESTION);
+    });
+
+    // A generation persists an empty assistant message before building the context, so the
+    // last entry is blank and the user's question sits one before it.
+    it('never shrinks the question when a pending assistant message trails it', async () => {
+        getRecentMessagesMock.mockReturnValue([
+            ...buildToolHeavyConversation(),
+            textMessage('pending', 'conv-heavy', 'assistant', ''),
+        ]);
+
+        const { buildConversationContext } = await import('@main/services/ai/context-memory');
+        const context = buildConversationContext('conv-heavy', 0);
+        const latest = context.recentMessages[context.recentMessages.length - 1];
+
+        expect(latest.content).toContain(LATEST_QUESTION);
+    });
+
     it('keeps the minimum recent turns even with no budget left', async () => {
         getRecentMessagesMock.mockReturnValue(buildLongConversation());
 
@@ -189,6 +224,55 @@ describe('context-memory', () => {
         expect(context.summary).not.toBeNull();
     });
 });
+
+const LATEST_QUESTION =
+    'Et que disait le prophete sur la foi qui deplace les montagnes, ' +
+    'sur la priere qui persevere, et sur la maniere dont un pasteur doit ' +
+    'preparer son coeur avant de monter en chaire le dimanche matin ? ' +
+    "J'aimerais aussi comprendre le lien avec le bapteme du Saint-Esprit, " +
+    'et comment presenter cela simplement a une assemblee qui debute dans la foi, ' +
+    'sans employer de termes trop savants qui decourageraient les plus jeunes, ' +
+    'tout en restant fidele a ce que la Parole enseigne sur ce sujet precis.';
+
+function searchContentResult(index: number) {
+    return {
+        toolCallId: `tool-${index}`,
+        name: 'searchContent',
+        output: {
+            results: Array.from({ length: 10 }, (_, hit) => ({
+                sermonId: `6${hit}-0101`,
+                translationId: 3,
+                languageCode: 'fr',
+                title: `Titre du sermon ${hit}`,
+                matches: Array.from({ length: 5 }, (_, snippet) => ({
+                    paragraphNumber: snippet,
+                    snippet: 'Parole citée dans ce paragraphe. '.repeat(10),
+                    wmbUrl: `wmb://sermon/6${hit}-0101/fr/3/${snippet}`,
+                })),
+                totalMatches: 5,
+            })),
+            totalSermons: 120,
+            hasMore: true,
+        },
+    };
+}
+
+/** User turns are plain; every assistant turn carries a full search result, as in real use. */
+function buildToolHeavyConversation(): AiMessage[] {
+    return Array.from({ length: 21 }, (_, index) => {
+        const isUser = index % 2 === 0;
+        const isLatest = index === 20;
+        return {
+            id: `heavy-${index}`,
+            conversationId: 'conv-heavy',
+            role: isUser ? ('user' as const) : ('assistant' as const),
+            content: isLatest ? LATEST_QUESTION : 'Message de la conversation.',
+            toolCalls: [],
+            toolResults: isUser ? [] : [searchContentResult(index)],
+            createdAt: new Date().toISOString(),
+        };
+    });
+}
 
 function buildLongConversation(): AiMessage[] {
     return Array.from({ length: 20 }, (_, index) =>
