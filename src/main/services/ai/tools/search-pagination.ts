@@ -93,10 +93,10 @@ export function parseSearchCursor<T>(
     }
 }
 
-function ensureSameField<T extends string | number>(
+export function ensureSameField<T extends string | number>(
     label: string,
     explicitValue: T | undefined,
-    cursorValue: T,
+    cursorValue: T | undefined,
 ): { error: string } | null {
     if (explicitValue === undefined || explicitValue === cursorValue) {
         return null;

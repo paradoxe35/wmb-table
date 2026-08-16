@@ -12,14 +12,13 @@ import type {
     BibleVersionOption,
 } from './types';
 import { validateLanguage } from './shared';
-import { encodeSearchCursor, parseSearchCursor } from './search-pagination';
+import { encodeSearchCursor, ensureSameField, parseSearchCursor } from './search-pagination';
 
 const BIBLE_SEARCH_LIMIT_SCHEMA = z.number().int().min(1).max(40);
 
 const bibleSearchCursorSchema = z.object({
     kind: z.literal('searchBible'),
     query: z.string().min(3),
-    languageCode: z.string().min(1),
     abbreviation: z.string().min(1),
     testament: z.enum(['O', 'N']).optional(),
     limit: BIBLE_SEARCH_LIMIT_SCHEMA,
@@ -33,7 +32,6 @@ function resolveBibleSearchPage(input: {
     testament?: 'O' | 'N';
     limit?: number;
     cursor?: string;
-    languageCode: string;
     abbreviation: string;
 }): BibleSearchPage | { error: string } {
     const limit = input.limit ?? 20;
@@ -48,7 +46,6 @@ function resolveBibleSearchPage(input: {
         return {
             kind: 'searchBible',
             query,
-            languageCode: input.languageCode,
             abbreviation: input.abbreviation,
             testament: input.testament,
             limit,
@@ -62,21 +59,13 @@ function resolveBibleSearchPage(input: {
     }
 
     const page = parsed.value;
-    const explicitQuery = input.query?.trim();
-    if (explicitQuery && explicitQuery !== page.query) {
-        return { error: 'The provided query does not match the pagination cursor.' };
-    }
-    if (input.testament && input.testament !== page.testament) {
-        return { error: 'The provided testament does not match the pagination cursor.' };
-    }
-    if (input.limit && input.limit !== page.limit) {
-        return { error: 'The provided limit does not match the pagination cursor.' };
-    }
-    if (input.abbreviation !== page.abbreviation) {
-        return { error: 'The provided Bible version does not match the pagination cursor.' };
-    }
+    const mismatch =
+        ensureSameField('query', input.query?.trim() || undefined, page.query) ??
+        ensureSameField('testament', input.testament, page.testament) ??
+        ensureSameField('limit', input.limit, page.limit) ??
+        ensureSameField('Bible version', input.abbreviation, page.abbreviation);
 
-    return page;
+    return mismatch ?? page;
 }
 
 function resolveBibleVersion(
@@ -262,7 +251,6 @@ export function buildBibleTools(
                     testament,
                     limit,
                     cursor,
-                    languageCode: lang,
                     abbreviation: resolvedVersion.abbreviation,
                 });
                 if ('error' in page) {
