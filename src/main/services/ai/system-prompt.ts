@@ -38,7 +38,6 @@ export function buildSystemPrompt(input: {
     installedLanguages: InstalledLanguage[];
     languagePreference: 'active' | 'explicit-only';
     activeBibleVersion?: string;
-    hasAgents?: boolean;
 }): string {
     return [
         `Today's date is ${getTodayDateFormatted()}.`,
@@ -74,22 +73,16 @@ export function buildSystemPrompt(input: {
         'Only use quotation marks for wording that was actually returned by the cited source in this run. Otherwise paraphrase and say it is a paraphrase.',
         'Never cite a sermon paragraph number unless that exact paragraph was returned by getSermonContent in this run.',
         '',
-        ...(input.hasAgents
-            ? [
-                  '## Tool routing priority',
-                  'When subagents are available, use them as the primary path for sermon-content research.',
-                  'Use **researchTopic** for discovery or topic research: broad questions, subject studies, cross-references, comparisons, finding where a subject appears, or any answer that may require multiple sermons. It must search with multiple keyword variants, read relevant passages, paginate when needed, and return a synthesized answer with citations.',
-                  'Use **readSermon** only when the user targets one specific sermon or sermon-like hint. It may resolve one sermon first from a title, date, location, or sermon ID, then summarize, outline, explain, quote, or mine that sermon for Bible citations/key themes.',
-                  'Use direct sermon tools (`searchContent`, `searchSermons`, `getSermonContent`) for narrow lookups, exact-link recovery, saved-subject/note workflows, or fallback when subagents are unavailable or fail.',
-                  'Do not manually research a broad topic with direct sermon tools and then call **readSermon** on multiple results. For broad topic research, call **researchTopic** once.',
-                  'For follow-ups ("continue", "research more", "go deeper", "what else?"), call the relevant subagent with prior findings in `alreadyKnown` and the missing angle in `followUpGoal` or `focus`. Treat prior findings as continuity hints, not verified truth.',
-                  '',
-              ]
-            : []),
+        '## Tool routing priority',
+        'Use the subagents as the primary path for sermon-content research.',
+        'Use **researchTopic** for discovery or topic research: broad questions, subject studies, cross-references, comparisons, finding where a subject appears, or any answer that may require multiple sermons. It must search with multiple keyword variants, read relevant passages, paginate when needed, and return a synthesized answer with citations.',
+        'Use **readSermon** only when the user targets one specific sermon or sermon-like hint. It may resolve one sermon first from a title, date, location, or sermon ID, then summarize, outline, explain, quote, or mine that sermon for Bible citations/key themes.',
+        'Use direct sermon tools (`searchContent`, `searchSermons`, `getSermonContent`) for narrow lookups, exact-link recovery, saved-subject/note workflows, or fallback when a subagent fails.',
+        'Do not manually research a broad topic with direct sermon tools and then call **readSermon** on multiple results. For broad topic research, call **researchTopic** once.',
+        'For follow-ups ("continue", "research more", "go deeper", "what else?"), call the relevant subagent with prior findings in `alreadyKnown` and the missing angle in `followUpGoal` or `focus`. Treat prior findings as continuity hints, not verified truth.',
+        '',
         '## Searching sermon content',
-        input.hasAgents
-            ? 'When using direct sermon tools for the narrow cases above, follow these rules.'
-            : 'Use these direct sermon tool rules when answering sermon-content requests without subagents.',
+        'When using direct sermon tools for the narrow cases above, follow these rules.',
         'Use searchContent (full-text search) to find specific words or phrases inside sermon text.',
         'Use searchSermons only for metadata lookups (title, date, location).',
         'When searching sermons directly, always pass the sermonId AND translationId from the search results to getSermonContent.',

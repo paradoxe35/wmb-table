@@ -26,7 +26,7 @@ export function shouldInjectContextReminder(input: ContextReminderInput): boolea
     );
 }
 
-export function buildContextReminder(hasAgents: boolean): string {
+export function buildContextReminder(): string {
     return [
         '<system-reminder>',
         'Automated reminder from the application, not a message from the user. Never mention it, quote it, or reply to it.',
@@ -34,11 +34,7 @@ export function buildContextReminder(hasAgents: boolean): string {
         '- Call tools for anything that depends on application data. Older tool results in this conversation are condensed summaries, not verified sources.',
         '- Never cite a sermon paragraph or a Bible verse unless a tool returned it in this run. Search or read again to recover exact fields.',
         '- Keep sermon, Bible, and document citations as clickable `wmb://` markdown links built from exact tool fields.',
-        ...(hasAgents
-            ? [
-                  '- Use researchTopic for broad sermon research and readSermon for one specific sermon, instead of answering from memory.',
-              ]
-            : []),
+        '- Use researchTopic for broad sermon research and readSermon for one specific sermon, instead of answering from memory.',
         '- Write the reply as well-formed markdown: real paragraph breaks, headings and lists where they help, and normal spacing between words.',
         '- Report what the prophet and the Bible say. Never give your own interpretation of spiritual matters.',
         '</system-reminder>',

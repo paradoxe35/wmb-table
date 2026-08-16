@@ -11,7 +11,6 @@ import { buildAgentTools } from '../agents';
 
 export interface BuildAiToolsOptions {
     model?: LanguageModel;
-    disableAgentTools?: boolean;
     uiLanguage?: string;
     activeBibleVersion?: string;
     maxOutputTokens?: number;
@@ -53,18 +52,17 @@ export function buildAiTools(defaultContentLanguage: string, options?: BuildAiTo
               }
             : undefined;
 
-    const agentExecutors =
-        options?.model && !options.disableAgentTools
-            ? buildAgentTools({
-                  model: options.model,
-                  contentLanguage: defaultContentLanguage,
-                  uiLanguage: options.uiLanguage ?? defaultContentLanguage,
-                  activeBibleVersion: options.activeBibleVersion,
-                  maxOutputTokens: options.maxOutputTokens,
-                  abortSignal: options.abortSignal,
-                  dispatch,
-              })
-            : {};
+    const agentExecutors = options?.model
+        ? buildAgentTools({
+              model: options.model,
+              contentLanguage: defaultContentLanguage,
+              uiLanguage: options.uiLanguage ?? defaultContentLanguage,
+              activeBibleVersion: options.activeBibleVersion,
+              maxOutputTokens: options.maxOutputTokens,
+              abortSignal: options.abortSignal,
+              dispatch,
+          })
+        : {};
 
     const allExecutors = { ...executors, ...agentExecutors };
 

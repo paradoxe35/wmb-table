@@ -12,7 +12,11 @@ import * as configRepo from '@main/database/repositories/config.repository';
 import * as languagePackService from '@main/services/language-pack.service';
 import { PushChannels } from '@shared/ipc.types';
 import type { PdfExportResult } from '@shared/ipc.types';
-import { BUILTIN_PROVIDER_IDS, resolveProviderBaseUrl } from '@shared/ai.types';
+import {
+    BUILTIN_PROVIDER_IDS,
+    RECOMMENDED_MIN_CONTEXT_WINDOW,
+    resolveProviderBaseUrl,
+} from '@shared/ai.types';
 import type {
     AiConversation,
     AiConversationHistoryPage,
@@ -39,12 +43,7 @@ import {
     shouldInjectContextReminder,
     withContextReminder,
 } from './context-reminder';
-import {
-    calculateRemoteTokenBudget,
-    MIN_REMOTE_CONTEXT_WINDOW,
-    measurePromptTokens,
-    measureToolTokens,
-} from './token-budget';
+import { calculateRemoteTokenBudget, measurePromptTokens, measureToolTokens } from './token-budget';
 import { resolveActiveModel, resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
 import { fetchProviderModels, getModelLimits } from './model-fetcher';
@@ -81,7 +80,6 @@ interface GenerationEnvironment {
     activeBibleVersion?: string;
     contextWindow?: number;
     maxOutputTokens?: number;
-    hasAgents: boolean;
     model: ReturnType<typeof resolveLanguageModel>;
     installedLanguages: InstalledLanguage[];
 }
@@ -456,19 +454,24 @@ export class AiService {
 
         const modelLimits = await getModelLimits(providerId, modelId, providerBaseUrl);
         const contextWindow = modelLimits.contextWindow;
-        const smallContext = contextWindow != null && contextWindow < MIN_REMOTE_CONTEXT_WINDOW;
-        const unknownRemoteContext = contextWindow == null;
-        const hasAgents = !smallContext && !unknownRemoteContext;
 
-        if (smallContext) {
-            log.warn('Small context window detected — agents disabled', {
+        // The system prompt and tool schemas alone cost more than a small window can hold, so
+        // such a model cannot answer at all. An unknown window stays allowed: we cannot prove
+        // it is too small, and refusing would block custom providers the registries do not list.
+        if (contextWindow != null && contextWindow < RECOMMENDED_MIN_CONTEXT_WINDOW) {
+            log.warn('Model rejected: context window below the supported minimum', {
                 providerId,
                 modelId,
                 contextWindow,
-                minRequired: MIN_REMOTE_CONTEXT_WINDOW,
+                minRequired: RECOMMENDED_MIN_CONTEXT_WINDOW,
             });
-        } else if (unknownRemoteContext) {
-            log.warn('Unknown context window — agents disabled', {
+            throw new Error(
+                "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre dans les paramètres.",
+            );
+        }
+
+        if (contextWindow == null) {
+            log.warn('Unknown context window — proceeding without a verified limit', {
                 providerId,
                 modelId,
             });
@@ -491,7 +494,6 @@ export class AiService {
             activeBibleVersion: resolvedBibleVersion?.abbreviation,
             contextWindow,
             maxOutputTokens: modelLimits.maxOutputTokens,
-            hasAgents,
             model,
             installedLanguages,
         };
@@ -505,14 +507,8 @@ export class AiService {
         environment: GenerationEnvironment,
     ): void {
         const controller = new AbortController();
-        const disableAgentTools =
-            !environment.hasAgents ||
-            (environment.contextWindow != null &&
-                environment.contextWindow < MIN_REMOTE_CONTEXT_WINDOW);
-
         const tools = buildAiTools(environment.contentLanguageCode, {
             model: environment.model,
-            disableAgentTools,
             uiLanguage: environment.uiLanguageCode,
             activeBibleVersion: environment.activeBibleVersion,
             maxOutputTokens: environment.maxOutputTokens,
@@ -529,12 +525,11 @@ export class AiService {
             installedLanguages: environment.installedLanguages,
             languagePreference: environment.settings.languagePreference,
             activeBibleVersion: environment.activeBibleVersion,
-            hasAgents: environment.hasAgents,
         });
         const toolTokens = measureToolTokens(tools);
         const baseSystemPromptTokens = measurePromptTokens(system);
         // Reserved unconditionally so an injected reminder can never push the request over.
-        const reminder = buildContextReminder(environment.hasAgents);
+        const reminder = buildContextReminder();
         const historyTokenBudget = calculateRemoteTokenBudget({
             modelLimits: {
                 contextWindow: environment.contextWindow,

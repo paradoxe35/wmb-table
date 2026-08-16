@@ -191,8 +191,10 @@ const pt: Record<string, string> = {
     'Aucune conversation': 'Nenhuma conversa',
     'Aucun sujet': 'Nenhum assunto',
     'Sélectionner ou saisir un modèle': 'Selecionar ou digitar um modelo',
-    "Ce modèle a une mémoire limitée : lors des longues conversations, l'assistant peut oublier le début. Si possible, choisissez un autre modèle.":
-        'Este modelo tem uma memória limitada: em conversas longas, o assistente pode esquecer o início. Se possível, escolha outro modelo.',
+    "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre dans les paramètres.":
+        'Este modelo é demasiado limitado para o assistente. Escolha outro nas configurações.',
+    "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre pour pouvoir l'utiliser.":
+        'Este modelo é demasiado limitado para o assistente. Escolha outro para poder utilizá-lo.',
     'Voir le raisonnement': 'Mostrar raciocínio',
     'Masquer le raisonnement': 'Ocultar raciocínio',
     '{{count}} dernières lignes': 'últimas {{count}} linhas',

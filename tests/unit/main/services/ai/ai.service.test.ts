@@ -70,7 +70,6 @@ vi.mock('@main/services/ai/token-budget', () => ({
     calculateRemoteTokenBudget: calculateRemoteTokenBudgetMock,
     measurePromptTokens: measurePromptTokensMock,
     measureToolTokens: measureToolTokensMock,
-    MIN_REMOTE_CONTEXT_WINDOW: 16_000,
 }));
 
 vi.mock('@main/services/ai/provider-resolver', () => ({
@@ -214,25 +213,40 @@ describe('AiService', () => {
         expect(runnerRunMock).not.toHaveBeenCalled();
     });
 
-    it('omits delegation instructions for small remote context windows', async () => {
+    it('refuses a model whose context window is below the supported minimum', async () => {
         getModelLimitsMock.mockResolvedValue({ contextWindow: 8_000 });
         const service = new AiService();
 
-        await service.sendMessage({} as never, {
-            conversationId: 'conv-1',
-            messages: ['hello world'],
-            generationId: 'gen-1',
-        });
+        await expect(
+            service.sendMessage({} as never, {
+                conversationId: 'conv-1',
+                messages: ['hello world'],
+                generationId: 'gen-1',
+            }),
+        ).rejects.toThrow('trop limité');
 
-        const runArgs = runnerRunMock.mock.calls[0]?.[0];
-        expect(runArgs.systemPrompt).not.toContain('## Tool routing priority');
-        expect(buildAiToolsMock).toHaveBeenCalledWith(
-            'fr',
-            expect.objectContaining({ disableAgentTools: true }),
-        );
+        expect(createMessageMock).not.toHaveBeenCalled();
+        expect(runnerRunMock).not.toHaveBeenCalled();
     });
 
-    it('disables delegation and agent tools when remote context window is unknown', async () => {
+    // The prompt and tool schemas alone outgrow a window this size, so it is refused rather
+    // than run in a degraded mode that would fail at the provider.
+    it('refuses a window that is below the minimum but far from tiny', async () => {
+        getModelLimitsMock.mockResolvedValue({ contextWindow: 24_000 });
+        const service = new AiService();
+
+        await expect(
+            service.sendMessage({} as never, {
+                conversationId: 'conv-1',
+                messages: ['hello world'],
+                generationId: 'gen-1',
+            }),
+        ).rejects.toThrow('trop limité');
+    });
+
+    // An unresolvable window cannot be proven too small, and refusing would block custom
+    // providers the model registries do not list.
+    it('still runs when the remote context window is unknown', async () => {
         getModelLimitsMock.mockResolvedValue({});
         const service = new AiService();
 
@@ -242,12 +256,8 @@ describe('AiService', () => {
             generationId: 'gen-1',
         });
 
-        const runArgs = runnerRunMock.mock.calls[0]?.[0];
-        expect(runArgs.systemPrompt).not.toContain('## Tool routing priority');
-        expect(buildAiToolsMock).toHaveBeenCalledWith(
-            'fr',
-            expect.objectContaining({ disableAgentTools: true }),
-        );
+        expect(runnerRunMock).toHaveBeenCalled();
+        expect(runnerRunMock.mock.calls[0]?.[0].systemPrompt).toContain('## Tool routing priority');
     });
 
     it('keeps delegation instructions for larger remote context windows', async () => {
@@ -263,7 +273,7 @@ describe('AiService', () => {
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
         expect(runArgs.systemPrompt).toContain('## Tool routing priority');
         expect(runArgs.systemPrompt).toContain(
-            'When subagents are available, use them as the primary path for sermon-content research.',
+            'Use the subagents as the primary path for sermon-content research.',
         );
     });
 

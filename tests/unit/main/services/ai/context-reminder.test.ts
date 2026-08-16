@@ -53,7 +53,7 @@ describe('shouldInjectContextReminder', () => {
 
 describe('buildContextReminder', () => {
     it('re-anchors tool use, citations and formatting', () => {
-        const reminder = buildContextReminder(false);
+        const reminder = buildContextReminder();
 
         expect(reminder).toContain('<system-reminder>');
         expect(reminder).toContain('</system-reminder>');
@@ -62,9 +62,9 @@ describe('buildContextReminder', () => {
         expect(reminder).toContain('markdown');
     });
 
-    it('mentions subagents only when they are available', () => {
-        expect(buildContextReminder(true)).toContain('researchTopic');
-        expect(buildContextReminder(false)).not.toContain('researchTopic');
+    it('points back at the subagents', () => {
+        expect(buildContextReminder()).toContain('researchTopic');
+        expect(buildContextReminder()).toContain('readSermon');
     });
 });
 

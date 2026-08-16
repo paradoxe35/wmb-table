@@ -187,8 +187,10 @@ const en: Record<string, string> = {
     'Aucune conversation': 'No conversations',
     'Aucun sujet': 'No subjects',
     'Sélectionner ou saisir un modèle': 'Select or type a model',
-    "Ce modèle a une mémoire limitée : lors des longues conversations, l'assistant peut oublier le début. Si possible, choisissez un autre modèle.":
-        'This model has a limited memory: in long conversations, the assistant may forget the beginning. If possible, choose another model.',
+    "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre dans les paramètres.":
+        'This model is too limited for the assistant. Choose another one in the settings.',
+    "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre pour pouvoir l'utiliser.":
+        'This model is too limited for the assistant. Choose another one to be able to use it.',
     'Voir le raisonnement': 'Show reasoning',
     'Masquer le raisonnement': 'Hide reasoning',
     '{{count}} dernières lignes': 'last {{count}} lines',

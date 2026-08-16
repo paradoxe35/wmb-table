@@ -136,11 +136,11 @@ function ModelContextWarning({
 
     return (
         <Alert
-            type="warning"
+            type="error"
             showIcon
             style={{ marginBlockStart: 8 }}
             title={t(
-                "Ce modèle a une mémoire limitée : lors des longues conversations, l'assistant peut oublier le début. Si possible, choisissez un autre modèle.",
+                "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre pour pouvoir l'utiliser.",
             )}
         />
     );
