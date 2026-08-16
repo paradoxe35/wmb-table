@@ -165,9 +165,7 @@ describe('context-memory', () => {
         expect(context.recentMessages.length).toBeLessThan(20);
     });
 
-    // Each message is 800 chars (200 mocked tokens); compacted user turns cost 100 and
-    // assistant turns 125. The summary ships in the system prompt of the same request, so
-    // compacting a message only frees the difference rather than its full cost.
+    // Compacting frees only the difference, since the summary ships in the same request.
     it('charges the compacted summary against the same token budget', async () => {
         getRecentMessagesMock.mockReturnValue(buildLongConversation());
 
@@ -199,8 +197,7 @@ describe('context-memory', () => {
         expect(latest.content).toContain(LATEST_QUESTION);
     });
 
-    // A generation persists an empty assistant message before building the context, so the
-    // last entry is blank and the user's question sits one before it.
+    // The pending assistant message is blank, so the question sits one entry before it.
     it('never shrinks the question when a pending assistant message trails it', async () => {
         getRecentMessagesMock.mockReturnValue([
             ...buildToolHeavyConversation(),

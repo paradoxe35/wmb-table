@@ -455,9 +455,8 @@ export class AiService {
         const modelLimits = await getModelLimits(providerId, modelId, providerBaseUrl);
         const contextWindow = modelLimits.contextWindow;
 
-        // The system prompt and tool schemas alone cost more than a small window can hold, so
-        // such a model cannot answer at all. An unknown window stays allowed: we cannot prove
-        // it is too small, and refusing would block custom providers the registries do not list.
+        // An unknown window stays allowed: it cannot be proven too small, and refusing would
+        // block custom providers the registries do not list.
         if (contextWindow != null && contextWindow < RECOMMENDED_MIN_CONTEXT_WINDOW) {
             log.warn('Model rejected: context window below the supported minimum', {
                 providerId,
@@ -528,7 +527,7 @@ export class AiService {
         });
         const toolTokens = measureToolTokens(tools);
         const baseSystemPromptTokens = measurePromptTokens(system);
-        // Reserved unconditionally so an injected reminder can never push the request over.
+        // Reserved even when not injected, so it can never push the request over.
         const reminder = buildContextReminder();
         const historyTokenBudget = calculateRemoteTokenBudget({
             modelLimits: {
@@ -740,10 +739,7 @@ export class AiService {
         this.pendingTitleRuns.delete(conversationId);
     }
 
-    /**
-     * Runs after the generation is released, so it is tracked separately to stay cancellable
-     * and to avoid writing a title to a conversation deleted while it was in flight.
-     */
+    /** Tracked separately so it stays cancellable once the generation itself is released. */
     private async runTitleGeneration(opts: {
         browserWindow: BrowserWindow;
         conversationId: string;

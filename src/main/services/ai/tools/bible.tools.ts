@@ -32,10 +32,7 @@ function parseBibleSearchCursor(cursor: string): BibleSearchPage | { error: stri
     return 'error' in parsed ? { error: parsed.error } : parsed.value;
 }
 
-/**
- * A cursor keeps the version it was created on, so a search started on a version other than the
- * active one continues on that same version. An explicit version only conflicts if it differs.
- */
+/** The cursor keeps its own version, so a search started on a non-active version continues there. */
 function resolveBibleSearchPage(input: {
     query?: string;
     testament?: 'O' | 'N';

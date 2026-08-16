@@ -1,8 +1,7 @@
 import type { PromptHistoryMessage } from './context-memory';
 
 /**
- * Counters instruction fade in long conversations: the system prompt loses weight as history
- * grows, so tool calls and formatting get dropped well before the window is full. Rebuilt per
+ * Counters instruction fade: the system prompt loses weight as history grows. Rebuilt per
  * request and never stored, so it cannot accumulate across turns.
  */
 

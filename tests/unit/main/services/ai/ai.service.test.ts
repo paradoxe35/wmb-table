@@ -229,8 +229,7 @@ describe('AiService', () => {
         expect(runnerRunMock).not.toHaveBeenCalled();
     });
 
-    // The prompt and tool schemas alone outgrow a window this size, so it is refused rather
-    // than run in a degraded mode that would fail at the provider.
+    // Refused rather than run degraded, since it would fail at the provider anyway.
     it('refuses a window that is below the minimum but far from tiny', async () => {
         getModelLimitsMock.mockResolvedValue({ contextWindow: 24_000 });
         const service = new AiService();
@@ -244,8 +243,7 @@ describe('AiService', () => {
         ).rejects.toThrow('trop limité');
     });
 
-    // An unresolvable window cannot be proven too small, and refusing would block custom
-    // providers the model registries do not list.
+    // An unresolvable window cannot be proven too small.
     it('still runs when the remote context window is unknown', async () => {
         getModelLimitsMock.mockResolvedValue({});
         const service = new AiService();

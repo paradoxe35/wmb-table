@@ -10,7 +10,7 @@ export type AiLanguagePreference = 'active' | 'explicit-only';
 export const AI_CONVERSATION_HISTORY_PAGE_SIZE = 30;
 export const AI_MESSAGE_HISTORY_PAGE_SIZE = 30;
 
-/** Below this the assistant warns the user and runs without subagents. */
+/** Below this the assistant warns in settings and refuses to run: the prompt alone would not fit. */
 export const RECOMMENDED_MIN_CONTEXT_WINDOW = 32_000;
 
 // ---------------------------------------------------------------------------

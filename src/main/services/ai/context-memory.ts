@@ -48,11 +48,8 @@ function normalizeWhitespace(value: string): string {
     return value.replace(/\s+/g, ' ').trim();
 }
 
-/**
- * Collapses redundant spacing but keeps line structure. Recent history is the strongest
- * formatting example the model has; flattening markdown here made replies drift toward
- * unformatted, run-together text as a conversation grew.
- */
+/** Keeps line structure: history is the model's formatting example, and flattening it made
+ * replies drift toward run-together text. */
 function normalizeStructuredText(value: string): string {
     return value
         .replace(/\r\n?/g, '\n')
@@ -519,17 +516,15 @@ function buildSummary(messages: PromptHistoryMessage[], charBudget: number): str
 export interface ConversationContext {
     recentMessages: PromptHistoryMessage[];
     summary: string | null;
-    /** Estimated tokens of the whole history before compaction (reporting only). */
+    /** Whole history before compaction; reporting only. */
     historyTokenCount: number;
-    /** Estimated tokens of the messages actually sent at full detail. */
+    /** What the recent messages actually cost after compaction and trimming. */
     recentTokenCount: number;
 }
 
 /**
- * Splits messages into recent (full detail) and older (compacted into summary), keeping at
- * least MIN_KEPT_TURNS recent turns. `tokenBudget` covers both, since the summary ships in the
- * system prompt of the same request: compacting trades a message's full cost for its short one.
- * Recent turns that still overflow are then shrunk in place, so the result fits the budget.
+ * `tokenBudget` covers the recent messages and the summary together, since the summary ships in
+ * the system prompt of the same request. Recent turns that still overflow are shrunk in place.
  */
 function splitByTokenBudget(
     messages: AiMessage[],
@@ -567,10 +562,8 @@ function splitByTokenBudget(
         splitIndex++;
     }
 
-    // The floor above stops compaction before the newest turns, so those can still exceed the
-    // budget on their own. Shrink them in place, oldest first, keeping the latest turn intact.
-    // A generation persists an empty assistant message before this runs, and that one formats
-    // to null, so the latest turn is the last non-empty entry rather than the last index.
+    // A pending generation persists an empty assistant message, which formats to null, so the
+    // latest turn is the last non-empty entry rather than the last index.
     let latestIndex = formatted.length - 1;
     while (latestIndex >= 0 && formatted[latestIndex] == null) {
         latestIndex--;
