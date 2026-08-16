@@ -316,6 +316,55 @@ describe('bible.tools', () => {
             expect(result.error).toContain('does not match the pagination cursor');
         });
 
+        it('continues a search made on a version other than the active one', async () => {
+            mockVersePage(50, 2);
+            resolveBibleVersionMock.mockImplementation((abbreviation?: string) => ({
+                abbreviation: abbreviation ?? 'lsg',
+                languageCode: 'en',
+                name: 'Version',
+            }));
+
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('en', 'lsg');
+            const first = (await tools.searchBible.execute({
+                query: 'love',
+                abbreviation: 'kjv',
+                limit: 2,
+            })) as { nextCursor?: string };
+
+            const second = (await tools.searchBible.execute({ cursor: first.nextCursor })) as {
+                error?: string;
+                bibleVersionAbbreviation?: string;
+            };
+
+            expect(second.error).toBeUndefined();
+            expect(second.bibleVersionAbbreviation).toBe('kjv');
+        });
+
+        it('rejects a cursor when a different version is asked for explicitly', async () => {
+            mockVersePage(50, 2);
+            resolveBibleVersionMock.mockImplementation((abbreviation?: string) => ({
+                abbreviation: abbreviation ?? 'lsg',
+                languageCode: 'en',
+                name: 'Version',
+            }));
+
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('en', 'lsg');
+            const first = (await tools.searchBible.execute({
+                query: 'love',
+                abbreviation: 'kjv',
+                limit: 2,
+            })) as { nextCursor?: string };
+
+            const second = (await tools.searchBible.execute({
+                cursor: first.nextCursor,
+                abbreviation: 'lsg',
+            })) as { error?: string };
+
+            expect(second.error).toContain('does not match the pagination cursor');
+        });
+
         it('rejects a malformed cursor', async () => {
             mockVersePage(50, 2);
 

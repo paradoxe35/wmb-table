@@ -27,16 +27,26 @@ const bibleSearchCursorSchema = z.object({
 
 type BibleSearchPage = z.infer<typeof bibleSearchCursorSchema>;
 
+function parseBibleSearchCursor(cursor: string): BibleSearchPage | { error: string } {
+    const parsed = parseSearchCursor(cursor, bibleSearchCursorSchema);
+    return 'error' in parsed ? { error: parsed.error } : parsed.value;
+}
+
+/**
+ * A cursor keeps the version it was created on, so a search started on a version other than the
+ * active one continues on that same version. An explicit version only conflicts if it differs.
+ */
 function resolveBibleSearchPage(input: {
     query?: string;
     testament?: 'O' | 'N';
     limit?: number;
-    cursor?: string;
+    continued?: BibleSearchPage;
+    explicitAbbreviation?: string;
     abbreviation: string;
 }): BibleSearchPage | { error: string } {
-    const limit = input.limit ?? 20;
+    const { continued } = input;
 
-    if (!input.cursor) {
+    if (!continued) {
         const query = input.query?.trim();
         if (!query || query.length < 3) {
             return {
@@ -48,24 +58,18 @@ function resolveBibleSearchPage(input: {
             query,
             abbreviation: input.abbreviation,
             testament: input.testament,
-            limit,
+            limit: input.limit ?? 20,
             offset: 0,
         };
     }
 
-    const parsed = parseSearchCursor(input.cursor, bibleSearchCursorSchema);
-    if ('error' in parsed) {
-        return { error: parsed.error };
-    }
-
-    const page = parsed.value;
     const mismatch =
-        ensureSameField('query', input.query?.trim() || undefined, page.query) ??
-        ensureSameField('testament', input.testament, page.testament) ??
-        ensureSameField('limit', input.limit, page.limit) ??
-        ensureSameField('Bible version', input.abbreviation, page.abbreviation);
+        ensureSameField('query', input.query?.trim() || undefined, continued.query) ??
+        ensureSameField('testament', input.testament, continued.testament) ??
+        ensureSameField('limit', input.limit, continued.limit) ??
+        ensureSameField('Bible version', input.explicitAbbreviation, continued.abbreviation);
 
-    return mismatch ?? page;
+    return mismatch ?? continued;
 }
 
 function resolveBibleVersion(
@@ -238,9 +242,14 @@ export function buildBibleTools(
                     return langError;
                 }
 
+                const continued = cursor ? parseBibleSearchCursor(cursor) : undefined;
+                if (continued && 'error' in continued) {
+                    return continued;
+                }
+
                 const resolvedVersion = resolveBibleVersion(
                     lang,
-                    abbreviation ?? defaultAbbreviation,
+                    continued?.abbreviation ?? abbreviation ?? defaultAbbreviation,
                 );
                 if ('error' in resolvedVersion) {
                     return resolvedVersion;
@@ -250,7 +259,8 @@ export function buildBibleTools(
                     query,
                     testament,
                     limit,
-                    cursor,
+                    continued,
+                    explicitAbbreviation: abbreviation,
                     abbreviation: resolvedVersion.abbreviation,
                 });
                 if ('error' in page) {
