@@ -294,7 +294,9 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                     }));
 
                     const returned = items.length;
-                    const hasMore = page.offset + returned < total;
+                    // Hits are dropped after the query, so a page can be empty while `total`
+                    // still counts them; a cursor here would repeat the same offset forever.
+                    const hasMore = returned > 0 && page.offset + returned < total;
                     const response: SearchContentToolResponse = {
                         results: items,
                         totalSermons: total,

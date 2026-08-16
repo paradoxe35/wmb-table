@@ -257,4 +257,19 @@ describe('sermon.tools', () => {
             },
         ]);
     });
+
+    it('does not hand back a cursor when a content page resolves to no usable hits', async () => {
+        // Tantivy reports more results, but every hit on this page was filtered out.
+        searchSermonsMock.mockResolvedValue({ matches: [], total: 120, totalIsExact: false });
+
+        const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
+        const tools = buildSermonTools('fr');
+        const result = (await tools.searchContent.execute({ query: 'amour' })) as {
+            hasMore: boolean;
+            nextCursor?: string;
+        };
+
+        expect(result.hasMore).toBe(false);
+        expect(result.nextCursor).toBeUndefined();
+    });
 });

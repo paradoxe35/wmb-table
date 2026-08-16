@@ -9,7 +9,6 @@ export const MAX_HISTORY_BUDGET = 200_000;
 
 export const REMOTE_MAX_OUTPUT_TOKENS = 8_192;
 export const REMOTE_MIN_OUTPUT_TOKENS = 2_048;
-export const MIN_REMOTE_CONTEXT_WINDOW = 16_000;
 
 interface TokenOverheadInput {
     systemPromptTokens: number;
@@ -41,10 +40,11 @@ export function resolveRemoteOutputTokens(input: RemoteTokenBudgetInput): number
 
     const overhead = computeOverhead(input.prompt);
     const available = contextWindow - overhead - MIN_HISTORY_BUDGET;
+    const headroom = Math.max(1, contextWindow - overhead);
     const resolved =
         available >= REMOTE_MAX_OUTPUT_TOKENS
             ? REMOTE_MAX_OUTPUT_TOKENS
-            : Math.max(REMOTE_MIN_OUTPUT_TOKENS, available);
+            : Math.min(Math.max(REMOTE_MIN_OUTPUT_TOKENS, available), headroom);
 
     return cap ? Math.max(1, Math.min(resolved, cap)) : resolved;
 }
@@ -57,9 +57,9 @@ export function calculateRemoteTokenBudget(input: RemoteTokenBudgetInput): numbe
 
     const overhead = computeOverhead(input.prompt);
     const outputReserve = resolveRemoteOutputTokens(input);
-    const budget = contextWindow - overhead - outputReserve;
+    const budget = Math.max(0, contextWindow - overhead - outputReserve);
 
-    return Math.max(MIN_HISTORY_BUDGET, Math.min(budget, MAX_HISTORY_BUDGET));
+    return Math.min(budget, MAX_HISTORY_BUDGET);
 }
 
 export function measurePromptTokens(prompt: string): number {

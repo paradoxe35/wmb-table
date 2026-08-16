@@ -1,4 +1,5 @@
 import { generateText } from 'ai';
+import { isAbortError } from '@ai-sdk/provider-utils';
 import { BrowserWindow } from 'electron';
 import log from '@main/lib/logger';
 import { exportHtmlToPdf } from '@main/lib/pdf-export';
@@ -11,7 +12,11 @@ import * as configRepo from '@main/database/repositories/config.repository';
 import * as languagePackService from '@main/services/language-pack.service';
 import { PushChannels } from '@shared/ipc.types';
 import type { PdfExportResult } from '@shared/ipc.types';
-import { BUILTIN_PROVIDER_IDS, resolveProviderBaseUrl } from '@shared/ai.types';
+import {
+    BUILTIN_PROVIDER_IDS,
+    RECOMMENDED_MIN_CONTEXT_WINDOW,
+    resolveProviderBaseUrl,
+} from '@shared/ai.types';
 import type {
     AiConversation,
     AiConversationHistoryPage,
@@ -25,6 +30,7 @@ import type {
     AiSendMessageRequest,
     AiSendMessageResult,
     AiSettings,
+    AiModelLimits,
     AiRemoteModel,
 } from '@shared/ai.types';
 import type { InstalledLanguage } from '@shared/types';
@@ -33,11 +39,11 @@ import { buildAiTools } from './tools';
 import { sendToRenderer } from '@main/ipc/register';
 import { buildConversationContext } from './context-memory';
 import {
-    calculateRemoteTokenBudget,
-    MIN_REMOTE_CONTEXT_WINDOW,
-    measurePromptTokens,
-    measureToolTokens,
-} from './token-budget';
+    buildContextReminder,
+    shouldInjectContextReminder,
+    withContextReminder,
+} from './context-reminder';
+import { calculateRemoteTokenBudget, measurePromptTokens, measureToolTokens } from './token-budget';
 import { resolveActiveModel, resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
 import { fetchProviderModels, getModelLimits } from './model-fetcher';
@@ -56,8 +62,7 @@ interface RunGenerationOptions {
     systemPrompt: string;
     history: ReturnType<typeof buildConversationContext>['recentMessages'];
     tools: ReturnType<typeof buildAiTools>;
-    abortSignal: AbortSignal;
-    remoteTokenBudget?: number;
+    abortController: AbortController;
     contextWindow?: number;
     maxOutputTokens?: number;
     toolTokens: number;
@@ -75,7 +80,6 @@ interface GenerationEnvironment {
     activeBibleVersion?: string;
     contextWindow?: number;
     maxOutputTokens?: number;
-    hasAgents: boolean;
     model: ReturnType<typeof resolveLanguageModel>;
     installedLanguages: InstalledLanguage[];
 }
@@ -99,6 +103,7 @@ interface BufferedAssistantText {
 
 export class AiService {
     private activeRuns = new Map<string, ActiveRun>();
+    private pendingTitleRuns = new Map<string, AbortController>();
     private bufferedAssistantText = new Map<string, BufferedAssistantText>();
     private static readonly TEXT_FLUSH_INTERVAL_MS = 40;
     private static readonly TEXT_FLUSH_THRESHOLD_CHARS = 160;
@@ -197,6 +202,8 @@ export class AiService {
     // ── Generation control ──
 
     stopGeneration(conversationId: string): void {
+        this.abortPendingTitle(conversationId);
+
         const activeRun = this.activeRuns.get(conversationId);
         if (!activeRun) {
             return;
@@ -253,6 +260,16 @@ export class AiService {
         baseUrl?: string;
     }): Promise<AiRemoteModel[]> {
         return fetchProviderModels(this.getSettings(), input);
+    }
+
+    async resolveModelLimits(input: {
+        providerId: string;
+        model: string;
+        baseUrl?: string;
+    }): Promise<AiModelLimits> {
+        const baseUrl =
+            input.baseUrl ?? resolveProviderBaseUrl(this.getSettings(), input.providerId);
+        return getModelLimits(input.providerId, input.model, baseUrl);
     }
 
     // ── Message sending ──
@@ -368,6 +385,9 @@ export class AiService {
         for (const conversationId of this.activeRuns.keys()) {
             this.stopGeneration(conversationId);
         }
+        for (const conversationId of this.pendingTitleRuns.keys()) {
+            this.abortPendingTitle(conversationId);
+        }
         for (const messageId of this.bufferedAssistantText.keys()) {
             this.clearAssistantTextTimer(messageId);
         }
@@ -434,19 +454,23 @@ export class AiService {
 
         const modelLimits = await getModelLimits(providerId, modelId, providerBaseUrl);
         const contextWindow = modelLimits.contextWindow;
-        const smallContext = contextWindow != null && contextWindow < MIN_REMOTE_CONTEXT_WINDOW;
-        const unknownRemoteContext = contextWindow == null;
-        const hasAgents = !smallContext && !unknownRemoteContext;
 
-        if (smallContext) {
-            log.warn('Small context window detected — agents disabled', {
+        // An unknown window stays allowed: it cannot be proven too small, and refusing would
+        // block custom providers the registries do not list.
+        if (contextWindow != null && contextWindow < RECOMMENDED_MIN_CONTEXT_WINDOW) {
+            log.warn('Model rejected: context window below the supported minimum', {
                 providerId,
                 modelId,
                 contextWindow,
-                minRequired: MIN_REMOTE_CONTEXT_WINDOW,
+                minRequired: RECOMMENDED_MIN_CONTEXT_WINDOW,
             });
-        } else if (unknownRemoteContext) {
-            log.warn('Unknown context window — agents disabled', {
+            throw new Error(
+                "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre dans les paramètres.",
+            );
+        }
+
+        if (contextWindow == null) {
+            log.warn('Unknown context window — proceeding without a verified limit', {
                 providerId,
                 modelId,
             });
@@ -469,7 +493,6 @@ export class AiService {
             activeBibleVersion: resolvedBibleVersion?.abbreviation,
             contextWindow,
             maxOutputTokens: modelLimits.maxOutputTokens,
-            hasAgents,
             model,
             installedLanguages,
         };
@@ -483,14 +506,8 @@ export class AiService {
         environment: GenerationEnvironment,
     ): void {
         const controller = new AbortController();
-        const disableAgentTools =
-            !environment.hasAgents ||
-            (environment.contextWindow != null &&
-                environment.contextWindow < MIN_REMOTE_CONTEXT_WINDOW);
-
         const tools = buildAiTools(environment.contentLanguageCode, {
             model: environment.model,
-            disableAgentTools,
             uiLanguage: environment.uiLanguageCode,
             activeBibleVersion: environment.activeBibleVersion,
             maxOutputTokens: environment.maxOutputTokens,
@@ -507,36 +524,34 @@ export class AiService {
             installedLanguages: environment.installedLanguages,
             languagePreference: environment.settings.languagePreference,
             activeBibleVersion: environment.activeBibleVersion,
-            hasAgents: environment.hasAgents,
         });
         const toolTokens = measureToolTokens(tools);
         const baseSystemPromptTokens = measurePromptTokens(system);
-        const initialRemoteTokenBudget = calculateRemoteTokenBudget({
+        // Reserved even when not injected, so it can never push the request over.
+        const reminder = buildContextReminder();
+        const historyTokenBudget = calculateRemoteTokenBudget({
             modelLimits: {
                 contextWindow: environment.contextWindow,
                 maxOutputTokens: environment.maxOutputTokens,
             },
             prompt: {
                 toolTokens,
-                systemPromptTokens: baseSystemPromptTokens,
+                systemPromptTokens: baseSystemPromptTokens + measurePromptTokens(reminder),
             },
         });
-        const { recentMessages, historyTokenCount, summary } = buildConversationContext(
-            conversation.id,
-            initialRemoteTokenBudget,
-        );
+        const { recentMessages, historyTokenCount, recentTokenCount, summary } =
+            buildConversationContext(conversation.id, historyTokenBudget);
         const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
         const systemPromptTokens = measurePromptTokens(systemPrompt);
-        const remoteTokenBudget = calculateRemoteTokenBudget({
-            modelLimits: {
-                contextWindow: environment.contextWindow,
-                maxOutputTokens: environment.maxOutputTokens,
-            },
-            prompt: {
-                toolTokens,
-                systemPromptTokens,
-            },
+        const promptTokens = systemPromptTokens + toolTokens + recentTokenCount;
+        const needsReminder = shouldInjectContextReminder({
+            compacted: summary != null,
+            promptTokens,
+            contextWindow: environment.contextWindow,
         });
+        const history = needsReminder
+            ? withContextReminder(recentMessages, reminder)
+            : recentMessages;
         const runner = new GenerationRunnerImpl();
 
         this.activeRuns.set(conversation.id, {
@@ -553,10 +568,12 @@ export class AiService {
             conversationId: conversation.id,
             modelContextWindow: environment.contextWindow ?? 'unknown',
             modelMaxOutputTokens: environment.maxOutputTokens ?? 'unknown',
-            maxTokenBudget: remoteTokenBudget,
-            historyTokenCount: historyTokenCount + systemPromptTokens + toolTokens,
+            historyTokenBudget,
+            historyTokenCount,
+            promptTokens,
             toolTokens,
             systemPromptTokens,
+            contextReminder: needsReminder,
         });
 
         void this.runGeneration({
@@ -567,10 +584,9 @@ export class AiService {
             assistantMessage,
             model: environment.model,
             systemPrompt,
-            history: recentMessages,
+            history,
             tools,
-            abortSignal: controller.signal,
-            remoteTokenBudget,
+            abortController: controller,
             contextWindow: environment.contextWindow,
             maxOutputTokens: environment.maxOutputTokens,
             toolTokens,
@@ -591,8 +607,7 @@ export class AiService {
             systemPrompt,
             history,
             tools,
-            abortSignal,
-            remoteTokenBudget,
+            abortController,
             contextWindow,
             maxOutputTokens,
             toolTokens,
@@ -600,6 +615,7 @@ export class AiService {
             contentLanguageCode,
             uiLanguageCode,
         } = opts;
+        const abortSignal = abortController.signal;
         const isCurrentRun = () =>
             this.isCurrentRun(conversation.id, generationId, assistantMessage.id);
 
@@ -614,16 +630,18 @@ export class AiService {
                 history,
                 tools,
                 abortSignal,
-                isCurrentRun: (_generationId, assistantMessageId) =>
-                    this.isCurrentRun(conversation.id, generationId, assistantMessageId),
-                dispatchTextDelta: (delta) =>
-                    this.queueAssistantText(
+                isCurrentRun: (_generationId, assistantMessageId) => {
+                    return this.isCurrentRun(conversation.id, generationId, assistantMessageId);
+                },
+                dispatchTextDelta: (delta) => {
+                    return this.queueAssistantText(
                         browserWindow,
                         conversation.id,
                         generationId,
                         assistantMessage.id,
                         delta,
-                    ),
+                    );
+                },
                 contextWindow,
                 maxOutputTokens,
                 toolTokens,
@@ -635,10 +653,8 @@ export class AiService {
                 return;
             }
 
-            const nextContext = buildConversationContext(conversation.id, remoteTokenBudget);
-            aiRepo.updateConversation(conversation.id, {
-                summary: nextContext.summary,
-            });
+            // Orders the conversation list by when its last reply finished, not when it started.
+            aiRepo.touchConversation(conversation.id);
             this.releaseRun(conversation.id, generationId);
             sendToRenderer(browserWindow, PushChannels.aiStreamComplete, {
                 conversationId: conversation.id,
@@ -649,35 +665,28 @@ export class AiService {
             const current = aiRepo.getConversation(conversation.id);
 
             const MAX_TITLE_INPUT_MESSAGES = 20;
-            const recentMessages = aiRepo.getRecentMessages(
+            const titleMessages = aiRepo.getRecentMessages(
                 conversation.id,
                 MAX_TITLE_INPUT_MESSAGES,
             );
-            if (current && shouldGenerateTitle(recentMessages.length, current.aiTitle)) {
-                const title = await generateConversationTitle(
+            if (current && shouldGenerateTitle(titleMessages.length, current.aiTitle)) {
+                await this.runTitleGeneration({
+                    browserWindow,
+                    conversationId: conversation.id,
+                    abortController,
                     model,
                     uiLanguageCode,
                     contentLanguageCode,
-                    recentMessages.map((message) => ({
+                    messages: titleMessages.map((message) => ({
                         role: message.role,
                         content: message.content,
                     })),
-                );
-
-                if (title) {
-                    const updated = aiRepo.updateConversation(conversation.id, {
-                        title,
-                        aiTitle: true,
-                    });
-                    sendToRenderer(browserWindow, PushChannels.aiConversationUpdated, {
-                        conversation: updated,
-                    });
-                }
+                });
             }
         } catch (error) {
             this.flushAssistantText(assistantMessage.id);
             const message = error instanceof Error ? error.message : 'AI generation failed.';
-            const wasAborted = abortSignal.aborted || this.isAbortError(error);
+            const wasAborted = abortSignal.aborted || isAbortError(error);
             if (wasAborted || !isCurrentRun()) {
                 return;
             }
@@ -722,6 +731,51 @@ export class AiService {
         const activeRun = this.activeRuns.get(conversationId);
         if (activeRun?.generationId === generationId) {
             this.activeRuns.delete(conversationId);
+        }
+    }
+
+    private abortPendingTitle(conversationId: string): void {
+        this.pendingTitleRuns.get(conversationId)?.abort();
+        this.pendingTitleRuns.delete(conversationId);
+    }
+
+    /** Tracked separately so it stays cancellable once the generation itself is released. */
+    private async runTitleGeneration(opts: {
+        browserWindow: BrowserWindow;
+        conversationId: string;
+        abortController: AbortController;
+        model: ReturnType<typeof resolveLanguageModel>;
+        uiLanguageCode: string;
+        contentLanguageCode: string;
+        messages: { role: string; content: string }[];
+    }): Promise<void> {
+        const { conversationId, abortController } = opts;
+        this.pendingTitleRuns.set(conversationId, abortController);
+
+        try {
+            const title = await generateConversationTitle(
+                opts.model,
+                opts.uiLanguageCode,
+                opts.contentLanguageCode,
+                opts.messages,
+                abortController.signal,
+            );
+
+            if (
+                !title ||
+                abortController.signal.aborted ||
+                !aiRepo.getConversation(conversationId)
+            ) {
+                return;
+            }
+
+            sendToRenderer(opts.browserWindow, PushChannels.aiConversationUpdated, {
+                conversation: aiRepo.updateConversation(conversationId, { title, aiTitle: true }),
+            });
+        } finally {
+            if (this.pendingTitleRuns.get(conversationId) === abortController) {
+                this.pendingTitleRuns.delete(conversationId);
+            }
         }
     }
 
@@ -829,17 +883,5 @@ export class AiService {
 
         clearTimeout(current.timer);
         current.timer = null;
-    }
-
-    private isAbortError(error: unknown): boolean {
-        if (error instanceof DOMException) {
-            return error.name === 'AbortError';
-        }
-
-        if (!(error instanceof Error)) {
-            return false;
-        }
-
-        return /abort(ed)?/i.test(error.message);
     }
 }

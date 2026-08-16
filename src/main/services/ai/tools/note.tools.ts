@@ -31,7 +31,7 @@ async function buildNoteHtml(markdown: string, title: string): Promise<string> {
     return html.includes('<h1>') ? html : `<h1>${escapeHtml(title)}</h1>\n${html}`;
 }
 
-export function buildNoteTools(_defaultContentLanguage: string): Record<string, AiToolDefinition> {
+export function buildNoteTools(): Record<string, AiToolDefinition> {
     return {
         getNotes: {
             description:

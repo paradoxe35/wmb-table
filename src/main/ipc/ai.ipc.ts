@@ -70,4 +70,8 @@ export function registerAiHandlers(): void {
     registerHandler(AiChannels.fetchProviderModels, async (_event, input) =>
         getAiService().fetchProviderModels(input),
     );
+
+    registerHandler(AiChannels.getModelLimits, async (_event, input) =>
+        getAiService().resolveModelLimits(input),
+    );
 }

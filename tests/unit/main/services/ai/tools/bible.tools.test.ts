@@ -219,4 +219,162 @@ describe('bible.tools', () => {
         expect(result).not.toHaveProperty('pageNumber');
         expect(result).not.toHaveProperty('end');
     });
+
+    describe('searchBible pagination', () => {
+        function mockVersePage(total: number, returned: number) {
+            resolveBibleVersionMock.mockReturnValue({
+                abbreviation: 'kjv',
+                languageCode: 'en',
+                name: 'King James Version',
+            });
+            searchVersesMock.mockReturnValue({
+                end: false,
+                itemsPerPage: returned,
+                query: 'love',
+                pageNumber: 1,
+                total,
+                data: Array.from({ length: returned }, (_, index) => ({
+                    item: {
+                        id: `verse-${index}`,
+                        bookName: 'John',
+                        book: '43N',
+                        testament: 'N',
+                        chapter: '3',
+                        verse: String(index + 1),
+                        content: 'For God so loved the world...',
+                    },
+                    matches: [],
+                    refIndex: index,
+                })),
+            });
+        }
+
+        it('returns a cursor when more verses remain', async () => {
+            mockVersePage(50, 2);
+
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('en');
+            const result = (await tools.searchBible.execute({
+                query: 'love',
+                languageCode: 'en',
+                limit: 2,
+            })) as { hasMore: boolean; nextCursor?: string };
+
+            expect(result.hasMore).toBe(true);
+            expect(typeof result.nextCursor).toBe('string');
+        });
+
+        it('continues from the cursor offset', async () => {
+            mockVersePage(50, 2);
+
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('en');
+            const first = (await tools.searchBible.execute({
+                query: 'love',
+                languageCode: 'en',
+                limit: 2,
+            })) as { nextCursor?: string };
+
+            await tools.searchBible.execute({ cursor: first.nextCursor });
+
+            expect(searchVersesMock).toHaveBeenLastCalledWith(
+                expect.objectContaining({ query: 'love', limit: 2, offset: 2 }),
+            );
+        });
+
+        it('omits the cursor on the last page', async () => {
+            mockVersePage(2, 2);
+
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('en');
+            const result = (await tools.searchBible.execute({
+                query: 'love',
+                languageCode: 'en',
+                limit: 2,
+            })) as { hasMore: boolean; nextCursor?: string };
+
+            expect(result.hasMore).toBe(false);
+            expect(result.nextCursor).toBeUndefined();
+        });
+
+        it('rejects a cursor that contradicts the explicit query', async () => {
+            mockVersePage(50, 2);
+
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('en');
+            const first = (await tools.searchBible.execute({
+                query: 'love',
+                languageCode: 'en',
+                limit: 2,
+            })) as { nextCursor?: string };
+
+            const result = (await tools.searchBible.execute({
+                query: 'grace',
+                cursor: first.nextCursor,
+            })) as { error?: string };
+
+            expect(result.error).toContain('does not match the pagination cursor');
+        });
+
+        it('continues a search made on a version other than the active one', async () => {
+            mockVersePage(50, 2);
+            resolveBibleVersionMock.mockImplementation((abbreviation?: string) => ({
+                abbreviation: abbreviation ?? 'lsg',
+                languageCode: 'en',
+                name: 'Version',
+            }));
+
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('en', 'lsg');
+            const first = (await tools.searchBible.execute({
+                query: 'love',
+                abbreviation: 'kjv',
+                limit: 2,
+            })) as { nextCursor?: string };
+
+            const second = (await tools.searchBible.execute({ cursor: first.nextCursor })) as {
+                error?: string;
+                bibleVersionAbbreviation?: string;
+            };
+
+            expect(second.error).toBeUndefined();
+            expect(second.bibleVersionAbbreviation).toBe('kjv');
+        });
+
+        it('rejects a cursor when a different version is asked for explicitly', async () => {
+            mockVersePage(50, 2);
+            resolveBibleVersionMock.mockImplementation((abbreviation?: string) => ({
+                abbreviation: abbreviation ?? 'lsg',
+                languageCode: 'en',
+                name: 'Version',
+            }));
+
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('en', 'lsg');
+            const first = (await tools.searchBible.execute({
+                query: 'love',
+                abbreviation: 'kjv',
+                limit: 2,
+            })) as { nextCursor?: string };
+
+            const second = (await tools.searchBible.execute({
+                cursor: first.nextCursor,
+                abbreviation: 'lsg',
+            })) as { error?: string };
+
+            expect(second.error).toContain('does not match the pagination cursor');
+        });
+
+        it('rejects a malformed cursor', async () => {
+            mockVersePage(50, 2);
+
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('en');
+            const result = (await tools.searchBible.execute({ cursor: 'not-a-cursor' })) as {
+                error?: string;
+            };
+
+            expect(result.error).toBe('Invalid pagination cursor.');
+        });
+    });
 });

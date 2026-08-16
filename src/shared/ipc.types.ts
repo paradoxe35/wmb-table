@@ -75,6 +75,7 @@ import type {
     AiRetryMessageRequest,
     AiRetryMessageResult,
     AiProviderTestResult,
+    AiModelLimits,
     AiRemoteModel,
     AiProviderDefinition,
     AiMessageHistoryPage,
@@ -284,6 +285,7 @@ export const AiChannels = {
     stopGeneration: 'ai:stopGeneration',
     testProvider: 'ai:testProvider',
     fetchProviderModels: 'ai:fetchProviderModels',
+    getModelLimits: 'ai:getModelLimits',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -609,6 +611,10 @@ export interface InvokeChannelMap {
     [AiChannels.fetchProviderModels]: {
         args: [{ providerId: string; apiKey?: string; baseUrl?: string }];
         return: AiRemoteModel[];
+    };
+    [AiChannels.getModelLimits]: {
+        args: [{ providerId: string; model: string; baseUrl?: string }];
+        return: AiModelLimits;
     };
 }
 

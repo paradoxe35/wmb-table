@@ -12,7 +12,7 @@ import { capAgentOutputTokens } from './output-limit';
 
 const AGENT_NAME = 'researchTopic';
 const MAX_STEPS = 50;
-const MAX_OUTPUT_TOKENS = 3072;
+const MAX_OUTPUT_TOKENS = 4096;
 const AGENT_MAX_RETRIES = 3;
 
 function buildResearchToolSubset(
@@ -123,6 +123,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                                     AGENT_NAME,
                                     event.toolCall.toolName,
                                     event.toolCall.toolCallId,
+                                    event.success ? undefined : event.error,
                                 );
                             }
                         },

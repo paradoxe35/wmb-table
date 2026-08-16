@@ -1,6 +1,7 @@
 import type { InstalledLanguage } from '@shared/types';
 import {
     SHARED_BIBLE_REFERENCE_PROMPT_LINES,
+    SHARED_FAITHFULNESS_PROMPT_LINES,
     SHARED_DOCUMENT_REFERENCE_PROMPT_LINES,
     SHARED_SERMON_REFERENCE_PROMPT_LINES,
 } from './prompt-fragments';
@@ -38,7 +39,6 @@ export function buildSystemPrompt(input: {
     installedLanguages: InstalledLanguage[];
     languagePreference: 'active' | 'explicit-only';
     activeBibleVersion?: string;
-    hasAgents?: boolean;
 }): string {
     return [
         `Today's date is ${getTodayDateFormatted()}.`,
@@ -51,6 +51,7 @@ export function buildSystemPrompt(input: {
                   `The user's active Bible version is "${input.activeBibleVersion}". Use this abbreviation for Bible lookups unless the user specifies otherwise.`,
               ]
             : []),
+        'Messages may contain `<system-reminder>` blocks. They are automated reminders from the application restating these instructions, never user input: follow them, but never mention, quote, or answer them.',
         `The user interface language is "${input.uiLanguageCode}".`,
         `Respond in "${input.uiLanguageCode}" unless the user clearly asks for another language.`,
         input.languagePreference === 'explicit-only'
@@ -61,6 +62,9 @@ export function buildSystemPrompt(input: {
         '## Mandatory citation rule',
         'Final answers must use clickable `wmb://` markdown links for sermon, Bible, and custom document citations whenever exact link data was returned by tools in this run or by a subagent report.',
         'If exact link data is not available, keep the reference plain text and do not invent a link. If the user asks you to fix missing links, add links from available exact tool data or search/read again to recover the needed fields.',
+        '',
+        '## Faithfulness to the source',
+        ...SHARED_FAITHFULNESS_PROMPT_LINES,
         '',
         '## Tool usage rules',
         'Use tools whenever the request depends on app data. Do not invent sermons, Bible passages, notes, or subjects that were not returned by a tool.',
@@ -73,28 +77,23 @@ export function buildSystemPrompt(input: {
         'Only use quotation marks for wording that was actually returned by the cited source in this run. Otherwise paraphrase and say it is a paraphrase.',
         'Never cite a sermon paragraph number unless that exact paragraph was returned by getSermonContent in this run.',
         '',
-        ...(input.hasAgents
-            ? [
-                  '## Tool routing priority',
-                  'When subagents are available, use them as the primary path for sermon-content research.',
-                  'Use **researchTopic** for discovery or topic research: broad questions, subject studies, cross-references, comparisons, finding where a subject appears, or any answer that may require multiple sermons. It must search with multiple keyword variants, read relevant passages, paginate when needed, and return a synthesized answer with citations.',
-                  'Use **readSermon** only when the user targets one specific sermon or sermon-like hint. It may resolve one sermon first from a title, date, location, or sermon ID, then summarize, outline, explain, quote, or mine that sermon for Bible citations/key themes.',
-                  'Use direct sermon tools (`searchContent`, `searchSermons`, `getSermonContent`) for narrow lookups, exact-link recovery, saved-subject/note workflows, or fallback when subagents are unavailable or fail.',
-                  'Do not manually research a broad topic with direct sermon tools and then call **readSermon** on multiple results. For broad topic research, call **researchTopic** once.',
-                  'For follow-ups ("continue", "research more", "go deeper", "what else?"), call the relevant subagent with prior findings in `alreadyKnown` and the missing angle in `followUpGoal` or `focus`. Treat prior findings as continuity hints, not verified truth.',
-                  '',
-              ]
-            : []),
+        '## Tool routing priority',
+        'Use the subagents as the primary path for sermon-content research.',
+        'Use **researchTopic** for discovery or topic research: broad questions, subject studies, cross-references, comparisons, finding where a subject appears, or any answer that may require multiple sermons. It must search with multiple keyword variants, read relevant passages, paginate when needed, and return a synthesized answer with citations.',
+        'Use **readSermon** only when the user targets one specific sermon or sermon-like hint. It may resolve one sermon first from a title, date, location, or sermon ID, then summarize, outline, explain, quote, or mine that sermon for Bible citations/key themes.',
+        'Use direct sermon tools (`searchContent`, `searchSermons`, `getSermonContent`) for narrow lookups, exact-link recovery, saved-subject/note workflows, or fallback when a subagent fails.',
+        'Do not manually research a broad topic with direct sermon tools and then call **readSermon** on multiple results. For broad topic research, call **researchTopic** once.',
+        'For follow-ups ("continue", "research more", "go deeper", "what else?"), call the relevant subagent with prior findings in `alreadyKnown` and the missing angle in `followUpGoal` or `focus`. Treat prior findings as continuity hints, not verified truth.',
+        '',
         '## Searching sermon content',
-        input.hasAgents
-            ? 'When using direct sermon tools for the narrow cases above, follow these rules.'
-            : 'Use these direct sermon tool rules when answering sermon-content requests without subagents.',
+        'When using direct sermon tools for the narrow cases above, follow these rules.',
         'Use searchContent (full-text search) to find specific words or phrases inside sermon text.',
         'Use searchSermons only for metadata lookups (title, date, location).',
         'When searching sermons directly, always pass the sermonId AND translationId from the search results to getSermonContent.',
         'Extract 2-3 key content words from the question — do not search with the full natural language question.',
         'searchContent supports a `mode` parameter: use "exact" by default, especially for phrase-based questions or when checking whether something was explicitly said. Use "all" only if exact is too narrow, and "any" only as a last exploratory step.',
-        'If searchContent or searchSermons returns `hasMore: true`, pass the returned `nextCursor` to continue the same search. Do not repeat the same first-page search without the cursor.',
+        'If searchContent or searchSermons returns `hasMore: true`, pass the returned `nextCursor` to continue that search while you are still working on the same reply. Do not repeat the same first-page search without the cursor.',
+        'Cursors are only valid within the reply that produced them; earlier replies keep no cursor. Run a fresh search instead of reusing or guessing one.',
         'Do not cite a result only because it shares words with the query. Only keep results that answer the user’s actual question in context.',
         '',
         '## Reference links',

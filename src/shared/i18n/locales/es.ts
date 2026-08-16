@@ -190,6 +190,10 @@ const es: Record<string, string> = {
     'Aucune conversation': 'Sin conversaciones',
     'Aucun sujet': 'Sin temas',
     'Sélectionner ou saisir un modèle': 'Seleccionar o escribir un modelo',
+    "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre dans les paramètres.":
+        'Este modelo es demasiado limitado para el asistente. Elija otro en la configuración.',
+    "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre pour pouvoir l'utiliser.":
+        'Este modelo es demasiado limitado para el asistente. Elija otro para poder usarlo.',
     'Voir le raisonnement': 'Ver razonamiento',
     'Masquer le raisonnement': 'Ocultar razonamiento',
     '{{count}} dernières lignes': 'últimas {{count}} líneas',

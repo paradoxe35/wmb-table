@@ -19,6 +19,7 @@ const getConversationMock = vi.fn();
 const getRecentMessagesMock = vi.fn();
 const createMessageMock = vi.fn();
 const updateConversationMock = vi.fn();
+const touchConversationMock = vi.fn();
 const shouldGenerateTitleMock = vi.fn();
 const generateConversationTitleMock = vi.fn();
 
@@ -34,6 +35,7 @@ vi.mock('@main/database/repositories/ai.repository', () => ({
     getRecentMessages: getRecentMessagesMock,
     createMessage: createMessageMock,
     updateConversation: updateConversationMock,
+    touchConversation: touchConversationMock,
     syncMessage: vi.fn(),
     getMessages: vi.fn().mockReturnValue([]),
 }));
@@ -68,7 +70,6 @@ vi.mock('@main/services/ai/token-budget', () => ({
     calculateRemoteTokenBudget: calculateRemoteTokenBudgetMock,
     measurePromptTokens: measurePromptTokensMock,
     measureToolTokens: measureToolTokensMock,
-    MIN_REMOTE_CONTEXT_WINDOW: 16_000,
 }));
 
 vi.mock('@main/services/ai/provider-resolver', () => ({
@@ -107,6 +108,10 @@ vi.mock('@main/lib/logger', () => ({
 
 const { AiService } = await import('@main/services/ai/ai.service');
 
+function flushAsync(): Promise<void> {
+    return new Promise((resolve) => setImmediate(resolve));
+}
+
 describe('AiService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -144,6 +149,8 @@ describe('AiService', () => {
         buildConversationContextMock.mockReturnValue({
             recentMessages: [],
             summary: null,
+            recentTokenCount: 0,
+            historyTokenCount: 0,
         });
         runnerRunMock.mockImplementation(() => new Promise(() => {}));
         getRecentMessagesMock.mockReturnValue([]);
@@ -206,25 +213,38 @@ describe('AiService', () => {
         expect(runnerRunMock).not.toHaveBeenCalled();
     });
 
-    it('omits delegation instructions for small remote context windows', async () => {
+    it('refuses a model whose context window is below the supported minimum', async () => {
         getModelLimitsMock.mockResolvedValue({ contextWindow: 8_000 });
         const service = new AiService();
 
-        await service.sendMessage({} as never, {
-            conversationId: 'conv-1',
-            messages: ['hello world'],
-            generationId: 'gen-1',
-        });
+        await expect(
+            service.sendMessage({} as never, {
+                conversationId: 'conv-1',
+                messages: ['hello world'],
+                generationId: 'gen-1',
+            }),
+        ).rejects.toThrow('trop limité');
 
-        const runArgs = runnerRunMock.mock.calls[0]?.[0];
-        expect(runArgs.systemPrompt).not.toContain('## Tool routing priority');
-        expect(buildAiToolsMock).toHaveBeenCalledWith(
-            'fr',
-            expect.objectContaining({ disableAgentTools: true }),
-        );
+        expect(createMessageMock).not.toHaveBeenCalled();
+        expect(runnerRunMock).not.toHaveBeenCalled();
     });
 
-    it('disables delegation and agent tools when remote context window is unknown', async () => {
+    // Refused rather than run degraded, since it would fail at the provider anyway.
+    it('refuses a window that is below the minimum but far from tiny', async () => {
+        getModelLimitsMock.mockResolvedValue({ contextWindow: 24_000 });
+        const service = new AiService();
+
+        await expect(
+            service.sendMessage({} as never, {
+                conversationId: 'conv-1',
+                messages: ['hello world'],
+                generationId: 'gen-1',
+            }),
+        ).rejects.toThrow('trop limité');
+    });
+
+    // An unresolvable window cannot be proven too small.
+    it('still runs when the remote context window is unknown', async () => {
         getModelLimitsMock.mockResolvedValue({});
         const service = new AiService();
 
@@ -234,12 +254,8 @@ describe('AiService', () => {
             generationId: 'gen-1',
         });
 
-        const runArgs = runnerRunMock.mock.calls[0]?.[0];
-        expect(runArgs.systemPrompt).not.toContain('## Tool routing priority');
-        expect(buildAiToolsMock).toHaveBeenCalledWith(
-            'fr',
-            expect.objectContaining({ disableAgentTools: true }),
-        );
+        expect(runnerRunMock).toHaveBeenCalled();
+        expect(runnerRunMock.mock.calls[0]?.[0].systemPrompt).toContain('## Tool routing priority');
     });
 
     it('keeps delegation instructions for larger remote context windows', async () => {
@@ -255,7 +271,7 @@ describe('AiService', () => {
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
         expect(runArgs.systemPrompt).toContain('## Tool routing priority');
         expect(runArgs.systemPrompt).toContain(
-            'When subagents are available, use them as the primary path for sermon-content research.',
+            'Use the subagents as the primary path for sermon-content research.',
         );
     });
 
@@ -338,6 +354,148 @@ describe('AiService', () => {
         ]);
     });
 
+    it('marks the conversation as updated when the reply finishes', async () => {
+        runnerRunMock.mockResolvedValue(undefined);
+
+        const service = new AiService();
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+        await flushAsync();
+
+        expect(touchConversationMock).toHaveBeenCalledWith('conv-1');
+    });
+
+    it('leaves the conversation timestamp alone while the reply is still streaming', async () => {
+        const service = new AiService();
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+        await flushAsync();
+
+        expect(touchConversationMock).not.toHaveBeenCalled();
+    });
+
+    it('re-anchors instructions in the last user turn once the context is compacted', async () => {
+        getModelLimitsMock.mockResolvedValue({ contextWindow: 64_000 });
+        buildConversationContextMock.mockReturnValue({
+            recentMessages: [{ role: 'user', content: 'hello world' }],
+            summary: 'earlier turns',
+            recentTokenCount: 1_000,
+            historyTokenCount: 40_000,
+        });
+
+        const service = new AiService();
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+
+        const history = runnerRunMock.mock.calls[0]?.[0].history;
+        expect(history).toHaveLength(1);
+        expect(history[0].role).toBe('user');
+        expect(history[0].content).toContain('hello world');
+        expect(history[0].content).toContain('<system-reminder>');
+    });
+
+    it('leaves short conversations untouched', async () => {
+        getModelLimitsMock.mockResolvedValue({ contextWindow: 64_000 });
+        buildConversationContextMock.mockReturnValue({
+            recentMessages: [{ role: 'user', content: 'hello world' }],
+            summary: null,
+            recentTokenCount: 100,
+            historyTokenCount: 100,
+        });
+
+        const service = new AiService();
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+
+        expect(runnerRunMock.mock.calls[0]?.[0].history).toEqual([
+            { role: 'user', content: 'hello world' },
+        ]);
+    });
+
+    it('cancels a pending title generation when the conversation is stopped', async () => {
+        runnerRunMock.mockResolvedValue(undefined);
+        shouldGenerateTitleMock.mockReturnValue(true);
+        getRecentMessagesMock.mockReturnValue([
+            { id: 'm1', role: 'user', content: 'question' },
+            { id: 'm2', role: 'assistant', content: 'answer' },
+        ]);
+
+        let capturedSignal: AbortSignal | undefined;
+        let resolveTitle: (value: string | null) => void = () => {};
+        generateConversationTitleMock.mockImplementation(
+            (_model, _ui, _content, _messages, signal) => {
+                capturedSignal = signal;
+                return new Promise((resolve) => {
+                    resolveTitle = resolve;
+                });
+            },
+        );
+
+        const service = new AiService();
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+        await flushAsync();
+
+        expect(capturedSignal?.aborted).toBe(false);
+
+        service.stopGeneration('conv-1');
+        expect(capturedSignal?.aborted).toBe(true);
+
+        resolveTitle('Late title');
+        await flushAsync();
+
+        expect(updateConversationMock).not.toHaveBeenCalledWith('conv-1', {
+            title: 'Late title',
+            aiTitle: true,
+        });
+    });
+
+    it('does not title a conversation deleted while the title was generating', async () => {
+        runnerRunMock.mockResolvedValue(undefined);
+        shouldGenerateTitleMock.mockReturnValue(true);
+        getRecentMessagesMock.mockReturnValue([
+            { id: 'm1', role: 'user', content: 'question' },
+            { id: 'm2', role: 'assistant', content: 'answer' },
+        ]);
+
+        let deleted = false;
+        getConversationMock.mockImplementation(() =>
+            deleted ? undefined : { id: 'conv-1', title: null, aiTitle: false },
+        );
+        generateConversationTitleMock.mockImplementation(async () => {
+            deleted = true;
+            return 'Orphan title';
+        });
+
+        const service = new AiService();
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+        await flushAsync();
+
+        expect(updateConversationMock).not.toHaveBeenCalledWith('conv-1', {
+            title: 'Orphan title',
+            aiTitle: true,
+        });
+    });
+
     it('uses only the 20 most recent messages when generating a conversation title', async () => {
         runnerRunMock.mockResolvedValue(undefined);
         shouldGenerateTitleMock.mockReturnValue(true);
@@ -365,6 +523,7 @@ describe('AiService', () => {
             'en',
             'fr',
             expect.arrayContaining([{ role: 'user', content: 'message 1' }]),
+            expect.any(AbortSignal),
         );
     });
 });

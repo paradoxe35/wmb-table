@@ -39,10 +39,24 @@ export const REMOTE_LIMITS: ContextLimits = {
 
 const TOOL_LIST_PREVIEW_LIMIT = 3;
 
+/** `buildSummary` prefixes each compacted line with its role, which the raw content misses. */
+const SUMMARY_LINE_OVERHEAD_TOKENS = 4;
+
 // ── Text utilities ──
 
 function normalizeWhitespace(value: string): string {
     return value.replace(/\s+/g, ' ').trim();
+}
+
+/** Keeps line structure: history is the model's formatting example, and flattening it made
+ * replies drift toward run-together text. */
+function normalizeStructuredText(value: string): string {
+    return value
+        .replace(/\r\n?/g, '\n')
+        .replace(/[^\S\n]+/g, ' ')
+        .replace(/ +$/gm, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
 }
 
 function truncate(value: string, maxChars: number): string {
@@ -359,7 +373,7 @@ function cleanToolOutput(name: string, output: any): unknown {
 
         case 'searchBible':
             if (!Array.isArray(output.results)) {
-                return output;
+                return omit(output, 'nextCursor');
             }
             return {
                 query: output.query,
@@ -446,7 +460,9 @@ function formatMessage(
 ): PromptHistoryMessage | null {
     if (message.role !== 'user' && message.role !== 'assistant') return null;
 
-    const mainText = normalizeWhitespace(message.content);
+    const mainText = compact
+        ? normalizeWhitespace(message.content)
+        : normalizeStructuredText(message.content);
 
     let toolLines: string[];
     if (compact) {
@@ -497,54 +513,101 @@ function buildSummary(messages: PromptHistoryMessage[], charBudget: number): str
 
 // ── Token-based compaction ──
 
+export interface ConversationContext {
+    recentMessages: PromptHistoryMessage[];
+    summary: string | null;
+    /** Whole history before compaction; reporting only. */
+    historyTokenCount: number;
+    /** What the recent messages actually cost after compaction and trimming. */
+    recentTokenCount: number;
+}
+
 /**
- * Split messages into recent (full detail) and older (compacted into summary).
- * Compaction triggers when total tokens exceed the budget, keeping at least
- * MIN_KEPT_TURNS recent turns intact.
+ * `tokenBudget` covers the recent messages and the summary together, since the summary ships in
+ * the system prompt of the same request. Recent turns that still overflow are shrunk in place.
  */
 function splitByTokenBudget(
     messages: AiMessage[],
     tokenBudget: number,
     limits: ContextLimits,
-): { recentMessages: PromptHistoryMessage[]; summary: string | null; historyTokenCount: number } {
-    // Format all messages at full detail (no truncation)
+): ConversationContext {
     const formatted = messages.map((msg) => formatMessage(msg, Infinity, limits, false));
 
-    // Find the split point: move oldest to compacted until under budget
-    let splitIndex = 0;
-    const minRecentIndex = Math.max(0, messages.length - MIN_KEPT_TURNS * 2);
-    let totalTokens = formatted.reduce((sum, m) => sum + (m ? estimateTokens(m.content) : 0), 0);
-    const historyTokenCount = totalTokens;
-
-    while (totalTokens > tokenBudget && splitIndex < minRecentIndex) {
-        const msg = formatted[splitIndex];
-        if (msg) totalTokens -= estimateTokens(msg.content);
-        splitIndex++;
-    }
-
-    if (splitIndex > 0) {
-        log.info('Context compacted by token budget', {
-            totalMessages: messages.length,
-            compactedMessages: splitIndex,
-            recentMessages: messages.length - splitIndex,
-            estimatedTokens: totalTokens,
-            tokenBudget,
-        });
-    }
-
-    // Compact older messages with tight limits
-    const olderFormatted = messages
-        .slice(0, splitIndex)
-        .map((msg) => {
+    const compactedCache = new Map<number, PromptHistoryMessage | null>();
+    const compactAt = (index: number): PromptHistoryMessage | null => {
+        if (!compactedCache.has(index)) {
+            const msg = messages[index];
             const charLimit =
                 msg.role === 'user'
                     ? limits.compactedUserCharLimit
                     : limits.compactedAssistantCharLimit;
-            return formatMessage(msg, charLimit, limits, true);
-        })
+            compactedCache.set(index, formatMessage(msg, charLimit, limits, true));
+        }
+        return compactedCache.get(index) ?? null;
+    };
+
+    let splitIndex = 0;
+    const minRecentIndex = Math.max(0, messages.length - MIN_KEPT_TURNS * 2);
+    let recentTokens = formatted.reduce((sum, m) => sum + (m ? estimateTokens(m.content) : 0), 0);
+    const historyTokenCount = recentTokens;
+    let summaryTokens = 0;
+
+    while (recentTokens + summaryTokens > tokenBudget && splitIndex < minRecentIndex) {
+        const full = formatted[splitIndex];
+        if (full) recentTokens -= estimateTokens(full.content);
+        const compacted = compactAt(splitIndex);
+        if (compacted) {
+            summaryTokens += estimateTokens(compacted.content) + SUMMARY_LINE_OVERHEAD_TOKENS;
+        }
+        splitIndex++;
+    }
+
+    // A pending generation persists an empty assistant message, which formats to null, so the
+    // latest turn is the last non-empty entry rather than the last index.
+    let latestIndex = formatted.length - 1;
+    while (latestIndex >= 0 && formatted[latestIndex] == null) {
+        latestIndex--;
+    }
+
+    let trimmedCount = 0;
+    for (
+        let index = splitIndex;
+        recentTokens + summaryTokens > tokenBudget && index < latestIndex;
+        index++
+    ) {
+        const full = formatted[index];
+        const compacted = compactAt(index);
+        if (!full || !compacted) {
+            continue;
+        }
+
+        const fullTokens = estimateTokens(full.content);
+        const compactedTokens = estimateTokens(compacted.content);
+        if (compactedTokens >= fullTokens) {
+            continue;
+        }
+
+        recentTokens += compactedTokens - fullTokens;
+        formatted[index] = compacted;
+        trimmedCount++;
+    }
+
+    if (splitIndex > 0 || trimmedCount > 0) {
+        log.info('Context compacted by token budget', {
+            totalMessages: messages.length,
+            compactedMessages: splitIndex,
+            trimmedRecentMessages: trimmedCount,
+            recentMessages: messages.length - splitIndex,
+            estimatedTokens: recentTokens + summaryTokens,
+            tokenBudget,
+        });
+    }
+
+    const olderFormatted = messages
+        .slice(0, splitIndex)
+        .map((_msg, index) => compactAt(index))
         .filter((m): m is PromptHistoryMessage => m != null);
 
-    // Recent messages keep full detail
     const recentMessages = formatted
         .slice(splitIndex)
         .filter((m): m is PromptHistoryMessage => m != null);
@@ -552,13 +615,17 @@ function splitByTokenBudget(
     return {
         recentMessages,
         historyTokenCount,
+        recentTokenCount: recentTokens,
         summary: buildSummary(olderFormatted, limits.summaryCharBudget),
     };
 }
 
 // ── Public API ──
 
-export function buildConversationContext(conversationId: string, remoteTokenBudget?: number) {
+export function buildConversationContext(
+    conversationId: string,
+    remoteTokenBudget?: number,
+): ConversationContext {
     const limits = REMOTE_LIMITS;
     const tokenBudget = remoteTokenBudget ?? DEFAULT_REMOTE_TOKEN_BUDGET;
     const messages = aiRepo.getRecentMessages(conversationId, MAX_LOADED_MESSAGES);

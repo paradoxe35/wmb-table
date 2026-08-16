@@ -347,6 +347,8 @@ const api = {
         }) => invoke(AiChannels.testProvider, input),
         fetchProviderModels: (input: { providerId: string; apiKey?: string; baseUrl?: string }) =>
             invoke(AiChannels.fetchProviderModels, input),
+        getModelLimits: (input: { providerId: string; model: string; baseUrl?: string }) =>
+            invoke(AiChannels.getModelLimits, input),
     },
 
     on: {

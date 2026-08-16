@@ -71,18 +71,18 @@ describe('calculateRemoteTokenBudget', () => {
         expect(budget).toBe(200_000);
     });
 
-    it('floors at MIN_HISTORY_BUDGET for very small models', () => {
-        const budget = calculateRemoteTokenBudget({
-            modelLimits: { contextWindow: 8_000 },
-            prompt: {
-                toolTokens: 5_000,
-                systemPromptTokens: 2_000,
-            },
-        });
-        expect(budget).toBe(4_000);
+    it('never budgets more history than a small context window can hold', () => {
+        const contextWindow = 8_000;
+        const prompt = { toolTokens: 5_000, systemPromptTokens: 2_000 };
+        const budget = calculateRemoteTokenBudget({ modelLimits: { contextWindow }, prompt });
+        const outputTokens = resolveRemoteOutputTokens({ modelLimits: { contextWindow }, prompt });
+
+        expect(budget + outputTokens + prompt.toolTokens + prompt.systemPromptTokens).toBeLessThan(
+            contextWindow,
+        );
     });
 
-    it('handles edge case where overhead exceeds context window', () => {
+    it('returns no history budget when overhead already exceeds the context window', () => {
         const budget = calculateRemoteTokenBudget({
             modelLimits: { contextWindow: 5_000 },
             prompt: {
@@ -90,7 +90,34 @@ describe('calculateRemoteTokenBudget', () => {
                 systemPromptTokens: 2_000,
             },
         });
-        expect(budget).toBe(4_000);
+        expect(budget).toBe(0);
+    });
+
+    it('never lets history plus output exceed the room left by the prompt', () => {
+        const prompt = { toolTokens: 5_000, systemPromptTokens: 2_000 };
+        const overhead = prompt.toolTokens + prompt.systemPromptTokens;
+
+        for (const contextWindow of [
+            5_000, 8_000, 16_000, 32_000, 64_000, 128_000, 200_000, 1_000_000,
+        ]) {
+            const modelLimits = { contextWindow };
+            const reserved =
+                calculateRemoteTokenBudget({ modelLimits, prompt }) +
+                resolveRemoteOutputTokens({ modelLimits, prompt });
+
+            expect(reserved).toBeLessThanOrEqual(Math.max(1, contextWindow - overhead));
+        }
+    });
+
+    it('keeps output tokens inside the context window on small models', () => {
+        const contextWindow = 8_000;
+        const outputTokens = resolveRemoteOutputTokens({
+            modelLimits: { contextWindow },
+            prompt: { toolTokens: 5_000, systemPromptTokens: 2_000 },
+        });
+
+        expect(outputTokens).toBeGreaterThan(0);
+        expect(outputTokens).toBeLessThanOrEqual(contextWindow - 7_512);
     });
 
     it('uses explicit prompt and tool tokens when reserving output space', () => {
