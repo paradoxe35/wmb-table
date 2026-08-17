@@ -88,4 +88,36 @@ describe('GenerationRunnerImpl', () => {
             expect.any(Function),
         );
     });
+
+    it('separates text emitted across steps instead of running it together', async () => {
+        const dispatchTextDelta = vi.fn();
+
+        await runWith(
+            [
+                { type: 'text-start' },
+                { type: 'text-delta', text: 'Je lance la recherche.' },
+                { type: 'tool-call', toolCallId: 't1', toolName: 'searchContent', input: {} },
+                { type: 'text-start' },
+                { type: 'text-delta', text: 'Le rapport indique...' },
+            ],
+            dispatchTextDelta,
+        );
+
+        expect(dispatchTextDelta.mock.calls.map((call) => call[0]).join('')).toBe(
+            'Je lance la recherche.\n\nLe rapport indique...',
+        );
+    });
+
+    it('does not open the reply with a separator', async () => {
+        const dispatchTextDelta = vi.fn();
+
+        await runWith(
+            [{ type: 'text-start' }, { type: 'text-delta', text: 'Voici la reponse.' }],
+            dispatchTextDelta,
+        );
+
+        expect(dispatchTextDelta.mock.calls.map((call) => call[0]).join('')).toBe(
+            'Voici la reponse.',
+        );
+    });
 });

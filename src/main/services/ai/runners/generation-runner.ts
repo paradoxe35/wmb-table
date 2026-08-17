@@ -63,10 +63,25 @@ export class GenerationRunnerImpl implements GenerationRunner {
         });
 
         let lastFinishReason: string | undefined;
+        // Each step opens its own text block. Without a separator the last sentence of one step
+        // and the first of the next are concatenated straight together.
+        let hasEmittedText = false;
+        let needsSeparator = false;
 
         for await (const part of result.fullStream) {
             switch (part.type) {
+                case 'text-start':
+                    needsSeparator = hasEmittedText;
+                    break;
                 case 'text-delta':
+                    if (!part.text) {
+                        break;
+                    }
+                    if (needsSeparator) {
+                        ctx.dispatchTextDelta('\n\n');
+                        needsSeparator = false;
+                    }
+                    hasEmittedText = true;
                     ctx.dispatchTextDelta(part.text);
                     break;
                 case 'reasoning-delta':
