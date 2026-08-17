@@ -1,4 +1,4 @@
-import type { BibleVersionInfo, ViewMenuValue } from '@shared/types';
+import type { BibleVersionInfo, SyncProgress, ViewMenuValue } from '@shared/types';
 import { DEFAULT_MAX_TABS } from '@shared/constants';
 import { createStore } from './create-store';
 
@@ -20,6 +20,7 @@ export type SettingsTabValue = (typeof SETTINGS_TAB_KEYS)[keyof typeof SETTINGS_
 interface AppState {
     loaded: boolean;
     syncing: boolean;
+    syncProgress: SyncProgress | null;
     mainView: ViewMenuValue;
     optionView: OptionViewValue;
     settingsTab: SettingsTabValue;
@@ -33,6 +34,7 @@ interface AppState {
 
     setLoaded(v: boolean): void;
     setSyncing(v: boolean): void;
+    setSyncProgress(v: SyncProgress | null): void;
     setMainView(v: ViewMenuValue): void;
     setOptionView(v: OptionViewValue): void;
     setSettingsTab(v: SettingsTabValue): void;
@@ -52,6 +54,7 @@ interface AppState {
 export const useAppStore = createStore<AppState>((set) => ({
     loaded: false,
     syncing: false,
+    syncProgress: null,
     mainView: 'document',
     optionView: 'search',
     settingsTab: SETTINGS_TAB_KEYS.general,
@@ -65,6 +68,7 @@ export const useAppStore = createStore<AppState>((set) => ({
 
     setLoaded: (v) => set({ loaded: v }),
     setSyncing: (v) => set({ syncing: v }),
+    setSyncProgress: (v) => set({ syncProgress: v }),
     setMainView: (v) => set({ mainView: v }),
     setOptionView: (v) => set({ optionView: v }),
     setSettingsTab: (v) => set({ settingsTab: v }),

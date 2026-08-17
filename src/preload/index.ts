@@ -381,6 +381,8 @@ const api = {
         ) => onPush(PushChannels.newSynchronizedDatas, cb),
         syncFailure: (cb: (p: PushEventMap[typeof PushChannels.syncFailure]) => void) =>
             onPush(PushChannels.syncFailure, cb),
+        syncProgress: (cb: (p: PushEventMap[typeof PushChannels.syncProgress]) => void) =>
+            onPush(PushChannels.syncProgress, cb),
         openLibrary: (cb: (p: PushEventMap[typeof PushChannels.openLibrary]) => void) =>
             onPush(PushChannels.openLibrary, cb),
         languageDownloadProgress: (
