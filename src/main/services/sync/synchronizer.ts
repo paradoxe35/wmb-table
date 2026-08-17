@@ -25,6 +25,7 @@ import {
     type DriveFile,
 } from './drive.service';
 import { applyChangeLog, applySnapshot, type AffectedTables } from './db-merge.service';
+import { createRemoteApplyProgress } from './sync-progress';
 import {
     getExistingClient,
     refreshAccessTokenIfNeeded,
@@ -311,6 +312,27 @@ async function applyRemoteChanges(drive: GoogleDriveService): Promise<void> {
 
     if (applicable.length === 0) return;
     log.info(`[Sync] Applying ${applicable.length} remote file(s)`);
+
+    const progress = createRemoteApplyProgress(applicable.length);
+    let processed = 0;
+
+    try {
+        await applyRemoteFiles(drive, applicable, (count) => {
+            processed = count;
+            progress.advance(count);
+        });
+    } finally {
+        progress.finish();
+    }
+
+    log.info(`[Sync] Processed ${processed}/${applicable.length} remote file(s)`);
+}
+
+async function applyRemoteFiles(
+    drive: GoogleDriveService,
+    applicable: DriveFile[],
+    onProcessed: (processed: number) => void,
+): Promise<void> {
     let processed = 0;
 
     for (const file of applicable) {
@@ -339,10 +361,7 @@ async function applyRemoteChanges(drive: GoogleDriveService): Promise<void> {
         updateSyncTimeOffset(file.createdTime);
         saveProcessedChange(file.id);
         processed++;
-
-        if (processed % 10 === 0 || processed === applicable.length) {
-            log.info(`[Sync] Processed ${processed}/${applicable.length} remote file(s)`);
-        }
+        onProcessed(processed);
     }
 }
 

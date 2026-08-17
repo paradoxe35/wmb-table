@@ -16,6 +16,7 @@ export default function SyncListener() {
     const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
     const setNotes = useNotesStore((s) => s.setNotes);
     const setSyncing = useAppStore((s) => s.setSyncing);
+    const setSyncProgress = useAppStore((s) => s.setSyncProgress);
     const aiInitialized = useAiChatStore((s) => s.initialized);
     const refreshAiAfterSync = useAiChatStore((s) => s.refreshAfterSync);
 
@@ -47,14 +48,18 @@ export default function SyncListener() {
             }
         };
 
+        const cleanupProgress = window.api.on.syncProgress(setSyncProgress);
+
         const cleanupSuccess = window.api.on.newSynchronizedDatas((tables) => {
             setSyncing(false);
+            setSyncProgress(null);
             refreshChangedTables(tables);
             window.dispatchEvent(new Event(SYNC_EVENT.syncCompleted));
         });
 
         const cleanupFailure = window.api.on.syncFailure((event) => {
             setSyncing(false);
+            setSyncProgress(null);
             if (event.affectedTables?.length) {
                 refreshChangedTables(event.affectedTables);
             }
@@ -92,6 +97,7 @@ export default function SyncListener() {
         document.addEventListener('visibilitychange', onVisibilityChange);
 
         return () => {
+            cleanupProgress();
             cleanupSuccess();
             cleanupFailure();
             window.removeEventListener('online', onOnline);
@@ -105,6 +111,7 @@ export default function SyncListener() {
         setCustomDocuments,
         setNotes,
         setSyncing,
+        setSyncProgress,
         t,
     ]);
 

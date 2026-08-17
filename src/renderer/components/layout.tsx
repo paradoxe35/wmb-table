@@ -1,14 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Button, Layout, Space, Spin, Tooltip } from 'antd';
-import {
-    LeftCircleOutlined,
-    RightCircleOutlined,
-    LoadingOutlined,
-    CloudSyncOutlined,
-} from '@ant-design/icons';
+import { Button, Layout } from 'antd';
+import { LeftCircleOutlined, RightCircleOutlined } from '@ant-design/icons';
 
 import ViewerMenu from './layout/viewer-menu';
+import AppStatusIndicator from './layout/app-status-indicator';
 import SidebarMenu from './layout/sidebar-menu';
 import SidebarDocuments from './layout/sidebar-documents';
 import MiniPlayerBar from './mini-player-bar';
@@ -21,40 +16,11 @@ import { APP_NAME } from '@renderer/utils/constants';
 const { Header, Content } = Layout;
 
 function Title() {
-    const { t } = useTranslation();
-    const appLoaded = useAppStore((s) => s.loaded);
-    const syncing = useAppStore((s) => s.syncing);
-
-    const showSpinner = !appLoaded || syncing;
-    const hint = !appLoaded
-        ? t('Chargement des données...')
-        : syncing
-          ? t('Synchronisation en cours...')
-          : '';
-
     return (
-        <Space orientation="horizontal">
-            <span>{APP_NAME}</span>
-            {showSpinner && (
-                <Tooltip title={hint}>
-                    {syncing && appLoaded ? (
-                        <CloudSyncOutlined
-                            style={{
-                                fontSize: 'var(--fs-base)',
-                                color: 'var(--ant-color-primary)',
-                                opacity: 0.7,
-                            }}
-                        />
-                    ) : (
-                        <Spin
-                            indicator={
-                                <LoadingOutlined style={{ fontSize: 'var(--fs-xl)' }} spin />
-                            }
-                        />
-                    )}
-                </Tooltip>
-            )}
-        </Space>
+        <span className="app-title">
+            {APP_NAME}
+            <AppStatusIndicator />
+        </span>
     );
 }
 

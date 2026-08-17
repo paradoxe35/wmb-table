@@ -867,6 +867,11 @@ export interface SyncStatus {
     error: string | null;
 }
 
+export interface SyncProgress {
+    processed: number;
+    total: number;
+}
+
 export interface SyncFailureEvent {
     message: string;
     isAuthError: boolean;

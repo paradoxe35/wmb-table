@@ -699,6 +699,7 @@ const es: Record<string, string> = {
     // ── Layout ──
     'Chargement des données...': 'Cargando datos...',
     'Synchronisation en cours...': 'Sincronizando...',
+    'Synchronisation... {{processed}}/{{total}}': 'Sincronizando... {{processed}}/{{total}}',
 
     // ── Paragraph navigator modal ──
     'Sélectionnez un paragraphe': 'Seleccione un párrafo',

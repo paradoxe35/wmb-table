@@ -42,6 +42,7 @@ import type {
     LanguageDownloadProgress,
     SyncStatus,
     SyncFailureEvent,
+    SyncProgress,
     HighlightCreateData,
     HighlightUpdateData,
     SermonTranslation,
@@ -305,6 +306,7 @@ export const PushChannels = {
     downloadAudioProgress: 'push:downloadAudioProgress',
     newSynchronizedDatas: 'push:newSynchronizedDatas',
     syncFailure: 'push:syncFailure',
+    syncProgress: 'push:syncProgress',
     openLibrary: 'push:openLibrary',
     languageDownloadProgress: 'push:languageDownloadProgress',
     languageInstalled: 'push:languageInstalled',
@@ -632,6 +634,7 @@ export interface PushEventMap {
     [PushChannels.downloadAudioProgress]: AudioDownloadProgress;
     [PushChannels.newSynchronizedDatas]: string[];
     [PushChannels.syncFailure]: SyncFailureEvent;
+    [PushChannels.syncProgress]: SyncProgress | null;
     [PushChannels.openLibrary]: void;
     [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;
     [PushChannels.languageInstalled]: LanguageInstalledEvent;
