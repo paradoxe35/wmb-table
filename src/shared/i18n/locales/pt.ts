@@ -697,7 +697,8 @@ const pt: Record<string, string> = {
     // ── Layout ──
     'Chargement des données...': 'Carregando dados...',
     'Synchronisation en cours...': 'Sincronizando...',
-    'Synchronisation en cours... {{percent}}%': 'Sincronizando... {{percent}}%',
+    'Synchronisation en cours... {{processed}}/{{total}}':
+        'Sincronizando... {{processed}}/{{total}}',
 
     // ── Paragraph navigator modal ──
     'Sélectionnez un paragraphe': 'Selecione um parágrafo',

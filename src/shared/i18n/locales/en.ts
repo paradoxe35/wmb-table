@@ -706,7 +706,8 @@ const en: Record<string, string> = {
     // ── Layout ──
     'Chargement des données...': 'Loading data...',
     'Synchronisation en cours...': 'Syncing...',
-    'Synchronisation en cours... {{percent}}%': 'Synchronizing... {{percent}}%',
+    'Synchronisation en cours... {{processed}}/{{total}}':
+        'Synchronizing... {{processed}}/{{total}}',
 
     // ── Paragraph navigator modal ──
     'Sélectionnez un paragraphe': 'Select a paragraph',
