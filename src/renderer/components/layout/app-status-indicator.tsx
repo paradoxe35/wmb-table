@@ -11,9 +11,13 @@ export default function AppStatusIndicator() {
 
     if (!appLoaded) {
         return (
-            <Tooltip title={t('Chargement des données...')}>
-                <Spin indicator={<LoadingOutlined style={{ fontSize: 'var(--fs-xl)' }} spin />} />
-            </Tooltip>
+            <span className="app-status-indicator">
+                <Tooltip title={t('Chargement des données...')}>
+                    <Spin
+                        indicator={<LoadingOutlined style={{ fontSize: 'var(--fs-xl)' }} spin />}
+                    />
+                </Tooltip>
+            </span>
         );
     }
 
@@ -29,14 +33,16 @@ export default function AppStatusIndicator() {
         : t('Synchronisation en cours...');
 
     return (
-        <Tooltip title={hint}>
-            <CloudSyncOutlined
-                className="sync-indicator"
-                style={{
-                    fontSize: 'var(--fs-base)',
-                    color: 'var(--ant-color-primary)',
-                }}
-            />
-        </Tooltip>
+        <span className="app-status-indicator">
+            <Tooltip title={hint}>
+                <CloudSyncOutlined
+                    className="sync-indicator"
+                    style={{
+                        fontSize: 'var(--fs-base)',
+                        color: 'var(--ant-color-primary)',
+                    }}
+                />
+            </Tooltip>
+        </span>
     );
 }

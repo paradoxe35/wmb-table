@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Layout, Space } from 'antd';
+import { Button, Layout } from 'antd';
 import { LeftCircleOutlined, RightCircleOutlined } from '@ant-design/icons';
 
 import ViewerMenu from './layout/viewer-menu';
@@ -17,10 +17,10 @@ const { Header, Content } = Layout;
 
 function Title() {
     return (
-        <Space orientation="horizontal">
-            <span>{APP_NAME}</span>
+        <span className="app-title">
+            {APP_NAME}
             <AppStatusIndicator />
-        </Space>
+        </span>
     );
 }
 

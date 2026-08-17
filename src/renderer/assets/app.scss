@@ -222,6 +222,22 @@ body {
     }
 }
 
+.app-title {
+    position: relative;
+    display: inline-block;
+}
+
+/* Out of flow so appearing or disappearing never nudges the header menu. */
+.app-status-indicator {
+    position: absolute;
+    left: calc(100% + 0.4em);
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+}
+
 .sync-indicator {
     animation: sync-pulse 1.6s ease-in-out infinite;
 }
