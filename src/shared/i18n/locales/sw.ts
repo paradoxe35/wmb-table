@@ -694,8 +694,7 @@ const sw: Record<string, string> = {
     // ── Layout ──
     'Chargement des données...': 'Inapakia data...',
     'Synchronisation en cours...': 'Inasawazisha...',
-    'Synchronisation en cours... {{processed}}/{{total}}':
-        'Inasawazisha... {{processed}}/{{total}}',
+    'Synchronisation... {{processed}}/{{total}}': 'Inasawazisha... {{processed}}/{{total}}',
 
     // ── Paragraph navigator modal ──
     'Sélectionnez un paragraphe': 'Chagua aya',

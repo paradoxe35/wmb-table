@@ -26,7 +26,7 @@ export default function AppStatusIndicator() {
     }
 
     const hint = syncProgress
-        ? t('Synchronisation en cours... {{processed}}/{{total}}', {
+        ? t('Synchronisation... {{processed}}/{{total}}', {
               processed: syncProgress.processed,
               total: syncProgress.total,
           })
