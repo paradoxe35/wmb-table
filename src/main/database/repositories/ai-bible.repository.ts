@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
 import * as bibleService from '@main/services/bible.service';
 import { normalizeBibleAbbreviation } from '@shared/types';
-import { strNormalize } from '@shared/searchable';
+import { strNormalize, stripSeparators } from '@shared/searchable';
 import type { BibleBook, BibleSearchResult } from '@shared/types';
 
 export interface ResolvedBibleVersion {
@@ -150,7 +150,7 @@ export function getPassage(input: {
 }
 
 /** Resolve a book name or code to the internal book code used in the DB. */
-function resolveBookCode(db: Database.Database, book: string): string | null {
+export function resolveBookCode(db: Database.Database, book: string): string | null {
     const trimmed = book.trim();
 
     // Try exact match on book code first (e.g. "01O", "43N")
@@ -175,6 +175,15 @@ function resolveBookCode(db: Database.Database, book: string): string | null {
     // Prefix normalized match (e.g. "rev" matches "Révélation", "apo" matches "Apocalypse")
     const prefixMatch = allBooks.find((r) => strNormalize(r.book_name).startsWith(normalized));
     if (prefixMatch) return prefixMatch.book;
+
+    // Last resort, for a query that ran the words together: "1jean" for "1 Jean"
+    const joined = stripSeparators(normalized);
+    const joinedMatch = allBooks.find((r) =>
+        stripSeparators(strNormalize(r.book_name)).startsWith(joined),
+    );
+    if (joinedMatch) {
+        return joinedMatch.book;
+    }
 
     return null;
 }

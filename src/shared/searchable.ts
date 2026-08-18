@@ -329,6 +329,11 @@ const NON_WORD_CLASS = '[^\\p{Alphabetic}\\p{N}]';
 const SEPARATOR_PATTERN = `${NON_WORD_CLASS}*`;
 const SEPARATORS = new RegExp(`${NON_WORD_CLASS}+`, 'gu');
 
+/** Drop everything between words, so a query may run together what a name keeps apart. */
+export function stripSeparators(text: string): string {
+    return text.replace(SEPARATORS, '');
+}
+
 /** Word starts mean nothing where words run together: there, any position is a start. */
 function wordStartPrefix(term: string): string {
     return SCRIPTIO_CONTINUA.test(term) ? '' : WORD_START;
@@ -382,15 +387,33 @@ export function scoreSearchMatch(text: string, query: SearchQuery): number {
     }
 
     // The query may run together words the title keeps apart: "leglise" for "L'Église".
-    const joined = haystack.replace(SEPARATORS, '');
+    const joined = stripSeparators(haystack);
     return query.terms.every((term) => joined.includes(term.text))
         ? SCORE_CONTAINS
         : SCORE_NO_MATCH;
 }
 
 /**
- * Filter a list by a raw user query, best match first. An empty query keeps everything.
- * `tieBreak` orders entries the query ranks equally, and orders the untouched list.
+ * Filter a list against an already compiled query, best match first.
+ * `tieBreak` orders entries the query ranks equally.
+ */
+export function filterBySearchQuery<T>(
+    items: readonly T[],
+    query: SearchQuery,
+    toText: (item: T) => string,
+    tieBreak?: (a: T, b: T) => number,
+): T[] {
+    return items
+        .map((item) => ({ item, score: scoreSearchMatch(toText(item), query) }))
+        .filter((entry) => entry.score > SCORE_NO_MATCH)
+        .sort((a, b) => b.score - a.score || (tieBreak ? tieBreak(a.item, b.item) : 0))
+        .map((entry) => entry.item);
+}
+
+/**
+ * Filter a list by a raw user query, best match first. A query with no searchable word
+ * keeps everything, which is what a search box wants; callers that must reject such a
+ * query instead should compile it with `parseSearchQuery` and branch on the null.
  */
 export function searchList<T>(
     items: readonly T[],
@@ -400,12 +423,7 @@ export function searchList<T>(
 ): T[] {
     const parsed = parseSearchQuery(query);
     if (!parsed) return tieBreak ? [...items].sort(tieBreak) : [...items];
-
-    return items
-        .map((item) => ({ item, score: scoreSearchMatch(toText(item), parsed) }))
-        .filter((entry) => entry.score > SCORE_NO_MATCH)
-        .sort((a, b) => b.score - a.score || (tieBreak ? tieBreak(a.item, b.item) : 0))
-        .map((entry) => entry.item);
+    return filterBySearchQuery(items, parsed, toText, tieBreak);
 }
 
 // ---------------------------------------------------------------------------
