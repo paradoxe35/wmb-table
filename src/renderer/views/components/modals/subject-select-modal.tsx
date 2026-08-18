@@ -10,7 +10,7 @@ import {
     type AddDocumentReferenceDetail,
     type FocusSubjectDetail,
 } from '@renderer/utils/events';
-import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { searchList } from '@renderer/utils/searchable';
 import { useSubjectsStore } from '@renderer/stores';
 
 export function SubjectSelectModal() {
@@ -76,11 +76,7 @@ export function SubjectSelectModal() {
 
     const onSearch = useCallback(
         (value: string) => {
-            if (!value.trim()) {
-                setDatas(subjects);
-                return;
-            }
-            setDatas(subjects.filter((d) => simpleRegExp(value).test(strNormalize(d.name))));
+            setDatas(searchList(subjects, value, (d) => d.name));
         },
         [subjects],
     );

@@ -5,7 +5,7 @@ import { NoteItem } from '@shared/types';
 import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useNotesStore } from '@renderer/stores';
-import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { searchList } from '@renderer/utils/searchable';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AI_DATA_EVENT } from '@renderer/utils/events';
 
@@ -70,7 +70,7 @@ export function Notes({ setWorkingNote }: { setWorkingNote: (noteId: string) => 
 
     const onSearch = useCallback((value: string) => {
         if (odatas.current.length) {
-            setNotes(odatas.current.filter((d) => simpleRegExp(value).test(strNormalize(d.name))));
+            setNotes(searchList(odatas.current, value, (d) => d.name));
         }
     }, []);
 

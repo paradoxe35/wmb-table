@@ -1,12 +1,12 @@
 // Re-export shared searchable utilities used by renderer
 export {
     strNormalizeNoLower,
-    simpleRegExp,
     strNormalize,
     matchesQuery,
     buildHighlightRegex,
     getHighlightRanges,
     paragraphContainsAllWords,
+    searchList,
 } from '@shared/searchable';
 
 // DOM-specific utility (cannot live in shared)

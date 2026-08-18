@@ -43,7 +43,7 @@ import {
 } from '@ant-design/icons';
 import { BibleIcons } from '@renderer/components/icons';
 import { SUBJECT_EVENT, AI_DATA_EVENT, type FocusSubjectDetail } from '@renderer/utils/events';
-import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { searchList } from '@renderer/utils/searchable';
 import { interactiveProps } from '@renderer/utils/interactive';
 import {
     buildPendingNavigation,
@@ -127,9 +127,7 @@ export function useSubjectsData() {
     const onSearch = useCallback(
         (value: string) => {
             if (odata.current.length) {
-                setData(
-                    odata.current.filter((d) => simpleRegExp(value).test(strNormalize(d.name))),
-                );
+                setData(searchList(odata.current, value, (d) => d.name));
             }
         },
         [setData],

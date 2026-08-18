@@ -311,6 +311,104 @@ export function buildHighlightRegex(query: string, _mode: SearchMode, stem = tru
 }
 
 // ---------------------------------------------------------------------------
+// List filtering
+// ---------------------------------------------------------------------------
+
+/**
+ * Ranked from the most literal match to the loosest one still worth showing, so a
+ * title that reads back the query outranks one that merely contains its letters.
+ */
+const SCORE_NO_MATCH = 0;
+const SCORE_CONTAINS = 1;
+const SCORE_WORD_STARTS = 2;
+const SCORE_PHRASE = 3;
+const SCORE_PHRASE_AT_START = 4;
+
+/** Whatever separates two words, so "suis moi" reaches "Suis-moi" and "suis  moi" alike. */
+const NON_WORD_CLASS = '[^\\p{Alphabetic}\\p{N}]';
+const SEPARATOR_PATTERN = `${NON_WORD_CLASS}*`;
+const SEPARATORS = new RegExp(`${NON_WORD_CLASS}+`, 'gu');
+
+/** Word starts mean nothing where words run together: there, any position is a start. */
+function wordStartPrefix(term: string): string {
+    return SCRIPTIO_CONTINUA.test(term) ? '' : WORD_START;
+}
+
+interface SearchTerm {
+    text: string;
+    atWordStart: RegExp;
+}
+
+/** A query compiled once, then tested against every candidate in a list. */
+export interface SearchQuery {
+    terms: SearchTerm[];
+    phrase: RegExp;
+}
+
+/**
+ * Compile a user query for filtering a list. Case and diacritics are folded, and
+ * punctuation is dropped on both sides, so the query only has to carry the letters.
+ */
+export function parseSearchQuery(query: string): SearchQuery | null {
+    const terms = tokenizeQuery(query, 'exact').map(strNormalize).filter(Boolean);
+    if (terms.length === 0) return null;
+
+    return {
+        terms: terms.map((text) => ({
+            text,
+            atWordStart: new RegExp(wordStartPrefix(text) + escapeRegExp(text), 'u'),
+        })),
+        phrase: new RegExp(
+            wordStartPrefix(terms[0]) + terms.map(escapeRegExp).join(SEPARATOR_PATTERN),
+            'u',
+        ),
+    };
+}
+
+/**
+ * How well `text` answers the query, or `SCORE_NO_MATCH` when it does not.
+ * Every term must be present; where they sit decides the rank.
+ */
+export function scoreSearchMatch(text: string, query: SearchQuery): number {
+    const haystack = strNormalize(text);
+
+    if (query.terms.every((term) => haystack.includes(term.text))) {
+        const phrase = query.phrase.exec(haystack);
+        if (phrase) return phrase.index === 0 ? SCORE_PHRASE_AT_START : SCORE_PHRASE;
+
+        return query.terms.every((term) => term.atWordStart.test(haystack))
+            ? SCORE_WORD_STARTS
+            : SCORE_CONTAINS;
+    }
+
+    // The query may run together words the title keeps apart: "leglise" for "L'Église".
+    const joined = haystack.replace(SEPARATORS, '');
+    return query.terms.every((term) => joined.includes(term.text))
+        ? SCORE_CONTAINS
+        : SCORE_NO_MATCH;
+}
+
+/**
+ * Filter a list by a raw user query, best match first. An empty query keeps everything.
+ * `tieBreak` orders entries the query ranks equally, and orders the untouched list.
+ */
+export function searchList<T>(
+    items: readonly T[],
+    query: string,
+    toText: (item: T) => string,
+    tieBreak?: (a: T, b: T) => number,
+): T[] {
+    const parsed = parseSearchQuery(query);
+    if (!parsed) return tieBreak ? [...items].sort(tieBreak) : [...items];
+
+    return items
+        .map((item) => ({ item, score: scoreSearchMatch(toText(item), parsed) }))
+        .filter((entry) => entry.score > SCORE_NO_MATCH)
+        .sort((a, b) => b.score - a.score || (tieBreak ? tieBreak(a.item, b.item) : 0))
+        .map((entry) => entry.item);
+}
+
+// ---------------------------------------------------------------------------
 // Legacy helpers
 // ---------------------------------------------------------------------------
 
