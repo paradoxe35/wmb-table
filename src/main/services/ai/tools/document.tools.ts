@@ -193,7 +193,9 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
                 const slice = lines.slice(startLine, startLine + maxLines).join('\n');
 
                 return {
-                    ...doc,
+                    documentId: doc.id,
+                    title: doc.title,
+                    languageCode: doc.languageCode,
                     wmbUrl: buildDocWmbLink({
                         type: 'doc',
                         documentId: doc.id,

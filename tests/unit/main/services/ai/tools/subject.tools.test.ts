@@ -17,13 +17,16 @@ vi.mock('@main/database/repositories/subjects.repository', () => ({
     deleteItem: deleteItemMock,
 }));
 
+const getSermonParagraphsMock = vi.fn();
+const getSermonMetaMock = vi.fn();
+
 vi.mock('@main/services/tantivy.service', () => ({
     getInstalledLanguages: getInstalledLanguagesMock,
-    getSermonParagraphs: vi.fn(),
+    getSermonParagraphs: getSermonParagraphsMock,
 }));
 
 vi.mock('@main/services/reference-data.service', () => ({
-    getSermonMeta: vi.fn(),
+    getSermonMeta: getSermonMetaMock,
     getSermonListForLanguage: vi.fn(() => []),
     getTranslationsForSermonInLanguage: vi.fn(() => []),
 }));
@@ -44,11 +47,45 @@ describe('subject.tools', () => {
         const result = await tools.addSermonReferenceToSubject.execute({
             subjectId: 'unknown',
             sermonId: '56-0805',
-            paragraphIndex: 3,
+            paragraphNumber: 3,
         });
 
         expect(result).toEqual({ error: 'Subject "unknown" not found.' });
         expect(createItemMock).not.toHaveBeenCalled();
+    });
+
+    describe('the paragraph named the way sermon results name it', () => {
+        beforeEach(() => {
+            existsMock.mockReturnValue(true);
+            getSermonMetaMock.mockReturnValue({
+                sermonId: '65-0801',
+                translationId: 7,
+                title: 'Le Dieu de cet âge mauvais',
+                dateMs: Date.UTC(1965, 7, 1),
+            });
+            getSermonParagraphsMock.mockResolvedValue([
+                { paragraphIndex: 133, content: 'Le paragraphe cité.' },
+            ]);
+            createItemMock.mockReturnValue({ id: 'ref-1' });
+        });
+
+        it('adds the paragraph a result called paragraphNumber', async () => {
+            const result = (await tools.addSermonReferenceToSubject.execute({
+                subjectId: 'subject-1',
+                sermonId: '65-0801',
+                translationId: 7,
+                paragraphNumber: 133,
+            })) as { error?: string; referenceId?: string };
+
+            expect(result.error).toBeUndefined();
+            expect(result.referenceId).toBe('ref-1');
+            expect(createItemMock).toHaveBeenCalledWith(
+                'subject-1',
+                'Le Dieu de cet âge mauvais',
+                expect.objectContaining({ paragraphIndex: 133 }),
+                'Le paragraphe cité.',
+            );
+        });
     });
 
     it('turns a duplicate subject name into a recoverable tool error', async () => {

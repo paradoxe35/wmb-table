@@ -154,6 +154,110 @@ describe('context-memory', () => {
         expect(recent.length).toBeLessThan(1000);
     });
 
+    /**
+     * The summariser reads tool output by key off an untyped object, so a renamed output
+     * field degrades the summary silently. These pin the keys each tool actually returns.
+     */
+    describe('summarizing tool results the way the tools return them', () => {
+        function conversationWith(result: AiMessage['toolResults'][number]): AiMessage[] {
+            const filler = Array.from({ length: 19 }, (_, index) =>
+                textMessage(
+                    `filler-${index}`,
+                    'conv-tools',
+                    index % 2 === 0 ? 'user' : 'assistant',
+                    'x'.repeat(400),
+                ),
+            );
+            return [
+                {
+                    id: 'tooled',
+                    conversationId: 'conv-tools',
+                    role: 'assistant',
+                    content: 'Resultat',
+                    toolCalls: [],
+                    toolResults: [result],
+                    createdAt: new Date().toISOString(),
+                },
+                ...filler,
+            ];
+        }
+
+        async function summaryFor(result: AiMessage['toolResults'][number]): Promise<string> {
+            getRecentMessagesMock.mockReturnValue(conversationWith(result));
+            const { buildConversationContext } = await import('@main/services/ai/context-memory');
+            return buildConversationContext('conv-tools', 500).summary ?? '';
+        }
+
+        it('lists the versions getBibleVersions returned', async () => {
+            const summary = await summaryFor({
+                toolCallId: 'versions-1',
+                name: 'getBibleVersions',
+                output: [
+                    { bibleVersionAbbreviation: 'lsg', languageCode: 'fr', name: 'Louis Segond' },
+                    { bibleVersionAbbreviation: 'kjv', languageCode: 'en', name: 'King James' },
+                ],
+            });
+
+            expect(summary).toContain('2 Bible version(s): lsg, kjv');
+            expect(summary).not.toContain('none');
+        });
+
+        it('names the subject getSubjectById returned', async () => {
+            const summary = await summaryFor({
+                toolCallId: 'subject-1',
+                name: 'getSubjectById',
+                output: {
+                    subjectId: 'subject-1',
+                    name: 'La foi',
+                    documents: [{ referenceId: 'ref-1', documentTitle: 'Titre' }],
+                },
+            });
+
+            expect(summary).toContain('Subject "La foi": 1 reference(s)');
+        });
+
+        it('names the subject createSubject returned even without a name', async () => {
+            const summary = await summaryFor({
+                toolCallId: 'subject-2',
+                name: 'createSubject',
+                output: { subjectId: 'subject-2' },
+            });
+
+            expect(summary).toContain('Created subject: subject-2');
+        });
+    });
+
+    it('does not invent an empty field on subject references it passes through', async () => {
+        getRecentMessagesMock.mockReturnValue([
+            {
+                id: 'assistant-subject',
+                conversationId: 'conv-subject',
+                role: 'assistant',
+                content: 'Sujet',
+                toolCalls: [],
+                toolResults: [
+                    {
+                        toolCallId: 'subject-3',
+                        name: 'getSubjectById',
+                        output: {
+                            subjectId: 'subject-3',
+                            name: 'La foi',
+                            documents: [{ referenceId: 'ref-1', documentTitle: 'Titre' }],
+                        },
+                    },
+                ],
+                createdAt: new Date().toISOString(),
+            },
+        ]);
+
+        const { buildConversationContext } = await import('@main/services/ai/context-memory');
+        const recent = buildConversationContext('conv-subject', LARGE_BUDGET).recentMessages[0]
+            ?.content;
+
+        expect(recent).toContain('"documentTitle":"Titre"');
+        expect(recent).not.toContain('textContent');
+    });
+
     it('compacts older messages into summary when exceeding token budget', async () => {
         getRecentMessagesMock.mockReturnValue(buildLongConversation());
 

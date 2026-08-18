@@ -94,7 +94,7 @@ export interface CustomDocumentSearchToolResponse extends PaginatedToolResult {
 // ---------------------------------------------------------------------------
 
 export interface BibleVersionOption {
-    abbreviation: string;
+    bibleVersionAbbreviation: string;
     languageCode: string;
     name: string;
 }
