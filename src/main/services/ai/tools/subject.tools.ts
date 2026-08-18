@@ -70,14 +70,18 @@ export function buildSubjectTools(
                 sermonId: z.string(),
                 languageCode: z.string().optional(),
                 translationId: z.number().int().optional(),
-                paragraphIndex: z.number().int().min(0),
+                paragraphNumber: z
+                    .number()
+                    .int()
+                    .min(0)
+                    .describe('Paragraph number from getSermonContent or searchContent'),
             }),
             execute: async ({
                 subjectId: rawSubjectId,
                 sermonId: rawSermonId,
                 languageCode,
                 translationId,
-                paragraphIndex,
+                paragraphNumber,
             }) => {
                 const subjectId = rawSubjectId.trim();
                 const sermonId = rawSermonId.trim();
@@ -111,7 +115,7 @@ export function buildSubjectTools(
                         error: `Failed to retrieve sermon paragraphs: ${err instanceof Error ? err.message : String(err)}`,
                     };
                 }
-                const paragraph = paragraphs.find((p) => p.paragraphIndex === paragraphIndex);
+                const paragraph = paragraphs.find((p) => p.paragraphIndex === paragraphNumber);
                 if (!paragraph) return { error: 'Paragraphe introuvable.' };
 
                 const item = subjectsRepo.createItem(
@@ -119,7 +123,7 @@ export function buildSubjectTools(
                     meta.title,
                     buildParagraphReference(
                         buildSermonDocumentIdentity(meta.sermonId, meta.translationId, lang),
-                        paragraphIndex,
+                        paragraphNumber,
                     ),
                     paragraph.content,
                 );

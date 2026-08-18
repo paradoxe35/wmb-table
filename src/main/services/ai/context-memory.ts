@@ -193,7 +193,7 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
         case 'getBibleVersions':
             if (Array.isArray(output))
                 return summarizeList(
-                    extractNames(output, 'abbreviation', 'title'),
+                    extractNames(output, 'bibleVersionAbbreviation', 'name'),
                     `${output.length} Bible version(s)`,
                 );
             break;
@@ -237,7 +237,7 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
 
         case 'createSubject':
             if (output && typeof output === 'object')
-                return `Created subject: ${String(output.name ?? output.id ?? 'subject')}`;
+                return `Created subject: ${String(output.name ?? output.subjectId ?? 'subject')}`;
             break;
 
         case 'getNotes':
@@ -271,7 +271,7 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
         case 'getSubjectById':
             if (output && typeof output === 'object') {
                 const docs = Array.isArray(output.documents) ? output.documents.length : 0;
-                return `Subject "${String(output.name ?? output.id ?? 'subject')}": ${docs} reference(s)`;
+                return `Subject "${String(output.name ?? output.subjectId ?? 'subject')}": ${docs} reference(s)`;
             }
             break;
 
@@ -412,22 +412,6 @@ function cleanToolOutput(name: string, output: any): unknown {
                 response: previewText(text, LONG_PREVIEW),
             };
         }
-
-        case 'getSubjectById':
-            if (!Array.isArray(output.documents)) {
-                return output;
-            }
-            return {
-                ...output,
-                documents: output.documents.map((doc: any) => ({
-                    ...omit(doc, ['documentReference', 'textContent']),
-                    textContent: previewText(doc.textContent, LONG_PREVIEW),
-                })),
-            };
-
-        case 'addBibleReferenceToSubject':
-        case 'addSermonReferenceToSubject':
-            return omit(output, ['documentReference', 'textContent', 'bible']);
 
         case 'getNoteById':
             if (typeof output.content !== 'string') {

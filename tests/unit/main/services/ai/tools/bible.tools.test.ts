@@ -46,7 +46,7 @@ describe('bible.tools', () => {
         const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
         const tools = buildBibleTools('fr');
         const result = (await tools.getBibleVersions.execute({ languageCode: 'fr' })) as Array<{
-            abbreviation: string;
+            bibleVersionAbbreviation: string;
             languageCode: string;
             name: string;
             type?: string;
@@ -55,7 +55,7 @@ describe('bible.tools', () => {
 
         expect(result).toEqual([
             {
-                abbreviation: 'lsg',
+                bibleVersionAbbreviation: 'lsg',
                 languageCode: 'fr',
                 name: 'Louis Segond',
             },
@@ -94,7 +94,7 @@ describe('bible.tools', () => {
         const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
         const tools = buildBibleTools('fr');
         const result = (await tools.getBiblePassage.execute({
-            book: 'Jean',
+            bookCode: '43N',
             chapter: '3',
             fromVerse: '16',
             toVerse: '17',
@@ -144,19 +144,13 @@ describe('bible.tools', () => {
         expect(result.verses[0]).not.toHaveProperty('id');
     });
 
-    describe('naming the book the way earlier results named it', () => {
-        /** The four payloads that failed in production, carried over from a verse result. */
+    describe('the field names a model carries over from a result', () => {
+        /** The four payloads that failed in production, named the way results name them. */
         const CARRIED_FORWARD = [
-            {
-                bookCode: '46N',
-                bookName: '1 Corinthiens',
-                chapter: '7',
-                fromVerse: '10',
-                toVerse: '16',
-            },
-            { bookCode: '43N', bookName: 'Jean', chapter: '3', fromVerse: '3', toVerse: '5' },
-            { bookCode: '60N', bookName: '1 Pierre', chapter: '1', fromVerse: '23', toVerse: '25' },
-            { bookCode: '45N', bookName: 'Romains', chapter: '10', fromVerse: '9', toVerse: '10' },
+            { bookCode: '46N', chapter: '7', fromVerse: '10', toVerse: '16' },
+            { bookCode: '43N', chapter: '3', fromVerse: '3', toVerse: '5' },
+            { bookCode: '60N', chapter: '1', fromVerse: '23', toVerse: '25' },
+            { bookCode: '45N', chapter: '10', fromVerse: '9', toVerse: '10' },
         ];
 
         beforeEach(() => {
@@ -178,80 +172,65 @@ describe('bible.tools', () => {
             ]);
         });
 
-        it.each(CARRIED_FORWARD)(
-            'reads $bookName $chapter without a `book` field',
-            async (input) => {
-                const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
-                const tools = buildBibleTools('fr');
-
-                const result = (await tools.getBiblePassage.execute({
-                    ...input,
-                    abbreviation: 'lsg',
-                    languageCode: 'fr',
-                })) as { error?: string; verseCount?: number };
-
-                expect(result.error).toBeUndefined();
-                expect(result.verseCount).toBe(1);
-                expect(getPassageMock).toHaveBeenCalledWith(
-                    expect.objectContaining({ book: input.bookCode }),
-                );
-            },
-        );
-
-        it('still prefers an explicit book over the carried-over names', async () => {
+        it.each(CARRIED_FORWARD)('reads $bookCode $chapter', async (input) => {
             const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
             const tools = buildBibleTools('fr');
 
-            await tools.getBiblePassage.execute({
-                book: 'Matthieu',
-                bookCode: '43N',
-                bookName: 'Jean',
-                chapter: '5',
-            });
+            const result = (await tools.getBiblePassage.execute({
+                ...input,
+                bibleVersionAbbreviation: 'lsg',
+                languageCode: 'fr',
+            })) as { error?: string; verseCount?: number };
 
+            expect(result.error).toBeUndefined();
+            expect(result.verseCount).toBe(1);
             expect(getPassageMock).toHaveBeenCalledWith(
-                expect.objectContaining({ book: 'Matthieu' }),
+                expect.objectContaining({ book: input.bookCode }),
             );
         });
 
-        it('falls back to the book name when only that was carried over', async () => {
+        it('resolves a book name passed as the code, for a cold lookup', async () => {
             const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
             const tools = buildBibleTools('fr');
 
-            await tools.getBiblePassage.execute({ bookName: '1 Pierre', chapter: '1' });
+            await tools.getBiblePassage.execute({ bookCode: '1 Pierre', chapter: '1' });
 
             expect(getPassageMock).toHaveBeenCalledWith(
                 expect.objectContaining({ book: '1 Pierre' }),
             );
         });
 
-        it('asks for the book in plain terms when none of the three is given', async () => {
+        it('honours the version a verse result named, instead of the default', async () => {
             const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
-            const tools = buildBibleTools('fr');
+            const tools = buildBibleTools('fr', 'lsg');
 
-            const result = (await tools.getBiblePassage.execute({ chapter: '3' })) as {
-                error?: string;
-            };
+            await tools.getBiblePassage.execute({
+                bookCode: '43N',
+                chapter: '3',
+                bibleVersionAbbreviation: 'kjv',
+            });
 
-            expect(result.error).toContain('Provide the book');
-            expect(getPassageMock).not.toHaveBeenCalled();
+            expect(resolveBibleVersionMock).toHaveBeenCalledWith('kjv', 'fr');
         });
 
-        it('adds a carried-over reference to a subject', async () => {
+        it('honours that version when searching too', async () => {
+            searchVersesMock.mockReturnValue({
+                end: true,
+                itemsPerPage: 10,
+                query: 'la foi',
+                pageNumber: 1,
+                total: 0,
+                data: [],
+            });
             const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
-            const tools = buildBibleTools('fr');
+            const tools = buildBibleTools('fr', 'lsg');
 
-            const result = (await tools.addBibleReferenceToSubject.execute({
-                subjectId: 'subject-1',
-                bookCode: '43N',
-                bookName: 'Jean',
-                chapter: '3',
-                fromVerse: '16',
-                abbreviation: 'lsg',
-            })) as { error?: string };
+            await tools.searchBible.execute({
+                query: 'la foi',
+                bibleVersionAbbreviation: 'kjv',
+            });
 
-            expect(result.error).toBeUndefined();
-            expect(getPassageMock).toHaveBeenCalledWith(expect.objectContaining({ book: '43N' }));
+            expect(resolveBibleVersionMock).toHaveBeenCalledWith('kjv', 'fr');
         });
     });
 
@@ -448,7 +427,7 @@ describe('bible.tools', () => {
             const tools = buildBibleTools('en', 'lsg');
             const first = (await tools.searchBible.execute({
                 query: 'love',
-                abbreviation: 'kjv',
+                bibleVersionAbbreviation: 'kjv',
                 limit: 2,
             })) as { nextCursor?: string };
 
@@ -473,13 +452,13 @@ describe('bible.tools', () => {
             const tools = buildBibleTools('en', 'lsg');
             const first = (await tools.searchBible.execute({
                 query: 'love',
-                abbreviation: 'kjv',
+                bibleVersionAbbreviation: 'kjv',
                 limit: 2,
             })) as { nextCursor?: string };
 
             const second = (await tools.searchBible.execute({
                 cursor: first.nextCursor,
-                abbreviation: 'lsg',
+                bibleVersionAbbreviation: 'lsg',
             })) as { error?: string };
 
             expect(second.error).toContain('does not match the pagination cursor');

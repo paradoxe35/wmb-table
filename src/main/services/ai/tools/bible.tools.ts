@@ -123,30 +123,17 @@ function toBiblePassageResponse(
 }
 
 /**
- * Verse results name the book `bookCode` and `bookName`, so a model carrying one forward
- * sends those back rather than `book`. Accept every shape the tools themselves emit.
+ * One name per concept, matching the field names every Bible result returns, so a model
+ * carrying a result forward sends back exactly what it was given.
  */
-const BOOK_INPUT_FIELDS = {
-    book: z
-        .string()
-        .optional()
-        .describe('Book name or code (e.g. "Jean", "Genesis", "43N"). Required.'),
-    bookCode: z.string().optional().describe('Book code from an earlier result (e.g. "43N")'),
-    bookName: z.string().optional().describe('Book name from an earlier result (e.g. "Jean")'),
-};
+const BOOK_CODE_SCHEMA = z
+    .string()
+    .describe('Book code from a Bible result (e.g. "43N"). A book name ("Jean") also resolves.');
 
-function resolveBookInput(input: {
-    book?: string;
-    bookCode?: string;
-    bookName?: string;
-}): string | null {
-    const book = (input.book ?? input.bookCode ?? input.bookName)?.trim();
-    return book || null;
-}
-
-const MISSING_BOOK_ERROR = {
-    error: 'Provide the book as "book", using the name or the code from an earlier result (e.g. "Jean" or "43N").',
-};
+const BIBLE_VERSION_SCHEMA = z
+    .string()
+    .optional()
+    .describe('Bible version abbreviation from a Bible result (e.g. "lsg")');
 
 function lookupBiblePassage(input: {
     book: string;
@@ -194,7 +181,7 @@ export function buildBibleTools(
                     return versions;
                 }
                 return versions.map((version): BibleVersionOption => ({
-                    abbreviation: version.abbreviation,
+                    bibleVersionAbbreviation: version.abbreviation,
                     languageCode: version.languageCode,
                     name: version.name,
                 }));
@@ -202,30 +189,27 @@ export function buildBibleTools(
         },
         getBiblePassage: {
             description:
-                'Retrieve Bible verses. Provide the book name as it appears in the Bible ' +
-                '(e.g. "Genesis", "Revelation", "Jean", "Matthieu", "Apocalypse"). ' +
+                'Retrieve Bible verses. Pass the bookCode returned by an earlier Bible result ' +
+                '(e.g. "43N"); a book name as written in the Bible ("Jean", "Apocalypse") also works. ' +
                 'Provide chapter and verse numbers as digits. ' +
-                'Use getBibleVersions first to find available abbreviations if needed. ' +
+                'Use getBibleVersions first to find available versions if needed. ' +
                 'Returns verse objects with exact link fields and wmbUrl for markdown reference links.',
             inputSchema: z.object({
-                ...BOOK_INPUT_FIELDS,
+                bookCode: BOOK_CODE_SCHEMA,
                 chapter: z.string().describe('Chapter number (e.g. "3")'),
                 fromVerse: z.string().optional().describe('Starting verse number (e.g. "16")'),
                 toVerse: z.string().optional().describe('Ending verse number (e.g. "18")'),
-                abbreviation: z.string().optional().describe('Bible version abbreviation'),
+                bibleVersionAbbreviation: BIBLE_VERSION_SCHEMA,
                 languageCode: z.string().optional(),
             }),
-            execute: async ({ languageCode, abbreviation, book, bookCode, bookName, ...rest }) => {
-                const resolvedBook = resolveBookInput({ book, bookCode, bookName });
-                if (!resolvedBook) return MISSING_BOOK_ERROR;
-
+            execute: async ({ languageCode, bibleVersionAbbreviation, bookCode, ...rest }) => {
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
                 return lookupBiblePassage({
                     ...rest,
-                    book: resolvedBook,
-                    abbreviation: abbreviation ?? defaultAbbreviation,
+                    book: bookCode,
+                    abbreviation: bibleVersionAbbreviation ?? defaultAbbreviation,
                     languageCode: lang,
                 });
             },
@@ -243,7 +227,7 @@ export function buildBibleTools(
                         .enum(['O', 'N'])
                         .optional()
                         .describe('Filter by testament: "O" (Old) or "N" (New)'),
-                    abbreviation: z.string().optional().describe('Bible version abbreviation'),
+                    bibleVersionAbbreviation: BIBLE_VERSION_SCHEMA,
                     languageCode: z.string().optional(),
                     limit: BIBLE_SEARCH_LIMIT_SCHEMA.optional().describe(
                         'Max results (default 20, max 40)',
@@ -258,7 +242,14 @@ export function buildBibleTools(
                     message: 'Either query or cursor is required.',
                     path: ['query'],
                 }),
-            execute: async ({ languageCode, abbreviation, query, testament, limit, cursor }) => {
+            execute: async ({
+                languageCode,
+                bibleVersionAbbreviation,
+                query,
+                testament,
+                limit,
+                cursor,
+            }) => {
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) {
@@ -272,7 +263,7 @@ export function buildBibleTools(
 
                 const resolvedVersion = resolveBibleVersion(
                     lang,
-                    continued?.abbreviation ?? abbreviation ?? defaultAbbreviation,
+                    continued?.abbreviation ?? bibleVersionAbbreviation ?? defaultAbbreviation,
                 );
                 if ('error' in resolvedVersion) {
                     return resolvedVersion;
@@ -283,7 +274,7 @@ export function buildBibleTools(
                     testament,
                     limit,
                     continued,
-                    explicitAbbreviation: abbreviation,
+                    explicitAbbreviation: bibleVersionAbbreviation,
                     abbreviation: resolvedVersion.abbreviation,
                 });
                 if ('error' in page) {
@@ -330,9 +321,9 @@ export function buildBibleTools(
                 'Add a Bible verse range to a subject. Use the subject ID from getSubjects.',
             inputSchema: z.object({
                 subjectId: z.string().describe('The subject ID (from getSubjects)'),
-                abbreviation: z.string().optional(),
+                bibleVersionAbbreviation: BIBLE_VERSION_SCHEMA,
                 languageCode: z.string().optional(),
-                ...BOOK_INPUT_FIELDS,
+                bookCode: BOOK_CODE_SCHEMA,
                 chapter: z.string(),
                 fromVerse: z.string(),
                 toVerse: z.string().optional(),
@@ -340,10 +331,8 @@ export function buildBibleTools(
             execute: async ({
                 subjectId: rawSubjectId,
                 languageCode,
-                abbreviation,
-                book,
+                bibleVersionAbbreviation,
                 bookCode,
-                bookName,
                 ...rest
             }) => {
                 const subjectId = rawSubjectId.trim();
@@ -351,23 +340,20 @@ export function buildBibleTools(
                     return { error: `Subject "${subjectId}" not found.` };
                 }
 
-                const resolvedBook = resolveBookInput({ book, bookCode, bookName });
-                if (!resolvedBook) return MISSING_BOOK_ERROR;
-
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) {
                     return langError;
                 }
 
-                const resolvedAbbreviation = abbreviation ?? defaultAbbreviation;
+                const resolvedAbbreviation = bibleVersionAbbreviation ?? defaultAbbreviation;
                 if (!resolvedAbbreviation) {
                     return { error: 'Aucune version biblique active disponible.' };
                 }
 
                 const result = lookupBiblePassage({
                     ...rest,
-                    book: resolvedBook,
+                    book: bookCode,
                     abbreviation: resolvedAbbreviation,
                     languageCode: lang,
                 });
