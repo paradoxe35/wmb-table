@@ -84,19 +84,7 @@ function estimateTokens(text: string): number {
 }
 
 function getAgentOutputText(output: any): string {
-    if (!output || typeof output !== 'object') {
-        return '';
-    }
-
-    if (typeof output.response === 'string') {
-        return output.response;
-    }
-
-    if (typeof output.summary === 'string') {
-        return output.summary;
-    }
-
-    return '';
+    return output && typeof output.response === 'string' ? output.response : '';
 }
 
 // ── Tool result summarization ──

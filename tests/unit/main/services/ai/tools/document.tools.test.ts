@@ -134,6 +134,29 @@ describe('document.tools', () => {
         });
     });
 
+    it('names the document the way every other document field names it', async () => {
+        getCustomDocumentContentMock.mockResolvedValue({
+            id: 'doc-1',
+            title: 'Open Book Notes',
+            languageCode: 'en',
+            content: 'line one\nline two',
+            internalRevision: 7,
+        });
+
+        const { buildDocumentTools } = await import('@main/services/ai/tools/document.tools');
+        const tools = buildDocumentTools();
+
+        const result = (await tools.getCustomDocumentContent.execute({
+            documentId: 'doc-1',
+        })) as Record<string, unknown>;
+
+        expect(result.documentId).toBe('doc-1');
+        expect(result).not.toHaveProperty('id');
+        // The repository row is not the tool contract: extra columns must not leak to the model.
+        expect(result).not.toHaveProperty('internalRevision');
+        expect(result.wmbUrl).toContain('doc-1');
+    });
+
     it('returns an error when there are no custom documents', async () => {
         getCustomDocumentsMock.mockReturnValue([]);
 
