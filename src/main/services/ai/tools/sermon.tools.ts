@@ -2,7 +2,7 @@ import { z } from 'zod';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 import * as searchService from '@main/services/search.service';
-import { strNormalize, simpleRegExp } from '@shared/searchable';
+import { filterBySearchQuery, parseSearchQuery } from '@shared/searchable';
 import { buildSermonWmbLink } from '@shared/wmb-link';
 import type {
     AiToolDefinition,
@@ -14,6 +14,7 @@ import type {
     SearchContentToolResponse,
     SermonSearchToolResponse,
 } from './types';
+import type { SermonMeta } from '@shared/types';
 import { validateLanguage } from './shared';
 import {
     buildNextContentSearchCursor,
@@ -23,6 +24,20 @@ import {
     resolveSermonSearchPage,
     sermonSearchToolInputSchema,
 } from './search-pagination';
+
+/** Everything searchSermons matches a query against, as one blob of text. */
+function sermonSearchText(sermon: SermonMeta): string {
+    return [
+        sermon.title,
+        sermon.enTitle,
+        sermon.location,
+        sermon.cityState,
+        sermon.sermonId,
+        new Date(sermon.dateMs).toISOString().slice(0, 10),
+    ]
+        .filter(Boolean)
+        .join(' ');
+}
 
 export function buildSermonTools(defaultContentLanguage: string): Record<string, AiToolDefinition> {
     return {
@@ -50,33 +65,18 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                     return langError;
                 }
 
-                const words = page.query
-                    .trim()
-                    .split(/\s+/)
-                    .filter((w: string) => w.length >= 2);
+                const parsedQuery = parseSearchQuery(page.query);
+                if (!parsedQuery) {
+                    return {
+                        error: `Query "${page.query}" contains no searchable word. Search for a title, place, date, or sermon id.`,
+                    };
+                }
 
-                const patterns = words.map((w: string) => simpleRegExp(w));
-
-                const sermons = referenceDataService
-                    .getSermonListForLanguage(lang)
-                    .filter((sermon) => {
-                        const fields = strNormalize(
-                            [
-                                sermon.title,
-                                sermon.enTitle,
-                                sermon.location,
-                                sermon.cityState,
-                                sermon.sermonId,
-                                new Date(sermon.dateMs).toISOString().slice(0, 10),
-                            ]
-                                .filter(Boolean)
-                                .join(' '),
-                        );
-                        return patterns.every((re: RegExp) => {
-                            re.lastIndex = 0;
-                            return re.test(fields);
-                        });
-                    });
+                const sermons = filterBySearchQuery(
+                    referenceDataService.getSermonListForLanguage(lang),
+                    parsedQuery,
+                    sermonSearchText,
+                );
                 const results: SermonSearchResult[] = sermons
                     .slice(page.offset, page.offset + page.limit)
                     .map((s) => ({

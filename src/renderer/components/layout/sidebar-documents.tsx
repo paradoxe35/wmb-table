@@ -21,7 +21,7 @@ import { useAppStore, useInstalledLanguagesStore } from '@renderer/stores';
 import { useOpenDocumentRequest, useFormatSermonDate } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import SidebarBibleBrowser from './sidebar-bible-browser';
-import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { searchList, strNormalize } from '@renderer/utils/searchable';
 import { LANGUAGE_EVENT, CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
 import { interactiveProps } from '@renderer/utils/interactive';
 
@@ -163,6 +163,11 @@ const DocumentsAdded = () => {
 const alpha = Array.from(Array(26)).map((_e, i) => i + 65);
 const alphabets = alpha.map((x) => String.fromCharCode(x));
 
+const byTitle = (a: SermonListItemWithTranslations, b: SermonListItemWithTranslations) =>
+    a.title.localeCompare(b.title);
+
+const sortByTitle = (items: SermonListItemWithTranslations[]) => items.slice().sort(byTitle);
+
 const DocumentByAlphabetic = () => {
     const { t } = useTranslation();
     const sermons = useSermonStore((s) => s.sermons);
@@ -170,7 +175,10 @@ const DocumentByAlphabetic = () => {
     const setAlphabet = useSidebarDocumentsStore((s) => s.setSermonAlphabet);
 
     const items = useMemo(
-        () => sermons.filter((d) => strNormalize(d.title).charAt(0).toUpperCase() === alphabet),
+        () =>
+            sortByTitle(
+                sermons.filter((d) => strNormalize(d.title).charAt(0).toUpperCase() === alphabet),
+            ),
         [sermons, alphabet],
     );
 
@@ -202,7 +210,10 @@ const DocumentByYears = () => {
     );
 
     const effectiveYear = selectedYear ?? years[0] ?? null;
-    const items = effectiveYear ? (sermonsByYear[effectiveYear] ?? []) : [];
+    const items = useMemo(
+        () => sortByTitle(effectiveYear ? (sermonsByYear[effectiveYear] ?? []) : []),
+        [sermonsByYear, effectiveYear],
+    );
 
     const yearOptions = useMemo(
         () =>
@@ -273,11 +284,10 @@ const DocumentSearch = () => {
     const query = useSidebarDocumentsStore((s) => s.sermonSearchQuery);
     const setQuery = useSidebarDocumentsStore((s) => s.setSermonSearchQuery);
 
-    const items = useMemo(() => {
-        if (!query) return sermons;
-        const matcher = simpleRegExp(query);
-        return sermons.filter((d) => matcher.test(strNormalize(d.title)));
-    }, [sermons, query]);
+    const items = useMemo(
+        () => searchList(sermons, query, (d) => d.title, byTitle),
+        [sermons, query],
+    );
 
     return (
         <>
@@ -348,17 +358,12 @@ const DocumentList = ({ items }: { items: SermonListItemWithTranslations[] }) =>
     const isEnglish = useAppStore((s) => s.contentLanguage) === 'en';
     const formatDate = useFormatSermonDate();
 
-    const sorted = useMemo(
-        () => items.slice().sort((a, b) => a.title.localeCompare(b.title)),
-        [items],
-    );
-
     return (
         <>
             <Divider style={{ padding: 0, margin: 0 }} />
             <div className="document-list" style={{ flex: 1 }}>
                 <Virtuoso
-                    data={sorted}
+                    data={items}
                     itemContent={(_index, d) => {
                         const sermonKey = getTabKey({
                             type: 'sermon',

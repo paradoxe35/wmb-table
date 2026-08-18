@@ -5,9 +5,16 @@ const getAvailableVersionsMock = vi.fn();
 const resolveBibleVersionMock = vi.fn();
 const getPassageMock = vi.fn();
 const searchVersesMock = vi.fn();
+const subjectExistsMock = vi.fn(() => true);
+const createSubjectItemMock = vi.fn(() => ({ id: 'item-1' }));
 
 vi.mock('@main/services/tantivy.service', () => ({
     getInstalledLanguages: getInstalledLanguagesMock,
+}));
+
+vi.mock('@main/database/repositories/subjects.repository', () => ({
+    exists: subjectExistsMock,
+    createItem: createSubjectItemMock,
 }));
 
 vi.mock('@main/database/repositories/ai-bible.repository', () => ({
@@ -21,6 +28,8 @@ describe('bible.tools', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         getInstalledLanguagesMock.mockReturnValue(['fr', 'en']);
+        subjectExistsMock.mockReturnValue(true);
+        createSubjectItemMock.mockReturnValue({ id: 'item-1' });
     });
 
     it('returns only clean bible version fields', async () => {
@@ -133,6 +142,117 @@ describe('bible.tools', () => {
         });
         expect(result.verses[0]).not.toHaveProperty('book');
         expect(result.verses[0]).not.toHaveProperty('id');
+    });
+
+    describe('naming the book the way earlier results named it', () => {
+        /** The four payloads that failed in production, carried over from a verse result. */
+        const CARRIED_FORWARD = [
+            {
+                bookCode: '46N',
+                bookName: '1 Corinthiens',
+                chapter: '7',
+                fromVerse: '10',
+                toVerse: '16',
+            },
+            { bookCode: '43N', bookName: 'Jean', chapter: '3', fromVerse: '3', toVerse: '5' },
+            { bookCode: '60N', bookName: '1 Pierre', chapter: '1', fromVerse: '23', toVerse: '25' },
+            { bookCode: '45N', bookName: 'Romains', chapter: '10', fromVerse: '9', toVerse: '10' },
+        ];
+
+        beforeEach(() => {
+            resolveBibleVersionMock.mockReturnValue({
+                abbreviation: 'lsg',
+                languageCode: 'fr',
+                name: 'Louis Segond',
+            });
+            getPassageMock.mockImplementation((input: { book: string }) => [
+                {
+                    id: 'verse-1',
+                    bookName: 'Jean',
+                    book: input.book,
+                    testament: 'N',
+                    chapter: '3',
+                    verse: '16',
+                    content: 'Car Dieu a tant aime le monde...',
+                },
+            ]);
+        });
+
+        it.each(CARRIED_FORWARD)(
+            'reads $bookName $chapter without a `book` field',
+            async (input) => {
+                const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+                const tools = buildBibleTools('fr');
+
+                const result = (await tools.getBiblePassage.execute({
+                    ...input,
+                    abbreviation: 'lsg',
+                    languageCode: 'fr',
+                })) as { error?: string; verseCount?: number };
+
+                expect(result.error).toBeUndefined();
+                expect(result.verseCount).toBe(1);
+                expect(getPassageMock).toHaveBeenCalledWith(
+                    expect.objectContaining({ book: input.bookCode }),
+                );
+            },
+        );
+
+        it('still prefers an explicit book over the carried-over names', async () => {
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('fr');
+
+            await tools.getBiblePassage.execute({
+                book: 'Matthieu',
+                bookCode: '43N',
+                bookName: 'Jean',
+                chapter: '5',
+            });
+
+            expect(getPassageMock).toHaveBeenCalledWith(
+                expect.objectContaining({ book: 'Matthieu' }),
+            );
+        });
+
+        it('falls back to the book name when only that was carried over', async () => {
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('fr');
+
+            await tools.getBiblePassage.execute({ bookName: '1 Pierre', chapter: '1' });
+
+            expect(getPassageMock).toHaveBeenCalledWith(
+                expect.objectContaining({ book: '1 Pierre' }),
+            );
+        });
+
+        it('asks for the book in plain terms when none of the three is given', async () => {
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('fr');
+
+            const result = (await tools.getBiblePassage.execute({ chapter: '3' })) as {
+                error?: string;
+            };
+
+            expect(result.error).toContain('Provide the book');
+            expect(getPassageMock).not.toHaveBeenCalled();
+        });
+
+        it('adds a carried-over reference to a subject', async () => {
+            const { buildBibleTools } = await import('@main/services/ai/tools/bible.tools');
+            const tools = buildBibleTools('fr');
+
+            const result = (await tools.addBibleReferenceToSubject.execute({
+                subjectId: 'subject-1',
+                bookCode: '43N',
+                bookName: 'Jean',
+                chapter: '3',
+                fromVerse: '16',
+                abbreviation: 'lsg',
+            })) as { error?: string };
+
+            expect(result.error).toBeUndefined();
+            expect(getPassageMock).toHaveBeenCalledWith(expect.objectContaining({ book: '43N' }));
+        });
     });
 
     it('returns a clean bible search response without repository wrapper fields', async () => {

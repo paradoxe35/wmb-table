@@ -194,6 +194,96 @@ describe('sermon.tools', () => {
         expect(second.results.map((item) => item.sermonId)).toEqual(['56-0103']);
     });
 
+    describe('what searchSermons matches a query against', () => {
+        const SERMON = {
+            sermonId: '65-0801',
+            translationId: 7,
+            title: 'Le Dieu de cet âge mauvais',
+            enTitle: 'The God Of This Evil Age',
+            location: 'Jeffersonville, Indiana',
+            cityState: 'Jeffersonville IN',
+            dateMs: Date.UTC(1965, 7, 1),
+        };
+
+        async function search(query: string) {
+            getSermonListForLanguageMock.mockReturnValue([SERMON]);
+            const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
+            return (await buildSermonTools('fr').searchSermons.execute({ query })) as {
+                results: Array<{ sermonId: string }>;
+            };
+        }
+
+        it.each([
+            ['title', 'dieu age mauvais'],
+            ['title without its accents', 'age mauvais'],
+            ['english title', 'evil age'],
+            ['location', 'jeffersonville indiana'],
+            ['city and state', 'jeffersonville in'],
+            ['sermon id', '65-0801'],
+            ['sermon id without the dash', '650801'],
+            ['iso date', '1965-08-01'],
+        ])('finds it by %s', async (_field, query) => {
+            const result = await search(query);
+            expect(result.results.map((item) => item.sermonId)).toEqual(['65-0801']);
+        });
+
+        it('does not find it by words it does not carry', async () => {
+            const result = await search('tucson arizona');
+            expect(result.results).toEqual([]);
+        });
+    });
+
+    it('refuses a query with no searchable word instead of returning every sermon', async () => {
+        getSermonListForLanguageMock.mockReturnValue([
+            { sermonId: '56-0101', translationId: 1, title: 'Message Alpha', dateMs: 0 },
+            { sermonId: '56-0102', translationId: 2, title: 'Message Beta', dateMs: 0 },
+        ]);
+
+        const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
+        const tools = buildSermonTools('fr');
+
+        const result = (await tools.searchSermons.execute({ query: '...' })) as { error?: string };
+
+        expect(result.error).toContain('no searchable word');
+    });
+
+    it('keeps a one-character query searchable where a character is a whole word', async () => {
+        getSermonListForLanguageMock.mockReturnValue([
+            { sermonId: '56-0101', translationId: 1, title: '中国的信息', dateMs: 0 },
+            { sermonId: '56-0102', translationId: 2, title: 'Message Beta', dateMs: 0 },
+        ]);
+
+        const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
+        const tools = buildSermonTools('fr');
+
+        const result = (await tools.searchSermons.execute({ query: '\u4e2d' })) as {
+            results: Array<{ sermonId: string }>;
+        };
+
+        expect(result.results.map((item) => item.sermonId)).toEqual(['56-0101']);
+    });
+
+    it('puts the sermon the query names ahead of the ones that merely mention it', async () => {
+        getSermonListForLanguageMock.mockReturnValue([
+            { sermonId: '56-0101', translationId: 1, title: 'La sagesse contre la foi', dateMs: 0 },
+            { sermonId: '56-0102', translationId: 2, title: 'Parfois il faut attendre', dateMs: 0 },
+            { sermonId: '56-0103', translationId: 3, title: 'Foi parfaite', dateMs: 0 },
+        ]);
+
+        const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
+        const tools = buildSermonTools('fr');
+
+        const result = (await tools.searchSermons.execute({ query: 'foi' })) as {
+            results: Array<{ sermonId: string }>;
+        };
+
+        expect(result.results.map((item) => item.sermonId)).toEqual([
+            '56-0103',
+            '56-0101',
+            '56-0102',
+        ]);
+    });
+
     it('returns resolved and fallback translation ids when getSermonContent falls back', async () => {
         getSermonMetaMock.mockImplementation(
             (translationId: number, _lang: string, sermonId: string) => {

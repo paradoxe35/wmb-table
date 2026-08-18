@@ -42,11 +42,23 @@ describe('AI agents prompt builders', () => {
         expect(prompt).toContain('extend prior reading');
     });
 
-    it('tells the research agent to broaden and vary queries', () => {
+    it('tells the research agent to investigate rather than search once', () => {
         const prompt = buildResearchAgentPrompt('fr', 'en', 'kjv');
 
-        expect(prompt).toContain('Run multiple query variants');
-        expect(prompt).toContain('Do not stop after one weak search');
+        expect(prompt).toContain('Start from the intent, not the wording');
+        expect(prompt).toContain('sub-questions the answer rests on');
+        expect(prompt).toContain('Let results redirect you');
+        expect(prompt).toContain('Look for what would contradict your emerging answer');
+        expect(prompt).toContain('One search is never enough');
+    });
+
+    it('keeps the search mechanics the investigation runs on', () => {
+        const prompt = buildResearchAgentPrompt('fr', 'en', 'kjv');
+
+        expect(prompt).toContain('Search 2-3 content words');
+        expect(prompt).toContain('Mode "exact" first');
+        expect(prompt).toContain('Reuse `nextCursor`');
+        expect(prompt).toContain('The index ignores accents');
     });
 
     it('tells the sermon reader it may read more for whole-sermon tasks', () => {

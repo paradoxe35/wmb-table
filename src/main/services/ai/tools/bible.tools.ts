@@ -122,6 +122,32 @@ function toBiblePassageResponse(
     };
 }
 
+/**
+ * Verse results name the book `bookCode` and `bookName`, so a model carrying one forward
+ * sends those back rather than `book`. Accept every shape the tools themselves emit.
+ */
+const BOOK_INPUT_FIELDS = {
+    book: z
+        .string()
+        .optional()
+        .describe('Book name or code (e.g. "Jean", "Genesis", "43N"). Required.'),
+    bookCode: z.string().optional().describe('Book code from an earlier result (e.g. "43N")'),
+    bookName: z.string().optional().describe('Book name from an earlier result (e.g. "Jean")'),
+};
+
+function resolveBookInput(input: {
+    book?: string;
+    bookCode?: string;
+    bookName?: string;
+}): string | null {
+    const book = (input.book ?? input.bookCode ?? input.bookName)?.trim();
+    return book || null;
+}
+
+const MISSING_BOOK_ERROR = {
+    error: 'Provide the book as "book", using the name or the code from an earlier result (e.g. "Jean" or "43N").',
+};
+
 function lookupBiblePassage(input: {
     book: string;
     chapter: string;
@@ -182,23 +208,23 @@ export function buildBibleTools(
                 'Use getBibleVersions first to find available abbreviations if needed. ' +
                 'Returns verse objects with exact link fields and wmbUrl for markdown reference links.',
             inputSchema: z.object({
-                book: z
-                    .string()
-                    .describe(
-                        'Book name as written in the Bible (e.g. "Genesis", "Jean", "Matthieu", "Apocalypse")',
-                    ),
+                ...BOOK_INPUT_FIELDS,
                 chapter: z.string().describe('Chapter number (e.g. "3")'),
                 fromVerse: z.string().optional().describe('Starting verse number (e.g. "16")'),
                 toVerse: z.string().optional().describe('Ending verse number (e.g. "18")'),
                 abbreviation: z.string().optional().describe('Bible version abbreviation'),
                 languageCode: z.string().optional(),
             }),
-            execute: async ({ languageCode, abbreviation, ...rest }) => {
+            execute: async ({ languageCode, abbreviation, book, bookCode, bookName, ...rest }) => {
+                const resolvedBook = resolveBookInput({ book, bookCode, bookName });
+                if (!resolvedBook) return MISSING_BOOK_ERROR;
+
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
                 return lookupBiblePassage({
                     ...rest,
+                    book: resolvedBook,
                     abbreviation: abbreviation ?? defaultAbbreviation,
                     languageCode: lang,
                 });
@@ -306,16 +332,27 @@ export function buildBibleTools(
                 subjectId: z.string().describe('The subject ID (from getSubjects)'),
                 abbreviation: z.string().optional(),
                 languageCode: z.string().optional(),
-                book: z.string(),
+                ...BOOK_INPUT_FIELDS,
                 chapter: z.string(),
                 fromVerse: z.string(),
                 toVerse: z.string().optional(),
             }),
-            execute: async ({ subjectId: rawSubjectId, languageCode, abbreviation, ...rest }) => {
+            execute: async ({
+                subjectId: rawSubjectId,
+                languageCode,
+                abbreviation,
+                book,
+                bookCode,
+                bookName,
+                ...rest
+            }) => {
                 const subjectId = rawSubjectId.trim();
                 if (!subjectsRepo.exists(subjectId)) {
                     return { error: `Subject "${subjectId}" not found.` };
                 }
+
+                const resolvedBook = resolveBookInput({ book, bookCode, bookName });
+                if (!resolvedBook) return MISSING_BOOK_ERROR;
 
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
@@ -330,6 +367,7 @@ export function buildBibleTools(
 
                 const result = lookupBiblePassage({
                     ...rest,
+                    book: resolvedBook,
                     abbreviation: resolvedAbbreviation,
                     languageCode: lang,
                 });

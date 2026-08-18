@@ -12,7 +12,7 @@ import {
 
 import { useModalVisible, useIpcRequestWithLoader, useOpenDocumentRequest } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
-import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { searchList } from '@renderer/utils/searchable';
 import { useAppStore, useCustomDocumentsStore, useInstalledLanguagesStore } from '@renderer/stores';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { invalidateCustomDocumentContentCache } from '@renderer/views/document-view/hooks/document-content-hooks';
@@ -125,9 +125,7 @@ function DocumentList({
     const ipcRequestWithLoader = useIpcRequestWithLoader();
     const updateCustomDocument = useCustomDocumentsStore((s) => s.updateCustomDocument);
 
-    const filtered = searchTerm
-        ? customDocuments.filter((d) => simpleRegExp(searchTerm).test(strNormalize(d.title)))
-        : customDocuments;
+    const filtered = searchList(customDocuments, searchTerm, (d) => d.title);
 
     const handleDeletion = (document: CustomDocument) => {
         ipcRequestWithLoader(async () => {

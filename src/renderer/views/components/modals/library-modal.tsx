@@ -31,7 +31,7 @@ import type {
     LanguageDownloadProgress,
     LanguageInstalledEvent,
 } from '@shared/types';
-import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { searchList } from '@renderer/utils/searchable';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 
@@ -244,17 +244,12 @@ export default function LibraryModal() {
     }, []);
 
     const filteredLanguages = useMemo(() => {
-        let list = languages;
-        if (searchQuery.trim()) {
-            const re = simpleRegExp(searchQuery);
-            list = list.filter(
-                (l) =>
-                    re.test(strNormalize(l.language)) ||
-                    re.test(strNormalize(l.enLanguage)) ||
-                    re.test(strNormalize(l.code)),
-            );
-        }
-        const sorted = [...list].sort((a, b) => a.language.localeCompare(b.language));
+        const sorted = searchList(
+            languages,
+            searchQuery,
+            (l) => `${l.language} ${l.enLanguage} ${l.code}`,
+            (a, b) => a.language.localeCompare(b.language),
+        );
         const installed = sorted.filter((l) => l.installed);
         const available = sorted.filter((l) => !l.installed);
         return [...installed, ...available];

@@ -3,26 +3,24 @@ import { Input, AutoComplete, Select, Typography } from 'antd';
 import { SelectProps } from 'antd/es/select';
 import { useTranslation } from 'react-i18next';
 import { debounce } from '@renderer/utils/functions';
-import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { searchList } from '@renderer/utils/searchable';
 import { useSearchStore } from '@renderer/stores';
 import type { Suggestions, SearchMode } from '@shared/types';
 
 const { Text } = Typography;
 
 function buildSuggestionOptions(query: string, suggestions: Suggestions[]) {
-    return suggestions
-        .filter((sgg) => simpleRegExp(query).test(strNormalize(sgg.searchText)))
-        .map((sgg) => ({
-            value: sgg.searchText,
-            label: (
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>
-                        <Text type="secondary">{sgg.searchText}</Text>
-                    </span>
-                    <span>{sgg.found}</span>
-                </div>
-            ),
-        }));
+    return searchList(suggestions, query, (sgg) => sgg.searchText).map((sgg) => ({
+        value: sgg.searchText,
+        label: (
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>
+                    <Text type="secondary">{sgg.searchText}</Text>
+                </span>
+                <span>{sgg.found}</span>
+            </div>
+        ),
+    }));
 }
 
 export default function SearchInput({
