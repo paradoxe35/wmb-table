@@ -42,22 +42,29 @@ describe('AI agents prompt builders', () => {
         expect(prompt).toContain('extend prior reading');
     });
 
-    it('tells the research agent to investigate rather than search once', () => {
+    it('tells the research agent to keep searching until it can answer, then stop', () => {
         const prompt = buildResearchAgentPrompt('fr', 'en', 'kjv');
 
-        expect(prompt).toContain('Start from the intent, not the wording');
-        expect(prompt).toContain('sub-questions the answer rests on');
-        expect(prompt).toContain('Let results redirect you');
-        expect(prompt).toContain('Look for what would contradict your emerging answer');
-        expect(prompt).toContain('One search is never enough');
+        expect(prompt).toContain('Do not stop after one weak search');
+        expect(prompt).toContain("run one more search with the prophet's own wording");
+        expect(prompt).toContain('Stop once you can answer the topic from cited sources');
     });
 
-    it('keeps the search mechanics the investigation runs on', () => {
+    /** Depth without a stopping rule cost minutes per reply and bought nothing. */
+    it('does not ask the research agent to search until the corpus runs dry', () => {
         const prompt = buildResearchAgentPrompt('fr', 'en', 'kjv');
 
-        expect(prompt).toContain('Search 2-3 content words');
-        expect(prompt).toContain('Mode "exact" first');
-        expect(prompt).toContain('Reuse `nextCursor`');
+        expect(prompt).not.toContain('One search is never enough');
+        expect(prompt).not.toContain('sub-questions');
+        expect(prompt).not.toContain('what would contradict');
+    });
+
+    it('keeps the search mechanics', () => {
+        const prompt = buildResearchAgentPrompt('fr', 'en', 'kjv');
+
+        expect(prompt).toContain('Extract 2-3 key content words');
+        expect(prompt).toContain('mode "exact" first');
+        expect(prompt).toContain('reuse `nextCursor`');
         expect(prompt).toContain('The index ignores accents');
     });
 

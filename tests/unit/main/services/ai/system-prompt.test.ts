@@ -18,8 +18,8 @@ describe('AI system prompt', () => {
         expect(prompt).toContain('For broad topic research, call **researchTopic** once');
         expect(prompt).toContain('Use direct sermon tools');
         expect(prompt).toContain('`searchContent` finds words inside sermon text');
-        expect(prompt).toContain('sub-questions the answer depends on');
-        expect(prompt).toContain('start from what the question depends on rather than its wording');
+        expect(prompt).toContain('returns a synthesis with citations');
+        expect(prompt).toContain('search again with the wording they use');
     });
 
     it('tells models to use sermon titles as visible citation labels', () => {
