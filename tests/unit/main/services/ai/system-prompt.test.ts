@@ -17,8 +17,9 @@ describe('AI system prompt', () => {
         expect(prompt).toContain('Use the subagents as the primary path');
         expect(prompt).toContain('For broad topic research, call **researchTopic** once');
         expect(prompt).toContain('Use direct sermon tools');
-        expect(prompt).toContain('Use searchContent (full-text search)');
-        expect(prompt).toContain('Use searchSermons only for metadata lookups');
+        expect(prompt).toContain('`searchContent` finds words inside sermon text');
+        expect(prompt).toContain('sub-questions the answer depends on');
+        expect(prompt).toContain('start from what the question depends on rather than its wording');
     });
 
     it('tells models to use sermon titles as visible citation labels', () => {
