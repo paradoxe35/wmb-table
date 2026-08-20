@@ -1,5 +1,6 @@
 // ── Provider identification ──
 export const SEGMENT_GAP_MS = 300;
+export const SEGMENT_GAP_MAX_MS = 2000;
 export type TtsProviderLocality = 'local' | 'remote';
 
 export interface TtsProviderMeta {

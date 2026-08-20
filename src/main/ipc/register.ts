@@ -14,6 +14,7 @@ import { registerHighlightsHandlers } from './highlights.ipc';
 import { registerTtsHandlers } from './tts.ipc';
 import { registerAiHandlers } from './ai.ipc';
 import { registerPowerHandlers } from './power.ipc';
+import { registerTimerHandlers } from './timer.ipc';
 
 /**
  * Type-safe wrapper around `ipcMain.handle`.
@@ -87,4 +88,5 @@ export function initializeIpc(): void {
     registerTtsHandlers();
     registerAiHandlers();
     registerPowerHandlers();
+    registerTimerHandlers();
 }

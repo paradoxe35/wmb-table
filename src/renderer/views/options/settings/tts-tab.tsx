@@ -24,7 +24,12 @@ import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
 import { markFeatureReminderUsed } from '@renderer/lib/feature-reminders';
 import { getTtsDemoText } from '@shared/tts-demo-texts';
-import { SEGMENT_GAP_MS, type TtsProviderType, type TtsSettings } from '@shared/tts.types';
+import {
+    SEGMENT_GAP_MAX_MS,
+    SEGMENT_GAP_MS,
+    type TtsProviderType,
+    type TtsSettings,
+} from '@shared/tts.types';
 import { PROVIDER_CATALOG } from '@shared/tts.types';
 import { LocalityTag, FreeTag, Field, Hint, formatBytes } from './tts-shared';
 import { debounce, getErrorMessage } from '@renderer/utils/functions';
@@ -411,7 +416,7 @@ export default function TtsTab() {
                     >
                         <Slider
                             min={0}
-                            max={2000}
+                            max={SEGMENT_GAP_MAX_MS}
                             step={50}
                             value={settings.segmentGapMs ?? SEGMENT_GAP_MS}
                             onChange={(v) => handleUpdate({ segmentGapMs: v })}
