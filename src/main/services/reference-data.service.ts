@@ -128,12 +128,14 @@ function toAvailableTranslation(meta: {
     languageCode: string;
     title: string;
     translationName?: string | null;
+    hasAudio: boolean;
 }): AvailableTranslation {
     return {
         translationId: meta.translationId,
         languageCode: meta.languageCode,
         title: meta.title,
         translationName: meta.translationName ?? null,
+        hasAudio: meta.hasAudio,
     };
 }
 
@@ -153,7 +155,6 @@ function updatePrimaryListItem(
     current.translationId = candidate.translationId;
     current.title = candidate.title;
     current.enTitle = candidate.enTitle;
-    current.hasAudio = candidate.hasAudio;
     current.dateMs = candidate.dateMs;
     current.location = candidate.location;
     current.cityState = candidate.cityState;
@@ -233,6 +234,7 @@ export function getSermonListDeduplicated(langCode: string): SermonListItemWithT
                         languageCode: meta.languageCode,
                         title: meta.title,
                         translationName: translation.translator_name,
+                        hasAudio: meta.hasAudio,
                     }),
                 ],
             });
@@ -245,8 +247,11 @@ export function getSermonListDeduplicated(langCode: string): SermonListItemWithT
                 languageCode: meta.languageCode,
                 title: meta.title,
                 translationName: translation.translator_name,
+                hasAudio: meta.hasAudio,
             }),
         );
+        // Audio is per translator: the sermon has audio when any translation does.
+        existing.hasAudio ||= meta.hasAudio;
         updatePrimaryListItem(existing, meta);
     }
 

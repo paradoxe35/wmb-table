@@ -1,5 +1,36 @@
 import { resolveDateLocale } from '@shared/constants';
-import type { SermonListItem, SermonMeta } from '@shared/types';
+import { getLanguageDisplayName } from '@shared/tts.types';
+import type {
+    AudioDocumentPlayRequest,
+    AvailableTranslation,
+    SermonListItem,
+    SermonMeta,
+} from '@shared/types';
+
+export function getTranslationLabel(
+    translation: Pick<AvailableTranslation, 'translationId' | 'translationName'>,
+): string {
+    return translation.translationName ?? `T${translation.translationId}`;
+}
+
+/** Returns null when the sermon has no recording for this translation. */
+export function toAudioPlayRequest(
+    meta: SermonMeta,
+    autoplay: boolean,
+): AudioDocumentPlayRequest | null {
+    if (!meta.audioLink) return null;
+
+    return {
+        title: meta.title,
+        audioLink: meta.audioLink,
+        languageLabel: getLanguageDisplayName(meta.languageCode),
+        languageCode: meta.languageCode,
+        sermonId: meta.sermonId,
+        translationId: meta.translationId,
+        translationName: meta.translationName,
+        autoplay,
+    };
+}
 
 export function getSermonYear(
     sermon: Pick<SermonMeta | SermonListItem, 'sermonId'>,

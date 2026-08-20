@@ -9,6 +9,7 @@ import { getDocumentIdentityFromTab, getDocumentIdentityKey } from '@shared/type
 import { formatShortDate } from '@renderer/utils/sermon-utils';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { useAudioStore, useSermonsById } from '@renderer/stores';
+import { isSermonAudioLoaded } from '@renderer/stores/audio.store';
 import { BibleIcons } from '../icons';
 
 const SpeakerSvg = () => (
@@ -38,9 +39,10 @@ function useTabAudioState(tab: DocumentTab) {
     const { audioPlaying, audioPaused } = useAudioStore((s) => {
         const isCurrentAudioTab =
             tab.type === 'sermon' &&
-            s.sermonId === tab.documentId &&
-            s.translationId === tab.translationId &&
-            s.languageCode === tab.languageCode;
+            isSermonAudioLoaded(s, {
+                sermonId: tab.documentId,
+                languageCode: tab.languageCode,
+            });
 
         return {
             audioPlaying: isCurrentAudioTab && s.currentPlay?.status === 'play',

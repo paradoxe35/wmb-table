@@ -21,6 +21,7 @@ import { useAppStore, useInstalledLanguagesStore } from '@renderer/stores';
 import { useOpenDocumentRequest, useFormatSermonDate } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import SidebarBibleBrowser from './sidebar-bible-browser';
+import { getTranslationLabel } from '@renderer/utils/sermon-utils';
 import { searchList, strNormalize } from '@renderer/utils/searchable';
 import { LANGUAGE_EVENT, CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
 import { interactiveProps } from '@renderer/utils/interactive';
@@ -421,7 +422,7 @@ const ItemOutline = React.memo<{
                     <div className="sidebar-item__tags">
                         {sermon.availableTranslations.map((t) => (
                             <Tag key={t.translationId} color="blue" className="translation-tag">
-                                {t.translationName ?? `T${t.translationId}`}
+                                {getTranslationLabel(t)}
                             </Tag>
                         ))}
                     </div>

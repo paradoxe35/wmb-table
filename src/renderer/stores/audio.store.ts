@@ -41,6 +41,18 @@ interface AudioState {
     setError(error: string | null): void;
 }
 
+/**
+ * Recordings are stored per translation, but they are all the same sermon:
+ * true when the loaded audio belongs to this sermon in this language,
+ * whichever translation it came from.
+ */
+export function isSermonAudioLoaded(
+    state: Pick<AudioState, 'sermonId' | 'languageCode'>,
+    sermon: { sermonId: string; languageCode: string },
+): boolean {
+    return state.sermonId === sermon.sermonId && state.languageCode === sermon.languageCode;
+}
+
 export const useAudioStore = createStore<AudioState>((set) => ({
     currentPlay: null,
     audioSrc: null,

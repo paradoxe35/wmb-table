@@ -7,6 +7,7 @@ import {
     PauseCircleOutlined,
     TranslationOutlined,
     SearchOutlined,
+    SoundOutlined,
 } from '@ant-design/icons';
 import {
     useDocumentTabsStore,
@@ -14,24 +15,39 @@ import {
     useAudioStore,
     selectActiveTabKey,
 } from '@renderer/stores';
+import { isSermonAudioLoaded } from '@renderer/stores/audio.store';
 import { usePrepareTabIdentityChange } from '@renderer/hooks';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
-import type {
-    AvailableTranslation,
-    AudioDocumentPlayRequest,
-    SermonMeta,
-    SermonParagraph,
-} from '@shared/types';
+import type { AvailableTranslation, SermonMeta, SermonParagraph } from '@shared/types';
 import {
     CHILD_PARENT_WINDOW_EVENT,
-    type AudioDocumentPlayDetail,
+    requestAudioDocumentPlay,
     type OpenOtherTranslationsModalDetail,
 } from '@renderer/utils/events';
-import { getLanguageDisplayName } from '@shared/tts.types';
+import { getTranslationLabel, toAudioPlayRequest } from '@renderer/utils/sermon-utils';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
 import { TtsButton, ZoomControls, type TtsControls } from './tts-controls';
 import { useDocumentZoom } from './hooks';
 import { DocumentHeaderTitle } from './document-header-title';
+
+function TranslationOption({
+    translation,
+    playing,
+}: {
+    translation: AvailableTranslation;
+    playing: boolean;
+}) {
+    return (
+        <Space size={4}>
+            {getTranslationLabel(translation)}
+            {translation.hasAudio && (
+                <SoundOutlined
+                    style={{ color: playing ? 'var(--ant-color-primary)' : undefined }}
+                />
+            )}
+        </Space>
+    );
+}
 
 export default function SermonHeader({
     meta,
@@ -63,39 +79,22 @@ export default function SermonHeader({
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     const currentPlay = useAudioStore((s) => s.currentPlay);
-    const audioSermonId = useAudioStore((s) => s.sermonId);
     const audioTranslationId = useAudioStore((s) => s.translationId);
-    const audioLanguageCode = useAudioStore((s) => s.languageCode);
-    const isCurrentDocument =
-        audioSermonId === meta.sermonId &&
-        audioTranslationId === meta.translationId &&
-        audioLanguageCode === meta.languageCode;
-    const isPlaying = isCurrentDocument && currentPlay?.status === 'play';
+    const isSermonAudio = useAudioStore((s) => isSermonAudioLoaded(s, meta));
+    const isAudioPlaying = currentPlay?.status === 'play';
+    const isCurrentDocument = isSermonAudio && audioTranslationId === meta.translationId;
+    const isPlaying = isCurrentDocument && isAudioPlaying;
+    const playingTranslationId = isSermonAudio && isAudioPlaying ? audioTranslationId : null;
 
     const hasMultipleTranslations = availableTranslations.length > 1;
 
     const handleAudioPlay = useCallback(() => {
-        if (!meta.audioLink) return;
+        const request = toAudioPlayRequest(meta, true);
+        if (!request) return;
 
         setAudioTooltipOpen(false);
         setAudioTooltipSuppressed(true);
-
-        const detail: AudioDocumentPlayRequest = {
-            title: meta.title,
-            audioLink: meta.audioLink,
-            languageLabel: getLanguageDisplayName(meta.languageCode),
-            languageCode: meta.languageCode,
-            sermonId: meta.sermonId,
-            translationId: meta.translationId,
-            translationName: meta.translationName,
-            autoplay: true,
-        };
-
-        window.dispatchEvent(
-            new CustomEvent<AudioDocumentPlayDetail>(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, {
-                detail,
-            }),
-        );
+        requestAudioDocumentPlay(request);
     }, [meta]);
 
     const handleOtherTranslations = useCallback(() => {
@@ -152,12 +151,19 @@ export default function SermonHeader({
         ],
     );
 
-    const translationOptions = useMemo(() => {
-        return availableTranslations.map((translation) => ({
-            label: translation.translationName ?? `T${translation.translationId}`,
-            value: translation.translationId,
-        }));
-    }, [availableTranslations]);
+    const translationOptions = useMemo(
+        () =>
+            availableTranslations.map((translation) => ({
+                label: (
+                    <TranslationOption
+                        translation={translation}
+                        playing={translation.translationId === playingTranslationId}
+                    />
+                ),
+                value: translation.translationId,
+            })),
+        [availableTranslations, playingTranslationId],
+    );
 
     const canOpenTranslations = Boolean(meta.sermonId);
     const leftSlotClass = [

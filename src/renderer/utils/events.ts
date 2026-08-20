@@ -78,6 +78,14 @@ export type OpenOtherTranslationsModalDetail = {
 
 export type AudioDocumentPlayDetail = AudioDocumentPlayRequest;
 
+export function requestAudioDocumentPlay(detail: AudioDocumentPlayDetail): void {
+    window.dispatchEvent(
+        new CustomEvent<AudioDocumentPlayDetail>(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, {
+            detail,
+        }),
+    );
+}
+
 export type OpenHighlightModalDetail = Omit<HighlightCreateData, 'color' | 'comment'>;
 
 export type AddDocumentReferenceDetail = DocumentReferenceSelection & {

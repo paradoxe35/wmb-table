@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Modal, Slider, Space } from 'antd';
+import { Button, Modal, Segmented, Slider, Space } from 'antd';
 import {
     PlayCircleOutlined,
     PauseCircleOutlined,
@@ -12,8 +12,11 @@ import { useAudioStore } from '@renderer/stores';
 import { useOpenDocumentRequest } from '@renderer/hooks';
 import { useAudioControls } from '@renderer/hooks/use-audio-controls';
 import { useAudioKeyboard } from '@renderer/hooks/use-audio-keyboard';
+import { useSermonAudioSwitch } from '@renderer/hooks/use-sermon-audio-switch';
 import { formatTime } from '@renderer/utils/functions';
+import { getTranslationLabel } from '@renderer/utils/sermon-utils';
 import { AUDIO_SPEEDS } from '@renderer/utils/constants';
+import type { SermonMeta } from '@shared/types';
 
 // ── Sub-components ──
 
@@ -37,24 +40,46 @@ function TrackInfo({
     return (
         <>
             <h3
-                style={{ cursor: 'pointer', marginBottom: 4 }}
+                style={{ cursor: 'pointer', margin: 0 }}
                 className="hover-underline"
                 onClick={onTitleClick}
             >
                 {title}
             </h3>
-            {details.length > 0 && (
+            {details.map((detail) => (
                 <div
+                    key={detail}
                     style={{
                         color: 'var(--ant-color-text-secondary)',
                         fontSize: 'var(--fs-rel-3xl)',
-                        marginBottom: 16,
                     }}
                 >
-                    {details.join(' · ')}
+                    {detail}
                 </div>
-            )}
+            ))}
         </>
+    );
+}
+
+function TranslationSwitch({
+    translations,
+    activeTranslationId,
+    onSelect,
+}: {
+    translations: SermonMeta[];
+    activeTranslationId: number | null;
+    onSelect: (translationId: number) => void;
+}) {
+    return (
+        <Segmented
+            size="small"
+            value={activeTranslationId ?? undefined}
+            onChange={(value) => onSelect(Number(value))}
+            options={translations.map((translation) => ({
+                label: getTranslationLabel(translation),
+                value: translation.translationId,
+            }))}
+        />
     );
 }
 
@@ -194,7 +219,16 @@ export default function DocumentAudioPlayer() {
     const controls = useAudioControls();
     useAudioKeyboard(controls, modalOpen);
 
+    const { translations, activeTranslationId, selectTranslation, syncTabToPlayingTranslation } =
+        useSermonAudioSwitch();
+    const canSwitchTranslation = translations.length > 1;
+
     const isPlaying = currentPlay?.status === 'play';
+
+    const handlePlayPause = useCallback(() => {
+        if (!isPlaying) syncTabToPlayingTranslation();
+        controls.playPause();
+    }, [controls, isPlaying, syncTabToPlayingTranslation]);
 
     const handleTitleClick = useCallback(() => {
         if (!title || !sermonId || translationId == null || !languageCode) {
@@ -215,16 +249,33 @@ export default function DocumentAudioPlayer() {
         <Modal title={null} footer={null} width={500} open={modalOpen} onCancel={closeModal}>
             {title && (
                 <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                    <TrackInfo
-                        title={title}
-                        languageLabel={languageLabel}
-                        translationName={translationName}
-                        onTitleClick={handleTitleClick}
-                    />
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 6,
+                            marginBottom: 16,
+                        }}
+                    >
+                        <TrackInfo
+                            title={title}
+                            languageLabel={languageLabel}
+                            translationName={canSwitchTranslation ? null : translationName}
+                            onTitleClick={handleTitleClick}
+                        />
+                        {canSwitchTranslation && (
+                            <TranslationSwitch
+                                translations={translations}
+                                activeTranslationId={activeTranslationId}
+                                onSelect={selectTranslation}
+                            />
+                        )}
+                    </div>
                     <SeekBar currentTime={currentTime} duration={duration} onSeek={controls.seek} />
                     <PlaybackControls
                         isPlaying={isPlaying}
-                        onPlayPause={controls.playPause}
+                        onPlayPause={handlePlayPause}
                         onSkipBack={() => controls.skipBack()}
                         onJumpForward={() => controls.jumpForward()}
                     />
