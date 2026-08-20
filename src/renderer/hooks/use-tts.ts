@@ -3,6 +3,7 @@ import { message } from 'antd';
 import i18next from 'i18next';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
+import { UnthrottledTimer } from '@renderer/services/unthrottled-timer';
 import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { getTtsPlaybackErrorMessage } from '@renderer/lib/tts-error';
 import { segmentParagraphsBySentence } from '@renderer/lib/tts-segmentation';
@@ -172,7 +173,7 @@ export async function startTtsPlayback(
 
 // ── Browser TTS ──
 
-let browserTtsGapTimer: ReturnType<typeof setTimeout> | null = null;
+const browserGapTimer = new UnthrottledTimer();
 let browserPendingGap: {
     segments: TtsSegment[];
     index: number;
@@ -183,10 +184,7 @@ let browserPendingGap: {
 } | null = null;
 
 function clearBrowserTtsTimer(): void {
-    if (browserTtsGapTimer != null) {
-        clearTimeout(browserTtsGapTimer);
-        browserTtsGapTimer = null;
-    }
+    browserGapTimer.cancel();
     browserPendingGap = null;
 }
 
@@ -212,10 +210,7 @@ function armBrowserGapTimer(): void {
         return;
     }
 
-    if (browserTtsGapTimer != null) {
-        clearTimeout(browserTtsGapTimer);
-        browserTtsGapTimer = null;
-    }
+    browserGapTimer.cancel();
 
     const remainingMs = getBrowserGapRemainingMs();
     if (remainingMs <= 0) {
@@ -229,8 +224,7 @@ function armBrowserGapTimer(): void {
     }
 
     browserPendingGap.startedAt = Date.now();
-    browserTtsGapTimer = setTimeout(() => {
-        browserTtsGapTimer = null;
+    browserGapTimer.schedule(remainingMs, () => {
         captureBrowserGapProgress();
 
         if (!browserPendingGap) {
@@ -252,7 +246,7 @@ function armBrowserGapTimer(): void {
         const pending = browserPendingGap;
         browserPendingGap = null;
         playBrowserSegment(pending.segments, pending.index, pending.actions, pending.getStatus);
-    }, remainingMs);
+    });
 }
 
 function scheduleBrowserNextSegment(
@@ -277,10 +271,7 @@ function pauseBrowserGapTimer(): boolean {
     if (!browserPendingGap) {
         return false;
     }
-    if (browserTtsGapTimer != null) {
-        clearTimeout(browserTtsGapTimer);
-        browserTtsGapTimer = null;
-    }
+    browserGapTimer.cancel();
     captureBrowserGapProgress();
     return true;
 }
@@ -297,10 +288,7 @@ export function resyncBrowserGapTimer(): void {
     if (!browserPendingGap) {
         return;
     }
-    if (browserTtsGapTimer != null) {
-        clearTimeout(browserTtsGapTimer);
-        browserTtsGapTimer = null;
-    }
+    browserGapTimer.cancel();
     captureBrowserGapProgress();
     if (browserPendingGap.getStatus() === 'paused') {
         return;

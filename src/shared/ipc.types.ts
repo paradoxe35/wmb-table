@@ -214,6 +214,10 @@ export const PowerChannels = {
     setActive: 'power:setActive',
 } as const;
 
+export const TimerChannels = {
+    wait: 'timer:wait',
+} as const;
+
 export const AppChannels = {
     isInitialized: 'app:isInitialized',
     initialize: 'app:initialize',
@@ -509,6 +513,9 @@ export interface InvokeChannelMap {
 
     // Power save
     [PowerChannels.setActive]: { args: [boolean]; return: void };
+
+    // Timer
+    [TimerChannels.wait]: { args: [number]; return: void };
 
     // App
     [AppChannels.isInitialized]: { args: []; return: boolean };

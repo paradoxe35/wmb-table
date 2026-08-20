@@ -52,14 +52,16 @@ export function TtsButton({ tts }: { tts: TtsControls }) {
         );
     }
 
+    const canResume = tts.isPaused || tts.canResume;
+
     const label = tts.isPlaying
         ? t('Pause voix')
-        : tts.isPaused || tts.canResume
+        : canResume
           ? t('Reprendre la voix')
           : t('Lire à voix haute');
 
     const handler = tts.isPlaying ? tts.pause : tts.isPaused ? tts.resume : tts.play;
-    const isActive = tts.isPlaying || tts.isPaused;
+    const isActive = tts.isPlaying || canResume;
 
     return (
         <Tooltip title={label}>

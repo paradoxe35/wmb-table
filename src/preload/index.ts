@@ -14,6 +14,7 @@ import {
     TtsChannels,
     AiChannels,
     PowerChannels,
+    TimerChannels,
     PushChannels,
     type InvokeChannel,
     type InvokeChannelMap,
@@ -319,6 +320,10 @@ const api = {
 
     power: {
         setActive: (active: boolean) => invoke(PowerChannels.setActive, active),
+    },
+
+    timer: {
+        wait: (delayMs: number) => invoke(TimerChannels.wait, delayMs),
     },
 
     ai: {
