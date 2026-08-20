@@ -9,6 +9,7 @@ import { PushChannels } from '@shared/ipc.types';
 import { getTtsDemoText } from '@shared/tts-demo-texts';
 import type { TtsProvider } from './provider';
 import { TtsCache } from './tts-cache';
+import { disposeSilenceTrimming } from './silence';
 import type { CacheHit } from './tts-cache';
 import { OpenAiProvider } from './openai.provider';
 import { SherpaProvider } from './sherpa.provider';
@@ -39,6 +40,9 @@ const pLimit = resolveDefaultExport(pLimitModule);
 
 /** A prepared playback segment is always a disk cache reference. */
 type PreparedSegment = CacheHit;
+
+/** Bump when synthesized audio is processed differently, so cached segments are superseded. */
+const AUDIO_PIPELINE_VERSION = 'trim-silence-v1';
 
 function getReferenceVoiceMimeType(fileName: string): string {
     switch (extname(fileName).toLowerCase()) {
@@ -404,13 +408,14 @@ export class TtsService {
 
         const cfg = this.settings.providers[providerType];
         const text = getTtsDemoText(language);
-        return provider.previewVoice({
+        const preview = await provider.previewVoice({
             text,
             language,
             voiceId: voiceId ?? cfg?.voiceId,
             model: cfg?.model,
             rate: 1,
         });
+        return provider.trimSilence(preview);
     }
 
     async deleteClonedVoice(providerType: TtsProviderType, voiceId: string): Promise<void> {
@@ -435,6 +440,7 @@ export class TtsService {
 
     async dispose(): Promise<void> {
         await this.cache.flush();
+        disposeSilenceTrimming();
         for (const provider of this.providers.values()) {
             provider.dispose();
         }
@@ -587,7 +593,7 @@ export class TtsService {
             model: cfg?.model,
             rate: 1,
         });
-        return this.cache.set(cacheKey, result);
+        return this.cache.set(cacheKey, await provider.trimSilence(result));
     }
 
     private toSegmentAudioPayload(index: number, hit: CacheHit, queued = false) {
@@ -612,7 +618,10 @@ export class TtsService {
         model: string,
         rate: number,
     ): TtsCacheKey {
-        const hash = createHash('sha256').update(text).digest('hex').substring(0, 16);
+        const hash = createHash('sha256')
+            .update(`${AUDIO_PIPELINE_VERSION}:${text}`)
+            .digest('hex')
+            .substring(0, 16);
         return {
             provider,
             model,

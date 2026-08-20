@@ -7,7 +7,11 @@ import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useAudioRef } from './audio-context';
 import { useAudioControls } from '@renderer/hooks/use-audio-controls';
-import { CHILD_PARENT_WINDOW_EVENT, type AudioDocumentPlayDetail } from '@renderer/utils/events';
+import {
+    CHILD_PARENT_WINDOW_EVENT,
+    requestAudioDocumentPlay,
+    type AudioDocumentPlayDetail,
+} from '@renderer/utils/events';
 import { throttle, formatTime } from '@renderer/utils/functions';
 import { AUDIO_SPEEDS, THROTTLE_MS } from '@renderer/utils/constants';
 
@@ -288,17 +292,7 @@ export default function MiniPlayerBar() {
         window.api.audio.getLastPlay().then((data) => {
             if (data) {
                 autoplayRef.current = false;
-                window.dispatchEvent(
-                    new CustomEvent<AudioDocumentPlayDetail>(
-                        CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay,
-                        {
-                            detail: {
-                                ...data,
-                                autoplay: false,
-                            },
-                        },
-                    ),
-                );
+                requestAudioDocumentPlay({ ...data, autoplay: false });
             }
         });
     }, []);

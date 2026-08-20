@@ -6,7 +6,7 @@ import { pipeline } from 'node:stream/promises';
 import { basename, join, extname } from 'node:path';
 import { extract as tarExtract } from 'tar';
 import unbzip2 from 'unbzip2-stream';
-import { pcmToWav } from './utils.worker';
+import { encodeWav } from './wav';
 import type { TtsModelDownloadProgress } from '@shared/tts.types';
 import { downloadResumableFile } from '@main/lib/resumable-download';
 
@@ -311,7 +311,7 @@ function getNumSpeakers(): number {
 function synthesize(text: string, speakerId: number, speed: number): string {
     if (!ttsInstance) throw new Error('Sherpa-ONNX TTS not initialized');
     const audio = ttsInstance.generate({ text, sid: speakerId, speed });
-    const wavBuffer = pcmToWav(audio.samples, audio.sampleRate);
+    const wavBuffer = encodeWav(audio.samples, audio.sampleRate);
     return wavBuffer.toString('base64');
 }
 

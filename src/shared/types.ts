@@ -60,6 +60,7 @@ export interface AvailableTranslation {
     languageCode: string;
     title: string;
     translationName: string | null;
+    hasAudio: boolean;
 }
 
 export interface SermonListItem {

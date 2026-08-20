@@ -69,6 +69,7 @@
         "lodash": "^4.18.1",
         "mammoth": "^1.12.1",
         "marked": "^17.0.6",
+        "mpg123-decoder": "^1.0.3",
         "node-downloader-helper": "^2.1.11",
         "node-edge-tts": "^1.2.10",
         "p-limit": "^7.3.1",
