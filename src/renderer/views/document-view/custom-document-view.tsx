@@ -239,7 +239,7 @@ export default function CustomDocumentView() {
                 />
             }
         >
-            <div className="sermon-content-header">
+            <div className="sermon-content-header" data-document-start>
                 <h2 className="sermon-content-header__title">{docContent?.title}</h2>
             </div>
             <ParagraphList
