@@ -7,7 +7,7 @@ export default function SermonContentHeader({ meta }: { meta: SermonMeta }) {
     const formatDate = useFormatSermonDate(meta.languageCode);
 
     return (
-        <div className="sermon-content-header">
+        <div className="sermon-content-header" data-document-start>
             <h2 className="sermon-content-header__title">{meta.title}</h2>
             {meta.dateMs !== 0 && (
                 <div className="sermon-content-header__date">

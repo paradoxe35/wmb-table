@@ -70,10 +70,7 @@ export function parseMp3Frames(buffer: Buffer): Mp3Frame[] {
     return frames;
 }
 
-/**
- * Cuts on frame boundaries so the retained audio is never re-encoded. Returns null when the
- * bounds already cover every frame.
- */
+/** Cuts on frame boundaries so audio is never re-encoded. Null when nothing is trimmed. */
 export function sliceMp3BySamples(
     buffer: Buffer,
     frames: Mp3Frame[],

@@ -52,6 +52,11 @@ function TranslationOption({
     );
 }
 
+const audioActiveStyle = {
+    color: 'var(--ant-color-primary)',
+    backgroundColor: 'var(--ant-color-primary-bg)',
+};
+
 export default function SermonHeader({
     meta,
     zoom,
@@ -208,14 +213,7 @@ export default function SermonHeader({
                                 setAudioTooltipSuppressed(false);
                             }}
                             aria-label={isPlaying ? t('Pause audio') : t("Écouter l'audio")}
-                            style={
-                                isCurrentDocument
-                                    ? {
-                                          color: 'var(--ant-color-primary)',
-                                          backgroundColor: 'var(--ant-color-primary-bg)',
-                                      }
-                                    : undefined
-                            }
+                            style={isPlaying ? audioActiveStyle : undefined}
                         />
                     </Tooltip>
                 )}

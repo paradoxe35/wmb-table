@@ -326,9 +326,7 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
                             documentId: nextTab.documentId,
                             translationId: nextTab.translationId,
                             languageCode: nextTab.languageCode,
-                            // Clear rather than zero: the previous translation's
-                            // scroll must not carry over, and leaving it unset lets
-                            // the target translation's own saved position restore.
+                            // Unset, not zero: lets the target's saved position restore.
                             scrollY: undefined,
                             scrollX: undefined,
                         };

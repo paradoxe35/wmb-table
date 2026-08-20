@@ -70,7 +70,7 @@ export default function MiniPlayerBar() {
     const setCurrentPlay = useAudioStore((s) => s.setCurrentPlay);
     const loadAudio = useAudioStore((s) => s.loadAudio);
     const openModal = useAudioStore((s) => s.openModal);
-    const resetTts = useTtsStore((s) => s.reset);
+    const stopAndRememberTts = useTtsStore((s) => s.stopAndRemember);
 
     const controls = useAudioControls();
 
@@ -114,10 +114,10 @@ export default function MiniPlayerBar() {
         };
         const onLoadedMetadata = () => setDuration(el.duration);
         const onPlay = () => {
-            // Stop TTS when sermon audio starts
+            // Remember, don't reset: the reading position must survive the interruption.
             if (useTtsStore.getState().status !== 'idle') {
                 stopAllTtsPlayback();
-                resetTts();
+                stopAndRememberTts();
             }
 
             setCurrentPlay({
@@ -151,7 +151,7 @@ export default function MiniPlayerBar() {
             el.removeEventListener('pause', onPause);
             el.removeEventListener('ended', onEnded);
         };
-    }, [audioRef, resetTts, setCurrentTime, setDuration, setCurrentPlay, saveTime]);
+    }, [audioRef, stopAndRememberTts, setCurrentTime, setDuration, setCurrentPlay, saveTime]);
 
     // Pause sermon audio when TTS starts
     useEffect(() => {

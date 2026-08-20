@@ -1,7 +1,13 @@
 import { eq } from 'drizzle-orm';
 import { getDb } from '../index';
 import { ttsSettings } from '../schema';
-import type { TtsHighlightMode, TtsSettings, TtsProviderType } from '@shared/tts.types';
+import { SimpleCache } from '@main/lib/simple-cache';
+import type {
+    TtsHighlightMode,
+    TtsLastPosition,
+    TtsSettings,
+    TtsProviderType,
+} from '@shared/tts.types';
 import { createDefaultTtsSettings, SEGMENT_GAP_MS } from '@shared/tts.types';
 
 // Fixed ID so that all devices share the same row via Google Drive sync.
@@ -99,4 +105,18 @@ export function updateSettings(partial: Partial<TtsSettings>): TtsSettings {
     }
 
     return ensureSettings();
+}
+
+const lastPositionCache = new SimpleCache<TtsLastPosition>('tts-last-position');
+
+export function getLastPosition(): TtsLastPosition | null {
+    return lastPositionCache.get();
+}
+
+export function setLastPosition(position: TtsLastPosition | null): void {
+    if (position) {
+        lastPositionCache.set(position);
+    } else {
+        lastPositionCache.remove();
+    }
 }

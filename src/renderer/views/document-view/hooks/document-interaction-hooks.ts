@@ -26,6 +26,9 @@ import { useThemeStore } from '@renderer/stores/theme.store';
 import { formatDocumentSelectionForClipboard } from '../copy-format';
 
 const PARAGRAPH_SELECTOR = '[data-paragraph-index]';
+const DOCUMENT_START_SELECTOR = '[data-document-start]';
+// Sorts before every paragraph, and matches the intro segment when one is built.
+const DOCUMENT_START_INDEX = -1;
 
 function parseParagraphIndex(el: Element): number {
     return parseInt(el.getAttribute('data-paragraph-index') ?? '0', 10);
@@ -181,8 +184,12 @@ export function useContextMenuItems(
             }
 
             const target = contextTargetRef.current;
-            const paragraph = target instanceof Element ? target.closest(PARAGRAPH_SELECTOR) : null;
-            return paragraph ? parseParagraphIndex(paragraph) : null;
+            if (!(target instanceof Element)) return null;
+
+            const paragraph = target.closest(PARAGRAPH_SELECTOR);
+            if (paragraph) return parseParagraphIndex(paragraph);
+
+            return target.closest(DOCUMENT_START_SELECTOR) ? DOCUMENT_START_INDEX : null;
         };
 
         const getBibleVerse = (paragraphIndex: number): BibleBook | undefined =>

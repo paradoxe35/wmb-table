@@ -398,18 +398,33 @@ export function useTts(
     const currentDocumentKey = useTtsStore((s) => s.documentKey);
     const currentSegmentIndex = useTtsStore((s) => s.currentSegmentIndex);
     const totalSegments = useTtsStore((s) => s.totalSegments);
-    const segments = useTtsStore((s) => s.segments);
     const setPlaybackState = useTtsStore((s) => s.setPlaybackState);
     const languageSupported = useTtsStore((s) => s.languageSupported);
     const incompatibleMessage = useTtsStore((s) => s.incompatibleMessage);
     const stopAndRemember = useTtsStore((s) => s.stopAndRemember);
     const reset = useTtsStore((s) => s.reset);
     const markCompletedNaturally = useTtsStore((s) => s.markCompletedNaturally);
+    const lastStoppedDocumentKey = useTtsStore((s) => s.lastStoppedDocumentKey);
+    const lastStoppedSegmentIndex = useTtsStore((s) => s.lastStoppedSegmentIndex);
     const activeProvider = settings?.activeProvider;
+    const pendingContentRebuildRef = useRef(false);
 
     const play = useCallback(async () => {
         await startTtsPlayback(paragraphs, language, documentKey, options);
     }, [documentKey, language, options, paragraphs]);
+
+    const playFromParagraph = useCallback(
+        async (paragraphIndex: number) => {
+            await startTtsPlayback(paragraphs, language, documentKey, options, paragraphIndex);
+        },
+        [documentKey, language, options, paragraphs],
+    );
+
+    const replayFromCurrentParagraph = useCallback(() => {
+        const state = useTtsStore.getState();
+        const paragraphIndex = state.segments[state.currentSegmentIndex]?.paragraphIndex ?? 0;
+        return playFromParagraph(Math.max(1, paragraphIndex));
+    }, [playFromParagraph]);
 
     const pause = useCallback(() => {
         if (activeProvider === 'browser') {
@@ -429,6 +444,12 @@ export function useTts(
     }, [activeProvider, currentSegmentIndex, setPlaybackState, totalSegments]);
 
     const resume = useCallback(() => {
+        if (pendingContentRebuildRef.current) {
+            pendingContentRebuildRef.current = false;
+            void replayFromCurrentParagraph();
+            return;
+        }
+
         if (activeProvider === 'browser') {
             if (!resumeBrowserGapTimer()) {
                 browserTts.resume();
@@ -443,9 +464,16 @@ export function useTts(
             totalSegments,
             provider: activeProvider ?? DEFAULT_TTS_PROVIDER,
         });
-    }, [activeProvider, currentSegmentIndex, setPlaybackState, totalSegments]);
+    }, [
+        activeProvider,
+        currentSegmentIndex,
+        replayFromCurrentParagraph,
+        setPlaybackState,
+        totalSegments,
+    ]);
 
     const stop = useCallback(() => {
+        pendingContentRebuildRef.current = false;
         clearBrowserTtsTimer();
         browserTts.cancel();
         stopAllTtsPlayback();
@@ -476,47 +504,37 @@ export function useTts(
         [activeProvider, markCompletedNaturally, reset, setPlaybackState, settings],
     );
 
-    const playFromParagraph = useCallback(
-        async (paragraphIndex: number) => {
-            await startTtsPlayback(paragraphs, language, documentKey, options, paragraphIndex);
-        },
-        [documentKey, language, options, paragraphs],
-    );
-
-    // Restart playback from current paragraph when content-shaping settings change
-    const contentKey = `${settings?.announceSegmentNumbers}:${settings?.readIntroduction}:${settings?.highlightMode}`;
+    // readIntroduction excluded: the intro is at paragraphIndex -1, restarts resolve >= 1.
+    const contentKey = `${settings?.announceSegmentNumbers}:${settings?.highlightMode}`;
     const contentKeyRef = useRef(contentKey);
     useEffect(() => {
-        if (contentKeyRef.current !== contentKey) {
-            contentKeyRef.current = contentKey;
-            if (
-                currentDocumentKey === documentKey &&
-                (status === 'playing' || status === 'paused')
-            ) {
-                const currentSeg = segments[currentSegmentIndex];
-                const paragraphIdx = currentSeg?.paragraphIndex ?? 0;
-                playFromParagraph(Math.max(1, paragraphIdx));
-            }
+        if (contentKeyRef.current === contentKey) return;
+        contentKeyRef.current = contentKey;
+        if (currentDocumentKey !== documentKey) return;
+
+        if (status === 'playing') {
+            void replayFromCurrentParagraph();
+        } else if (status === 'paused') {
+            pendingContentRebuildRef.current = true;
         }
-    }, [
-        contentKey,
-        currentDocumentKey,
-        currentSegmentIndex,
-        documentKey,
-        playFromParagraph,
-        segments,
-        status,
-    ]);
+    }, [contentKey, currentDocumentKey, documentKey, replayFromCurrentParagraph, status]);
 
     const isThisDocument = currentDocumentKey === documentKey;
     const isPlaying = isThisDocument && (status === 'playing' || status === 'loading');
     const isPaused = isThisDocument && status === 'paused';
+    // play() picks the saved position up on its own; this only lets the UI say so.
+    const canResume =
+        !isPlaying &&
+        !isPaused &&
+        lastStoppedDocumentKey === documentKey &&
+        lastStoppedSegmentIndex > 0;
 
     return {
         canSpeak: languageSupported,
         incompatibleMessage,
         isPlaying,
         isPaused,
+        canResume,
         play,
         pause,
         resume,

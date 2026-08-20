@@ -41,7 +41,7 @@ const pLimit = resolveDefaultExport(pLimitModule);
 /** A prepared playback segment is always a disk cache reference. */
 type PreparedSegment = CacheHit;
 
-/** Bump when synthesized audio is processed differently, so cached segments are superseded. */
+/** Bump when audio processing changes, to supersede cached segments. */
 const AUDIO_PIPELINE_VERSION = 'trim-silence-v1';
 
 function getReferenceVoiceMimeType(fileName: string): string {

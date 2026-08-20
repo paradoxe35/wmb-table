@@ -65,7 +65,7 @@ function BibleContentHeader({
     const chapterLabel = chapter ? `${getChapterLabel(bibleLang)} ${chapter}` : null;
 
     return (
-        <div className="sermon-content-header">
+        <div className="sermon-content-header" data-document-start>
             <h2 className="sermon-content-header__title">{bookName}</h2>
             {chapterLabel && <div className="sermon-content-header__date">{chapterLabel}</div>}
             {versionName && (

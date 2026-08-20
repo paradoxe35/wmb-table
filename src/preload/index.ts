@@ -41,6 +41,7 @@ import type {
     TtsProviderType,
     TtsSettings,
     TtsSegment,
+    TtsLastPosition,
     TtsVoiceCloneRequest,
 } from '@shared/tts.types';
 import type {
@@ -283,6 +284,9 @@ const api = {
     tts: {
         getProviders: () => invoke(TtsChannels.getProviders),
         getSettings: () => invoke(TtsChannels.getSettings),
+        getLastPosition: () => invoke(TtsChannels.getLastPosition),
+        setLastPosition: (position: TtsLastPosition | null) =>
+            invoke(TtsChannels.setLastPosition, position),
         updateSettings: (s: Partial<TtsSettings>) => invoke(TtsChannels.updateSettings, s),
         startPlayback: (segs: TtsSegment[], lang: string, startIndex?: number) =>
             invoke(TtsChannels.startPlayback, segs, lang, startIndex),
