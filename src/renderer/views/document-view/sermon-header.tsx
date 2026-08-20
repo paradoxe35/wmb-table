@@ -38,11 +38,14 @@ function TranslationOption({
     playing: boolean;
 }) {
     return (
-        <Space size={4} align='center'>
+        <Space size={4} align="center">
             {getTranslationLabel(translation)}
             {translation.hasAudio && (
                 <CustomerServiceOutlined
-                    style={{ color: playing ? 'var(--ant-color-primary)' : undefined, fontSize: 'var(--fs-md)' }}
+                    style={{
+                        color: playing ? 'var(--ant-color-primary)' : undefined,
+                        fontSize: 'var(--fs-md)',
+                    }}
                 />
             )}
         </Space>
