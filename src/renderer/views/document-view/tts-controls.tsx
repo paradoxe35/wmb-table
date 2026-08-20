@@ -17,6 +17,7 @@ export interface TtsControls {
     incompatibleMessage?: string;
     isPlaying: boolean;
     isPaused: boolean;
+    canResume: boolean;
     play: () => void;
     pause: () => void;
     resume: () => void;
@@ -53,7 +54,7 @@ export function TtsButton({ tts }: { tts: TtsControls }) {
 
     const label = tts.isPlaying
         ? t('Pause voix')
-        : tts.isPaused
+        : tts.isPaused || tts.canResume
           ? t('Reprendre la voix')
           : t('Lire à voix haute');
 

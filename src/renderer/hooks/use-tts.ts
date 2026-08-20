@@ -404,6 +404,8 @@ export function useTts(
     const stopAndRemember = useTtsStore((s) => s.stopAndRemember);
     const reset = useTtsStore((s) => s.reset);
     const markCompletedNaturally = useTtsStore((s) => s.markCompletedNaturally);
+    const lastStoppedDocumentKey = useTtsStore((s) => s.lastStoppedDocumentKey);
+    const lastStoppedSegmentIndex = useTtsStore((s) => s.lastStoppedSegmentIndex);
     const activeProvider = settings?.activeProvider;
     const pendingContentRebuildRef = useRef(false);
 
@@ -520,12 +522,19 @@ export function useTts(
     const isThisDocument = currentDocumentKey === documentKey;
     const isPlaying = isThisDocument && (status === 'playing' || status === 'loading');
     const isPaused = isThisDocument && status === 'paused';
+    // play() picks the saved position up on its own; this only lets the UI say so.
+    const canResume =
+        !isPlaying &&
+        !isPaused &&
+        lastStoppedDocumentKey === documentKey &&
+        lastStoppedSegmentIndex > 0;
 
     return {
         canSpeak: languageSupported,
         incompatibleMessage,
         isPlaying,
         isPaused,
+        canResume,
         play,
         pause,
         resume,
