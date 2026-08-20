@@ -219,16 +219,10 @@ export default function DocumentAudioPlayer() {
     const controls = useAudioControls();
     useAudioKeyboard(controls, modalOpen);
 
-    const { translations, activeTranslationId, selectTranslation, syncTabToPlayingTranslation } =
-        useSermonAudioSwitch();
+    const { translations, activeTranslationId, selectTranslation } = useSermonAudioSwitch();
     const canSwitchTranslation = translations.length > 1;
 
     const isPlaying = currentPlay?.status === 'play';
-
-    const handlePlayPause = useCallback(() => {
-        if (!isPlaying) syncTabToPlayingTranslation();
-        controls.playPause();
-    }, [controls, isPlaying, syncTabToPlayingTranslation]);
 
     const handleTitleClick = useCallback(() => {
         if (!title || !sermonId || translationId == null || !languageCode) {
@@ -275,7 +269,7 @@ export default function DocumentAudioPlayer() {
                     <SeekBar currentTime={currentTime} duration={duration} onSeek={controls.seek} />
                     <PlaybackControls
                         isPlaying={isPlaying}
-                        onPlayPause={handlePlayPause}
+                        onPlayPause={controls.playPause}
                         onSkipBack={() => controls.skipBack()}
                         onJumpForward={() => controls.jumpForward()}
                     />
