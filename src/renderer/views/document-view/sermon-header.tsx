@@ -7,7 +7,7 @@ import {
     PauseCircleOutlined,
     TranslationOutlined,
     SearchOutlined,
-    SoundOutlined,
+    CustomerServiceOutlined,
 } from '@ant-design/icons';
 import {
     useDocumentTabsStore,
@@ -41,7 +41,7 @@ function TranslationOption({
         <Space size={4}>
             {getTranslationLabel(translation)}
             {translation.hasAudio && (
-                <SoundOutlined
+                <CustomerServiceOutlined
                     style={{ color: playing ? 'var(--ant-color-primary)' : undefined }}
                 />
             )}

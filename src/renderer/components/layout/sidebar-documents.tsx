@@ -1,7 +1,12 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input, Button, Card, Divider, Segmented, Select, Tag, Typography } from 'antd';
-import { SoundOutlined, GlobalOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons';
+import {
+    CustomerServiceOutlined,
+    GlobalOutlined,
+    PlusOutlined,
+    FileTextOutlined,
+} from '@ant-design/icons';
 import { Virtuoso } from 'react-virtuoso';
 import type { SermonListItemWithTranslations } from '@shared/types';
 import { getTabKey } from '@shared/types';
@@ -432,7 +437,7 @@ const ItemOutline = React.memo<{
                 {sermon.cityState && <div className="sidebar-item__city">{sermon.cityState}</div>}
                 {sermon.hasAudio && (
                     <div className="sidebar-item__audio">
-                        <SoundOutlined />
+                        <CustomerServiceOutlined />
                     </div>
                 )}
             </div>
