@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { languageLabel, normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
+import { pickSuggestedModel } from '@shared/sherpa-suggestion';
 import {
     isSherpaVoiceOf,
     sherpaVoiceId,
@@ -26,11 +27,6 @@ import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
 import type { TtsVoice } from '@shared/tts.types';
 
 const { Text } = Typography;
-
-/** A model's codes can carry a region or a script; the language alone decides a match. */
-function matchesLang(langCode: string[], target: string): boolean {
-    return langCode.some((code) => normalizeLanguageCode(code) === target);
-}
 
 /**
  * Languages are stored as codes and named at render time, so the list reads in the interface
@@ -118,7 +114,6 @@ function QualityTag({ model }: { model: TtsModelInfo }) {
 }
 
 const BROWSE_PAGE_SIZE = 10;
-const MIN_QUALITY_SIZE_MB = 30;
 const INSTALLED_LIST_MAX_HEIGHT = 200;
 
 interface SherpaConfigProps extends ProviderConfigProps {
@@ -305,22 +300,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
         [onUpdate, settings.providers],
     );
 
-    // Prefer quality (≥30MB), falling back to the largest; skip if one is already installed.
-    const suggestedModel = useMemo(() => {
-        const hasInstalled = models.some((m) => matchesLang(m.langCode, langCode) && m.installed);
-        if (hasInstalled) return undefined;
-
-        const candidates = models.filter((m) => matchesLang(m.langCode, langCode) && !m.installed);
-        if (candidates.length === 0) return undefined;
-
-        const quality = candidates
-            .filter((m) => (m.filesizeMb ?? 0) >= MIN_QUALITY_SIZE_MB)
-            .sort((a, b) => (a.filesizeMb ?? 0) - (b.filesizeMb ?? 0));
-        if (quality.length > 0) return quality[0];
-
-        // Only small models available — pick the largest one
-        return candidates.sort((a, b) => (b.filesizeMb ?? 0) - (a.filesizeMb ?? 0))[0];
-    }, [models, langCode]);
+    const suggestedModel = useMemo(() => pickSuggestedModel(models, langCode), [models, langCode]);
 
     // Browse: accent-insensitive search, sorted by installed first then lightest
     const browseResults = useMemo(() => {
