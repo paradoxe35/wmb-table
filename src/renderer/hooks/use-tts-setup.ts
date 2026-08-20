@@ -2,15 +2,17 @@ import { useEffect, useRef } from 'react';
 import { message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
-import { useTtsStore } from '@renderer/stores/tts.store';
+import { selectLastPosition, useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { getTtsPlaybackErrorMessage } from '@renderer/lib/tts-error';
+import { debounce } from '@renderer/utils/functions';
 import { resyncBrowserGapTimer } from './use-tts';
 import {
     DEFAULT_TTS_PROVIDER,
     SEGMENT_GAP_MS,
     type TtsIncompatibilityReason,
+    type TtsLastPosition,
 } from '@shared/tts.types';
 
 function getIncompatibilityMessage(
@@ -49,6 +51,7 @@ export function useTtsSetup(): void {
     const activePlaybackProvider = useTtsStore((s) => s.activeProvider);
     const setSettings = useTtsStore((s) => s.setSettings);
     const stopAndRemember = useTtsStore((s) => s.stopAndRemember);
+    const restoreLastPosition = useTtsStore((s) => s.restoreLastPosition);
     const setLanguageSupported = useTtsStore((s) => s.setLanguageSupported);
     const setIncompatibleMessage = useTtsStore((s) => s.setIncompatibleMessage);
     const triggerRecheck = useTtsStore((s) => s.triggerRecheck);
@@ -67,6 +70,34 @@ export function useTtsSetup(): void {
             });
         }
     }, [setSettings]);
+
+    useEffect(() => {
+        window.api.tts.getLastPosition().then(restoreLastPosition);
+    }, [restoreLastPosition]);
+
+    useEffect(() => {
+        const persist = debounce((position: TtsLastPosition | null) => {
+            void window.api.tts.setLastPosition(position);
+        }, 1000);
+
+        let previous = selectLastPosition(useTtsStore.getState());
+        const unsubscribe = useTtsStore.subscribe((state) => {
+            const next = selectLastPosition(state);
+            if (
+                next?.documentKey === previous?.documentKey &&
+                next?.segmentIndex === previous?.segmentIndex
+            ) {
+                return;
+            }
+            previous = next;
+            persist(next);
+        });
+
+        return () => {
+            unsubscribe();
+            persist.flush();
+        };
+    }, []);
 
     const activeProviderCfg = settings?.providers[settings.activeProvider ?? DEFAULT_TTS_PROVIDER];
 

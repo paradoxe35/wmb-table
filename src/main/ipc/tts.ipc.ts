@@ -12,6 +12,14 @@ export function registerTtsHandlers(): void {
         return ttsRepo.ensureSettings();
     });
 
+    registerHandler(TtsChannels.getLastPosition, async () => {
+        return ttsRepo.getLastPosition();
+    });
+
+    registerHandler(TtsChannels.setLastPosition, async (_event, position) => {
+        ttsRepo.setLastPosition(position);
+    });
+
     registerHandler(TtsChannels.updateSettings, async (_event, settings) => {
         const updated = ttsRepo.updateSettings(settings);
         await getTtsService().reloadSettings();

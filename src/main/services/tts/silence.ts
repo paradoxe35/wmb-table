@@ -16,7 +16,7 @@ export interface SilenceBounds {
     endSample: number;
 }
 
-/** Null when the clip is silent throughout, so a silent segment never becomes zero-length audio. */
+/** Null when the clip is silent throughout, so it never becomes zero-length audio. */
 export function findSilenceBounds(samples: Float32Array, sampleRate: number): SilenceBounds | null {
     let start = 0;
     let end = samples.length - 1;

@@ -68,6 +68,7 @@ import type {
     TtsReferenceVoiceAudio,
     TtsModelInfo,
     TtsCompatibilityResult,
+    TtsLastPosition,
 } from './tts.types';
 import type {
     AiConversation,
@@ -267,6 +268,8 @@ export const TtsChannels = {
     getProviderModels: 'tts:getProviderModels',
     deleteProviderModel: 'tts:deleteProviderModel',
     previewVoice: 'tts:previewVoice',
+    getLastPosition: 'tts:getLastPosition',
+    setLastPosition: 'tts:setLastPosition',
     resolveConfigForLanguage: 'tts:resolveConfigForLanguage',
 } as const;
 
@@ -551,6 +554,8 @@ export interface InvokeChannelMap {
     // TTS
     [TtsChannels.getProviders]: { args: []; return: TtsProviderInfo[] };
     [TtsChannels.getSettings]: { args: []; return: TtsSettings };
+    [TtsChannels.getLastPosition]: { args: []; return: TtsLastPosition | null };
+    [TtsChannels.setLastPosition]: { args: [TtsLastPosition | null]; return: void };
     [TtsChannels.updateSettings]: { args: [Partial<TtsSettings>]; return: TtsSettings };
     [TtsChannels.startPlayback]: {
         args: [TtsSegment[], string, number?];

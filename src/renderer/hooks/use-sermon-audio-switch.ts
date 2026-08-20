@@ -13,10 +13,7 @@ export interface SermonAudioSwitch {
     selectTranslation(translationId: number): void;
 }
 
-/**
- * Lets the player move between the translations of the sermon it is playing.
- * Selecting one stops the current recording and loads the new one paused.
- */
+/** Selecting a translation stops the current recording and loads the new one paused. */
 export function useSermonAudioSwitch(): SermonAudioSwitch {
     const sermonId = useAudioStore((s) => s.sermonId);
     const languageCode = useAudioStore((s) => s.languageCode);

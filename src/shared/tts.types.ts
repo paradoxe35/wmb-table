@@ -129,6 +129,12 @@ export interface TtsPlaybackState {
     completedNaturally?: boolean; // true when all segments finished (not user stop)
 }
 
+/** Resume point for the most recently played document. Only one is kept. */
+export interface TtsLastPosition {
+    documentKey: string;
+    segmentIndex: number;
+}
+
 // ── Cache key ──
 export interface TtsCacheKey {
     provider: TtsProviderType;

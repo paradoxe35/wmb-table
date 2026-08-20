@@ -5,6 +5,7 @@ import type {
     TtsPlaybackState,
     TtsSegment,
     TtsProviderType,
+    TtsLastPosition,
 } from '@shared/tts.types';
 import { createStore } from './create-store';
 
@@ -42,6 +43,7 @@ interface TtsState {
     markCompletedNaturally(): void;
     /** Save position before clearing playback state */
     stopAndRemember(): void;
+    restoreLastPosition(position: TtsLastPosition | null): void;
     reset(): void;
 }
 
@@ -102,6 +104,11 @@ export const useTtsStore = createStore<TtsState>((set, get) => ({
             completedNaturally: false,
         });
     },
+    restoreLastPosition: (position) =>
+        set({
+            lastStoppedDocumentKey: position?.documentKey ?? null,
+            lastStoppedSegmentIndex: position?.segmentIndex ?? 0,
+        }),
     reset: () =>
         set({
             status: 'idle',
@@ -119,3 +126,16 @@ export const useTtsStore = createStore<TtsState>((set, get) => ({
 
 export const selectCurrentTtsSegment = (s: TtsState) => s.segments[s.currentSegmentIndex] ?? null;
 export const selectIsTtsPlaying = (s: TtsState) => s.status === 'playing' || s.status === 'loading';
+
+export function selectLastPosition(s: TtsState): TtsLastPosition | null {
+    if (s.documentKey && (s.status === 'playing' || s.status === 'paused')) {
+        return { documentKey: s.documentKey, segmentIndex: s.currentSegmentIndex };
+    }
+    if (s.lastStoppedDocumentKey && s.lastStoppedSegmentIndex > 0) {
+        return {
+            documentKey: s.lastStoppedDocumentKey,
+            segmentIndex: s.lastStoppedSegmentIndex,
+        };
+    }
+    return null;
+}
