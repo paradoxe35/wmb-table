@@ -549,7 +549,16 @@ export default function TtsTab() {
                         step={100}
                         value={settings.cacheMaxSizeMb}
                         onChange={(v) => handleUpdate({ cacheMaxSizeMb: v })}
-                        marks={{ 100: '100', 500: '500', 1000: '1 Go', 2000: '2 Go' }}
+                        marks={{
+                            100: '100',
+                            500: '500',
+                            1000: '1 Go',
+                            2000: (
+                                <span style={{ textWrap: 'nowrap', paddingRight: '5px' }}>
+                                    {'2 Go'}
+                                </span>
+                            ),
+                        }}
                     />
                 </div>
             </Card>
