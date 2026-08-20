@@ -121,7 +121,7 @@ describe('document-tabs.store', () => {
         });
     });
 
-    it('resets sermon scroll when switching inline to a different translation', () => {
+    it('clears sermon scroll when switching inline so the saved position can restore', () => {
         useDocumentTabsStore.setState({
             tabs: [
                 {
@@ -145,11 +145,10 @@ describe('document-tabs.store', () => {
             languageCode: 'fr',
         });
 
-        expect(useDocumentTabsStore.getState().tabs[0]).toMatchObject({
-            translationId: 2,
-            scrollY: 0,
-            scrollX: 0,
-        });
+        const switchedTab = useDocumentTabsStore.getState().tabs[0];
+        expect(switchedTab).toMatchObject({ translationId: 2 });
+        expect(switchedTab.scrollY).toBeUndefined();
+        expect(switchedTab.scrollX).toBeUndefined();
     });
 
     it('deduplicates bible tabs when switching inline to an already open chapter', () => {
