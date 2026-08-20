@@ -17,6 +17,7 @@ import type {
 } from '@shared/tts.types';
 import { voiceLanguageCode } from '@shared/tts.types';
 import { retryTtsNetworkCall } from './network-retry';
+import { trimMp3Silence } from './silence';
 
 // ── Voice listing ──
 
@@ -59,6 +60,7 @@ function tempMp3Path(): string {
 
 export class EdgeProvider implements TtsProvider {
     readonly type: TtsProviderType = 'edge';
+    readonly trimSilence = trimMp3Silence;
     private voiceId = 'fr-FR-DeniseNeural';
 
     private async fetchVoices(): Promise<EdgeVoiceEntry[]> {

@@ -10,6 +10,7 @@ import type {
 } from '@shared/tts.types';
 import { voiceLanguageCode } from '@shared/tts.types';
 import { fetchTtsWithRetry } from './network-retry';
+import { trimMp3Silence } from './silence';
 
 const OPENAI_VOICES = [
     'alloy',
@@ -84,6 +85,7 @@ const SUPPORTED_LANGUAGES = [
 
 export class OpenAiProvider implements TtsProvider {
     readonly type: TtsProviderType = 'openai';
+    readonly trimSilence = trimMp3Silence;
     private apiKey = '';
     private model = 'gpt-4o-mini-tts';
     private voiceId = 'nova';

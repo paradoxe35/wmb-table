@@ -22,6 +22,7 @@ export interface TtsProvider {
         cfg?: TtsProviderSettings,
     ): Promise<TtsCompatibilityResult>;
     synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult>;
+    trimSilence(result: TtsSynthesizeResult): Promise<TtsSynthesizeResult>;
     previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult>;
     downloadModel?(
         onProgress: (progress: TtsProviderDownloadProgress) => void,

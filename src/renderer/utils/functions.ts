@@ -34,9 +34,15 @@ export function getErrorMessage(err: unknown, fallback?: string): string {
 
 export function formatTime(seconds: number): string {
     if (!isFinite(seconds) || seconds < 0) return '0:00';
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
+
+    const total = Math.floor(seconds);
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const secs = total % 60;
+    const paddedSecs = String(secs).padStart(2, '0');
+
+    if (hours === 0) return `${minutes}:${paddedSecs}`;
+    return `${hours}:${String(minutes).padStart(2, '0')}:${paddedSecs}`;
 }
 
 export function hexToRgba(hex: string, alpha: number): string {

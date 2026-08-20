@@ -23,6 +23,7 @@ import { getTtsModelsDir } from '@main/lib/app-paths';
 import { WorkerRpc } from './worker-rpc';
 import type { TtsProviderDownloadProgress } from './provider';
 import workerPath from './sherpa.worker?modulePath';
+import { trimWavSilence } from './silence';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -165,6 +166,7 @@ function getLangCodesForModel(modelName: string): string[] {
 
 export class SherpaProvider implements TtsProvider {
     readonly type: TtsProviderType = 'sherpa';
+    readonly trimSilence = trimWavSilence;
     private speakerId = 0;
     private speed = 1.0;
     private activeModel = '';

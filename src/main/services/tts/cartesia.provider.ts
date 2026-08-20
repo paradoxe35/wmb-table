@@ -16,6 +16,7 @@ import type {
 import { normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
 import { fetchTtsWithRetry } from './network-retry';
 import { resolveDefaultExport } from '@main/lib/module-interop';
+import { trimMp3Silence } from './silence';
 
 const pLimit = resolveDefaultExport(pLimitModule);
 
@@ -100,6 +101,7 @@ const synthesisLimit = pLimit(2);
 
 export class CartesiaProvider implements TtsProvider {
     readonly type: TtsProviderType = 'cartesia';
+    readonly trimSilence = trimMp3Silence;
     private apiKey = '';
     private model = 'sonic-3';
     private voiceId = 'ab636c8b-9960-4fb3-bb0c-b7b655fb9745'; // Erwan (default)

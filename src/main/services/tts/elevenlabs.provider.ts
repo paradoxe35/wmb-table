@@ -14,6 +14,7 @@ import type {
 } from '@shared/tts.types';
 import { normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
 import { fetchTtsWithRetry } from './network-retry';
+import { trimMp3Silence } from './silence';
 
 const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
 
@@ -221,6 +222,7 @@ const voiceCache = new SimpleCache<TtsVoice[]>('elevenlabs-voices', 60 * 60 * 10
 
 export class ElevenLabsProvider implements TtsProvider {
     readonly type: TtsProviderType = 'elevenlabs';
+    readonly trimSilence = trimMp3Silence;
     private apiKey = '';
     private model = 'eleven_flash_v2_5';
     private voiceId = 'JBFqnCBsd6RMkjVDRZzb'; // Rachel (default)
