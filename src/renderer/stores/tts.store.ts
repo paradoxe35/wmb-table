@@ -68,13 +68,21 @@ export const useTtsStore = createStore<TtsState>((set, get) => ({
     setProviders: (providers) => set({ providers }),
     setSettings: (settings) => set({ settings }),
     setPlaybackState: (s) =>
-        set({
+        set((state) => ({
             status: s.status,
             currentSegmentIndex: s.currentSegmentIndex,
             totalSegments: s.totalSegments,
             activeProvider: s.provider,
             error: s.error ?? null,
-        }),
+            // The resume slot follows the document being played, so it never describes a
+            // document the session has moved on from.
+            ...(state.documentKey
+                ? {
+                      lastStoppedDocumentKey: state.documentKey,
+                      lastStoppedSegmentIndex: s.currentSegmentIndex,
+                  }
+                : {}),
+        })),
     setSegments: (segments) =>
         set({ segments, totalSegments: segments.length, completedNaturally: false }),
     setDocumentKey: (documentKey) => set({ documentKey }),
@@ -138,4 +146,13 @@ export function selectLastPosition(s: TtsState): TtsLastPosition | null {
         };
     }
     return null;
+}
+
+/** Only when the session is free: another document holding it will overwrite the saved slot. */
+export function selectCanResume(s: TtsState, documentKey: string): boolean {
+    return (
+        s.documentKey === null &&
+        s.lastStoppedDocumentKey === documentKey &&
+        s.lastStoppedSegmentIndex > 0
+    );
 }

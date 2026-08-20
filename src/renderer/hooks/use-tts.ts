@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { message } from 'antd';
 import i18next from 'i18next';
-import { useTtsStore } from '@renderer/stores/tts.store';
+import { selectCanResume, useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { UnthrottledTimer } from '@renderer/services/unthrottled-timer';
 import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
@@ -392,8 +392,7 @@ export function useTts(
     const stopAndRemember = useTtsStore((s) => s.stopAndRemember);
     const reset = useTtsStore((s) => s.reset);
     const markCompletedNaturally = useTtsStore((s) => s.markCompletedNaturally);
-    const lastStoppedDocumentKey = useTtsStore((s) => s.lastStoppedDocumentKey);
-    const lastStoppedSegmentIndex = useTtsStore((s) => s.lastStoppedSegmentIndex);
+    const canResume = useTtsStore((s) => selectCanResume(s, documentKey));
     const activeProvider = settings?.activeProvider;
     const pendingContentRebuildRef = useRef(false);
 
@@ -510,13 +509,6 @@ export function useTts(
     const isThisDocument = currentDocumentKey === documentKey;
     const isPlaying = isThisDocument && (status === 'playing' || status === 'loading');
     const isPaused = isThisDocument && status === 'paused';
-    // play() picks the saved position up on its own; this only lets the UI say so.
-    const canResume =
-        !isPlaying &&
-        !isPaused &&
-        lastStoppedDocumentKey === documentKey &&
-        lastStoppedSegmentIndex > 0;
-
     return {
         canSpeak: languageSupported,
         incompatibleMessage,
