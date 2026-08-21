@@ -15,7 +15,12 @@ import type {
 } from '@shared/tts.types';
 import { normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
 import { sherpaVoiceId, sherpaVoiceModel, sherpaVoiceSpeaker } from '@shared/sherpa-voice-id';
-import { entrySupportsLang, normalizeLangCodes, resolveSpeakerCount } from './sherpa-catalog';
+import {
+    entrySupportsLang,
+    normalizeLangCodes,
+    resolveSpeakerCount,
+    resolveEngineLanguage,
+} from './sherpa-catalog';
 import { SimpleCache } from '@main/lib/simple-cache';
 import { getAllCatalogModels, findCatalogModelByModelName } from './sherpa-catalog-data';
 import { refreshSherpaCatalog } from './sherpa-catalog-remote';
@@ -258,7 +263,17 @@ export class SherpaProvider implements TtsProvider {
 
         await this.ensureInitialized(modelName, request.language);
         const speed = request.rate ?? this.speed;
-        const audioBase64 = await this.rpc.call<string>('synthesize', request.text, sid, speed);
+        const lang = resolveEngineLanguage(
+            findCatalogModelByModelName(this.activeModel),
+            request.language,
+        );
+        const audioBase64 = await this.rpc.call<string>(
+            'synthesize',
+            request.text,
+            sid,
+            speed,
+            lang,
+        );
         return { audioBase64, mimeType: 'audio/wav' };
     }
 
@@ -442,8 +457,13 @@ export class SherpaProvider implements TtsProvider {
         if (!isModelInstalled(modelDir)) {
             throw new Error(`Modèle Sherpa-ONNX non trouvé: ${modelName}`);
         }
-        const engine = findCatalogModelByModelName(modelName)?.engine;
-        const ok = await this.rpc.call<boolean>('initialize', modelDir, language, engine);
+        const entry = findCatalogModelByModelName(modelName);
+        const ok = await this.rpc.call<boolean>(
+            'initialize',
+            modelDir,
+            resolveEngineLanguage(entry, language),
+            entry?.engine,
+        );
         if (!ok) throw new Error(`Échec d'initialisation du modèle: ${modelName}`);
         this.activeModel = modelName;
         this.initialized = true;

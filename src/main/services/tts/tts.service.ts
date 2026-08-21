@@ -42,7 +42,7 @@ const pLimit = resolveDefaultExport(pLimitModule);
 type PreparedSegment = CacheHit;
 
 /** Bump when audio processing changes, to supersede cached segments. */
-const AUDIO_PIPELINE_VERSION = 'trim-silence-v1';
+const AUDIO_PIPELINE_VERSION = 'sherpa-language-v1';
 
 function getReferenceVoiceMimeType(fileName: string): string {
     switch (extname(fileName).toLowerCase()) {

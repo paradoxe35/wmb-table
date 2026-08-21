@@ -1,4 +1,4 @@
-import { normalizeLanguageCode } from '@shared/tts.types';
+import { normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
 import type { TtsVoiceQuality } from '@shared/tts.types';
 
 // ── Types ──
@@ -66,4 +66,14 @@ export function entrySupportsLang(entry: SherpaCatalogEntry, code: string): bool
 export function resolveSpeakerCount(learned: number | undefined, modelSpeakers: number): number {
     if (learned && learned > 0) return learned;
     return Math.max(modelSpeakers, 1);
+}
+
+export function resolveEngineLanguage(
+    entry: SherpaCatalogEntry | undefined,
+    language: string | undefined,
+): string | undefined {
+    if (!entry || !language) return undefined;
+
+    const code = voiceLanguageCode(language);
+    return entrySupportsLang(entry, code) ? code : undefined;
 }

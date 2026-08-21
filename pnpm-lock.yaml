@@ -64,6 +64,9 @@ importers:
             i18next:
                 specifier: ^25.10.10
                 version: 25.10.10(typescript@5.9.3)
+            koffi:
+                specifier: ^3.1.5
+                version: 3.1.5
             lodash:
                 specifier: ^4.18.1
                 version: 4.18.1
@@ -1596,6 +1599,126 @@ packages:
             {
                 integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==,
             }
+
+    '@koromix/koffi-darwin-arm64@3.1.5':
+        resolution:
+            {
+                integrity: sha512-IpqITl2fJi3QN9bTtNnygWPdK7ScSjw3xtGu8e6feYGvimCysu+spgI5KyeslY2jTnqxGS9xr8pLAbLhGJ8edA==,
+            }
+        cpu: [arm64]
+        os: [darwin]
+
+    '@koromix/koffi-darwin-x64@3.1.5':
+        resolution:
+            {
+                integrity: sha512-4Tia4BS5EV/+vN9eIrdToanVe+U/2VqTZCBgOzoUbPKjgky51eqM+3J4qdRUvmYJohcJNPob5/hsxeItUZrl1g==,
+            }
+        cpu: [x64]
+        os: [darwin]
+
+    '@koromix/koffi-freebsd-arm64@3.1.5':
+        resolution:
+            {
+                integrity: sha512-bP94uzseFO79NG3flpU3WxfyvltD+jzC/kN8FDZLi8J0VUZNW1Wmu8yq87KEzjX1qT9KyX4Y+elVbGqHXHTv2Q==,
+            }
+        cpu: [arm64]
+        os: [freebsd]
+
+    '@koromix/koffi-freebsd-ia32@3.1.5':
+        resolution:
+            {
+                integrity: sha512-raFXXAPHzvCQWhaoMUF+Cc2ZWgg2UBU0RVoowHZhaw9nQYPC1pERcPRH+JA+SNIN6g4d2GFW6uPFc+QbUhsagA==,
+            }
+        cpu: [ia32]
+        os: [freebsd]
+
+    '@koromix/koffi-freebsd-x64@3.1.5':
+        resolution:
+            {
+                integrity: sha512-h6RyBZmPMBIDWTABkJIhzDdYwSnYAJvTacHpEjbT55Arkmw1H15Rl7CFtXuEuBrqh+uivoCrRgA6vszl9CsJ9g==,
+            }
+        cpu: [x64]
+        os: [freebsd]
+
+    '@koromix/koffi-linux-arm64@3.1.5':
+        resolution:
+            {
+                integrity: sha512-u0vCmKPu4yQDhl/ri1J6U3vDnvYtYjoZaIWb+oMbRXhVZeiqdE53MGPb+q2A7Dj2n9IbYloAfEICQbL6l0pmiQ==,
+            }
+        cpu: [arm64]
+        os: [linux]
+
+    '@koromix/koffi-linux-ia32@3.1.5':
+        resolution:
+            {
+                integrity: sha512-Xa5JbumWglwPVZgrJcLhqyC1wCWlfm7+C00p3FuOTNGp0qoYuf2/tOoAh0/q7+taVm30cMopu/6lRHwdmF6I/w==,
+            }
+        cpu: [ia32]
+        os: [linux]
+
+    '@koromix/koffi-linux-loong64@3.1.5':
+        resolution:
+            {
+                integrity: sha512-F3i2CeTcqVBUQiSRUBSEzX1VgtXmLLiZb/ouZtXHkWpTLhJNd9TH7s3CizTofci0VRqlKdexGUYhK5vzPDAAHA==,
+            }
+        cpu: [loong64]
+        os: [linux]
+
+    '@koromix/koffi-linux-riscv64@3.1.5':
+        resolution:
+            {
+                integrity: sha512-2TgQuzy+4PfDg+rw3kOmN6lywEWdzKT3eaLPbOp0b/9DaN7CLBJ/QIR5GhGsMNpeI30zU0YzFeYFxoVoJ/LqFw==,
+            }
+        cpu: [riscv64]
+        os: [linux]
+
+    '@koromix/koffi-linux-x64@3.1.5':
+        resolution:
+            {
+                integrity: sha512-2yaIg/1V0m4CiAUMzG4CIlWmq1WJ+QBMlFfaGr9su+OH5fuIqC7V3BbMiB03IwIl1VofIZO5JA4Db4lID8tpbw==,
+            }
+        cpu: [x64]
+        os: [linux]
+
+    '@koromix/koffi-openbsd-ia32@3.1.5':
+        resolution:
+            {
+                integrity: sha512-8/OXd+u9omMooykhvdJPEP7u6FFzzrrFo9gOmSHc9/DPt3XkVYOtSsE97PDk6zYaAzwIYHSKjHvIXsfFwFc7sg==,
+            }
+        cpu: [ia32]
+        os: [openbsd]
+
+    '@koromix/koffi-openbsd-x64@3.1.5':
+        resolution:
+            {
+                integrity: sha512-SpeqldKkuDk2aTj5PVWumy7eq6Tr2GtBPAOI1NiDHhg8xe433KraxrA9V9UjEd+1+kSGJQGR04nQByN3MPA9PQ==,
+            }
+        cpu: [x64]
+        os: [openbsd]
+
+    '@koromix/koffi-win32-arm64@3.1.5':
+        resolution:
+            {
+                integrity: sha512-uej3YAEKAhlfVPoIo5sOwtxhTLRVJ01LgtWrKGpnnAQU3C+Ilmaxdh+Oc2xc1G3NK30N5eCVJpyO9r3pjKC6Vw==,
+            }
+        cpu: [arm64]
+        os: [win32]
+
+    '@koromix/koffi-win32-ia32@3.1.5':
+        resolution:
+            {
+                integrity: sha512-d42jv2f4PwtJGNJS19Xfn/BRtGsBNNVkw0O0K5tkIGI+yNq4MnPTSUsaGbDIkCLNsCgk/LFqAaE8BExyCdrujA==,
+            }
+        cpu: [ia32]
+        os: [win32]
+
+    '@koromix/koffi-win32-x64@3.1.5':
+        resolution:
+            {
+                integrity: sha512-Pyo1WEHEP6Ek2NEn2pquwJzSPLOdY4vymoPSz0an1DgvFWSkOyBYYkGVoxL1ajfj5I1pPdXysYqixtVTzAtOfQ==,
+            }
+        cpu: [x64]
+        os: [win32]
 
     '@malept/cross-spawn-promise@2.0.0':
         resolution:
@@ -6228,6 +6351,12 @@ packages:
                 integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==,
             }
 
+    koffi@3.1.5:
+        resolution:
+            {
+                integrity: sha512-XVwwrxg0Ca6IEUQF4YtGIU4XN0LSselFYpYvgfhh8wafCunhEEx5hPr7LZhp5QyeFA/LcRsKHTqncCdjWjWAlg==,
+            }
+
     lazy-val@1.0.5:
         resolution:
             {
@@ -9732,6 +9861,51 @@ snapshots:
             '@jridgewell/resolve-uri': 3.1.2
             '@jridgewell/sourcemap-codec': 1.5.5
 
+    '@koromix/koffi-darwin-arm64@3.1.5':
+        optional: true
+
+    '@koromix/koffi-darwin-x64@3.1.5':
+        optional: true
+
+    '@koromix/koffi-freebsd-arm64@3.1.5':
+        optional: true
+
+    '@koromix/koffi-freebsd-ia32@3.1.5':
+        optional: true
+
+    '@koromix/koffi-freebsd-x64@3.1.5':
+        optional: true
+
+    '@koromix/koffi-linux-arm64@3.1.5':
+        optional: true
+
+    '@koromix/koffi-linux-ia32@3.1.5':
+        optional: true
+
+    '@koromix/koffi-linux-loong64@3.1.5':
+        optional: true
+
+    '@koromix/koffi-linux-riscv64@3.1.5':
+        optional: true
+
+    '@koromix/koffi-linux-x64@3.1.5':
+        optional: true
+
+    '@koromix/koffi-openbsd-ia32@3.1.5':
+        optional: true
+
+    '@koromix/koffi-openbsd-x64@3.1.5':
+        optional: true
+
+    '@koromix/koffi-win32-arm64@3.1.5':
+        optional: true
+
+    '@koromix/koffi-win32-ia32@3.1.5':
+        optional: true
+
+    '@koromix/koffi-win32-x64@3.1.5':
+        optional: true
+
     '@malept/cross-spawn-promise@2.0.0':
         dependencies:
             cross-spawn: 7.0.6
@@ -12914,6 +13088,24 @@ snapshots:
     keyv@4.5.4:
         dependencies:
             json-buffer: 3.0.1
+
+    koffi@3.1.5:
+        optionalDependencies:
+            '@koromix/koffi-darwin-arm64': 3.1.5
+            '@koromix/koffi-darwin-x64': 3.1.5
+            '@koromix/koffi-freebsd-arm64': 3.1.5
+            '@koromix/koffi-freebsd-ia32': 3.1.5
+            '@koromix/koffi-freebsd-x64': 3.1.5
+            '@koromix/koffi-linux-arm64': 3.1.5
+            '@koromix/koffi-linux-ia32': 3.1.5
+            '@koromix/koffi-linux-loong64': 3.1.5
+            '@koromix/koffi-linux-riscv64': 3.1.5
+            '@koromix/koffi-linux-x64': 3.1.5
+            '@koromix/koffi-openbsd-ia32': 3.1.5
+            '@koromix/koffi-openbsd-x64': 3.1.5
+            '@koromix/koffi-win32-arm64': 3.1.5
+            '@koromix/koffi-win32-ia32': 3.1.5
+            '@koromix/koffi-win32-x64': 3.1.5
 
     lazy-val@1.0.5: {}
 

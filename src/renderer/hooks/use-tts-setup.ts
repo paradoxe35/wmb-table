@@ -8,7 +8,6 @@ import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio
 import { getTtsPlaybackErrorMessage } from '@renderer/lib/tts-error';
 import { debounce } from '@renderer/utils/functions';
 import { resyncBrowserGapTimer } from './use-tts';
-import { UnthrottledTimer } from '@renderer/services/unthrottled-timer';
 import {
     DEFAULT_TTS_PROVIDER,
     SEGMENT_GAP_MS,
@@ -270,7 +269,7 @@ export function useTtsSetup(): void {
 
     // Segment audio playback + segment completion
     useEffect(() => {
-        const gapTimer = new UnthrottledTimer();
+        let gapTimeout: ReturnType<typeof setTimeout> | null = null;
         let pausedDuringGap = false;
         let currentGapMs = useTtsStore.getState().settings?.segmentGapMs ?? SEGMENT_GAP_MS;
 
@@ -291,7 +290,12 @@ export function useTtsSetup(): void {
         let lastPlayedSegmentIndex = -1;
         let retriedAudioErrorForSegment = -1;
 
-        const clearGap = () => gapTimer.cancel();
+        const clearGap = () => {
+            if (gapTimeout) {
+                clearTimeout(gapTimeout);
+                gapTimeout = null;
+            }
+        };
 
         const notifySegmentComplete = () => {
             window.api.tts.segmentComplete();
@@ -303,6 +307,7 @@ export function useTtsSetup(): void {
          * after audio has actually started playing, so main state stays in sync.
          */
         const playPreloadedAndNotify = () => {
+            gapTimeout = null;
             const current = useTtsStore.getState();
             if (current.status === 'idle' || current.status === 'paused') return;
             const rate = current.settings?.rate ?? 1;
@@ -321,7 +326,7 @@ export function useTtsSetup(): void {
             const gapMs = useTtsStore.getState().settings?.segmentGapMs ?? SEGMENT_GAP_MS;
             const remaining = Math.max(0, gapMs - alreadyWaited);
             if (remaining > 0) {
-                gapTimer.schedule(remaining, playPreloadedAndNotify);
+                gapTimeout = setTimeout(playPreloadedAndNotify, remaining);
             } else {
                 playPreloadedAndNotify();
             }
@@ -341,7 +346,7 @@ export function useTtsSetup(): void {
                 lastPlayedSegmentIndex = -1;
                 retriedAudioErrorForSegment = -1;
             } else if (state.status === 'paused') {
-                if (gapTimer.pending) {
+                if (gapTimeout) {
                     clearGap();
                     pausedDuringGap = true;
                 }
@@ -366,7 +371,7 @@ export function useTtsSetup(): void {
                     // Resuming from a normal gap-timer pause
                     schedulePlay();
                 }
-            } else if (gapChanged && gapTimer.pending) {
+            } else if (gapChanged && gapTimeout) {
                 clearGap();
                 schedulePlay(Date.now() - endedAt);
             }
