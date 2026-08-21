@@ -193,9 +193,11 @@ function createProgressTransform(
     });
 }
 
-function initialize(modelDir: string, _language?: string, engine?: string): boolean {
+function initialize(modelDir: string, language?: string, engine?: string): boolean {
     const kokoroLexiconArg = buildKokoroLexiconArg(modelDir);
-    const kokoroConfigKey = `${modelDir}|${kokoroLexiconArg}`;
+    // Only Kokoro takes its language at load time; supertonic reads one per generation.
+    const kokoroLang = engine === 'kokoro' ? (language ?? '') : '';
+    const kokoroConfigKey = `${modelDir}|${kokoroLexiconArg}|${kokoroLang}`;
     // Skip if already initialized with this model
     if (ttsInstance && currentKokoroConfigKey === kokoroConfigKey) {
         return true;
@@ -258,7 +260,7 @@ function initialize(modelDir: string, _language?: string, engine?: string): bool
             dataDir: hasDataDir ? join(modelDir, 'espeak-ng-data') : '',
             lengthScale: 1.0,
             lexicon: kokoroLexiconArg,
-            lang: '',
+            lang: kokoroLang,
         };
     } else if (vocoder) {
         // Matcha engine (acousticModel + vocoder)
@@ -308,9 +310,14 @@ function getNumSpeakers(): number {
     return ttsInstance?.numSpeakers ?? 1;
 }
 
-function synthesize(text: string, speakerId: number, speed: number): string {
+function synthesize(text: string, speakerId: number, speed: number, lang?: string): string {
     if (!ttsInstance) throw new Error('Sherpa-ONNX TTS not initialized');
-    const audio = ttsInstance.generate({ text, sid: speakerId, speed });
+    const audio = ttsInstance.generate({
+        text,
+        sid: speakerId,
+        speed,
+        ...(lang ? { extra: { lang } } : {}),
+    });
     const wavBuffer = encodeWav(audio.samples, audio.sampleRate);
     return wavBuffer.toString('base64');
 }
