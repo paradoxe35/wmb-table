@@ -1,5 +1,4 @@
 import log from 'electron-log';
-import { resolveDefaultExport } from '@main/lib/module-interop';
 
 const POWER_REQUEST_CONTEXT_VERSION = 0;
 const POWER_REQUEST_CONTEXT_SIMPLE_STRING = 0x1;
@@ -16,12 +15,14 @@ interface Kernel32 {
 let kernel32: Kernel32 | null = null;
 let requestHandle: unknown = null;
 let unavailable = process.platform !== 'win32';
-let queue: Promise<void> = Promise.resolve();
 
-async function loadKernel32(): Promise<Kernel32> {
+function loadKernel32(): Kernel32 {
     if (kernel32) return kernel32;
 
-    const koffi = resolveDefaultExport(await import('koffi'));
+    // require, not import(): the main bundle is compiled to bytecode and runs through `vm`,
+    // which has no dynamic import callback.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const koffi = require('koffi');
     const lib = koffi.load('kernel32.dll');
 
     koffi.struct('REASON_CONTEXT', {
@@ -39,11 +40,17 @@ async function loadKernel32(): Promise<Kernel32> {
     return kernel32;
 }
 
-async function apply(active: boolean): Promise<void> {
+/**
+ * Electron's blocker maps to ES_SYSTEM_REQUIRED, which only resets the idle timer: with the
+ * display off, Modern Standby still throttles the CPU and stalls local voice synthesis. Only
+ * PowerRequestExecutionRequired keeps the process running, and no Electron API reaches it.
+ * Windows terminates it after 5 minutes on battery, so this holds on AC power.
+ */
+export function setExecutionRequest(active: boolean): void {
     if (unavailable) return;
 
     try {
-        const api = await loadKernel32();
+        const api = loadKernel32();
 
         if (active) {
             if (requestHandle) return;
@@ -75,14 +82,4 @@ async function apply(active: boolean): Promise<void> {
         requestHandle = null;
         log.warn('[power-save] execution request unavailable', error);
     }
-}
-
-/**
- * Electron's blocker maps to ES_SYSTEM_REQUIRED, which only resets the idle timer: with the
- * display off, Modern Standby still throttles the CPU and stalls local voice synthesis. Only
- * PowerRequestExecutionRequired keeps the process running, and no Electron API reaches it.
- * Windows terminates it after 5 minutes on battery, so this holds on AC power.
- */
-export function setExecutionRequest(active: boolean): void {
-    queue = queue.then(() => apply(active));
 }
