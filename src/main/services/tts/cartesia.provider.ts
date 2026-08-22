@@ -14,7 +14,7 @@ import type {
     TtsCompatibilityResult,
 } from '@shared/tts.types';
 import { normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
-import { fetchTtsWithRetry } from './network-retry';
+import { fetchWithRetry } from '@main/lib/network-retry';
 import { resolveDefaultExport } from '@main/lib/module-interop';
 import { trimMp3Silence } from './silence';
 
@@ -176,7 +176,7 @@ export class CartesiaProvider implements TtsProvider {
             },
         };
 
-        const response = await fetchTtsWithRetry(
+        const response = await fetchWithRetry(
             `${CARTESIA_API_BASE}/tts/bytes`,
             {
                 method: 'POST',
@@ -239,14 +239,18 @@ export class CartesiaProvider implements TtsProvider {
 
         const body = Buffer.concat(parts);
 
-        const response = await fetch(`${CARTESIA_API_BASE}/voices/clone`, {
-            method: 'POST',
-            headers: {
-                ...this.authHeaders(),
-                'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        const response = await fetchWithRetry(
+            `${CARTESIA_API_BASE}/voices/clone`,
+            {
+                method: 'POST',
+                headers: {
+                    ...this.authHeaders(),
+                    'Content-Type': `multipart/form-data; boundary=${boundary}`,
+                },
+                body,
             },
-            body,
-        });
+            { label: 'Cartesia voice clone', retryOnStatus: false },
+        );
 
         if (!response.ok) {
             const errText = await response.text().catch(() => 'Unknown error');
@@ -271,10 +275,11 @@ export class CartesiaProvider implements TtsProvider {
     async deleteClonedVoice(voiceId: string): Promise<void> {
         if (!this.apiKey) throw new Error("La clé API Cartesia n'est pas configurée.");
 
-        const response = await fetch(`${CARTESIA_API_BASE}/voices/${voiceId}`, {
-            method: 'DELETE',
-            headers: this.authHeaders(),
-        });
+        const response = await fetchWithRetry(
+            `${CARTESIA_API_BASE}/voices/${voiceId}`,
+            { method: 'DELETE', headers: this.authHeaders() },
+            { label: 'Cartesia delete voice' },
+        );
 
         if (!response.ok && response.status !== 204) {
             const errText = await response.text().catch(() => 'Unknown error');
@@ -321,9 +326,11 @@ export class CartesiaProvider implements TtsProvider {
                 url.searchParams.set('limit', '100');
                 if (cursor) url.searchParams.set('starting_after', cursor);
 
-                const response = await fetch(url.toString(), {
-                    headers: this.authHeaders(),
-                });
+                const response = await fetchWithRetry(
+                    url.toString(),
+                    { headers: this.authHeaders() },
+                    { label: 'Cartesia voice list' },
+                );
 
                 if (!response.ok) {
                     const errBody = await response.text().catch(() => '');

@@ -13,7 +13,7 @@ import type {
     TtsCompatibilityResult,
 } from '@shared/tts.types';
 import { normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
-import { fetchTtsWithRetry } from './network-retry';
+import { fetchWithRetry } from '@main/lib/network-retry';
 import { trimMp3Silence } from './silence';
 
 const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
@@ -289,7 +289,7 @@ export class ElevenLabsProvider implements TtsProvider {
             body.language_code = normalizeLanguageCode(request.language);
         }
 
-        const response = await fetchTtsWithRetry(
+        const response = await fetchWithRetry(
             url.toString(),
             {
                 method: 'POST',
@@ -344,14 +344,18 @@ export class ElevenLabsProvider implements TtsProvider {
 
         const body = Buffer.concat(parts);
 
-        const response = await fetch(`${ELEVENLABS_API_BASE}/voices/add`, {
-            method: 'POST',
-            headers: {
-                'xi-api-key': this.apiKey,
-                'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        const response = await fetchWithRetry(
+            `${ELEVENLABS_API_BASE}/voices/add`,
+            {
+                method: 'POST',
+                headers: {
+                    'xi-api-key': this.apiKey,
+                    'Content-Type': `multipart/form-data; boundary=${boundary}`,
+                },
+                body,
             },
-            body,
-        });
+            { label: 'ElevenLabs voice clone', retryOnStatus: false },
+        );
 
         if (!response.ok) {
             const errText = await response.text().catch(() => 'Unknown error');
@@ -376,10 +380,11 @@ export class ElevenLabsProvider implements TtsProvider {
     async deleteClonedVoice(voiceId: string): Promise<void> {
         if (!this.apiKey) throw new Error("La clé API ElevenLabs n'est pas configurée.");
 
-        const response = await fetch(`${ELEVENLABS_API_BASE}/voices/${voiceId}`, {
-            method: 'DELETE',
-            headers: { 'xi-api-key': this.apiKey },
-        });
+        const response = await fetchWithRetry(
+            `${ELEVENLABS_API_BASE}/voices/${voiceId}`,
+            { method: 'DELETE', headers: { 'xi-api-key': this.apiKey } },
+            { label: 'ElevenLabs delete voice' },
+        );
 
         if (!response.ok) {
             const errText = await response.text().catch(() => 'Unknown error');
@@ -405,9 +410,11 @@ export class ElevenLabsProvider implements TtsProvider {
                     url.searchParams.set('next_page_token', pageToken);
                 }
 
-                const response = await fetch(url.toString(), {
-                    headers: { 'xi-api-key': this.apiKey },
-                });
+                const response = await fetchWithRetry(
+                    url.toString(),
+                    { headers: { 'xi-api-key': this.apiKey } },
+                    { label: 'ElevenLabs voice list' },
+                );
 
                 if (!response.ok) {
                     throw new Error(`ElevenLabs voices fetch failed: ${response.status}`);

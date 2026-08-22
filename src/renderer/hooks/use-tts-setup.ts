@@ -338,8 +338,8 @@ export function useTtsSetup(): void {
             const gapChanged = nextGapMs !== currentGapMs;
             currentGapMs = nextGapMs;
 
-            if (state.status === 'idle') {
-                // Hard stop: reset everything
+            if (state.status === 'idle' || state.status === 'error') {
+                // Nothing is coming: stop waiting for it.
                 clearGap();
                 waitingForSegmentIndex = -1;
                 pausedDuringGap = false;
