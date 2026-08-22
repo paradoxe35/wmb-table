@@ -12,6 +12,18 @@ import {
 import { sendToRenderer } from '@main/ipc/register';
 import i18n from '@main/lib/i18n';
 
+/**
+ * Deliberately absent from the menu: the shipped build keeps devtools reachable for whoever
+ * maintains it, without advertising them. `code` rather than `key` so the physical position
+ * holds on non-QWERTY layouts.
+ */
+export function isDevToolsShortcut(input: Electron.Input): boolean {
+    if (input.type !== 'keyDown' || input.code !== 'KeyI' || !input.shift || input.alt) {
+        return false;
+    }
+    return process.platform === 'darwin' ? input.meta || input.control : input.control;
+}
+
 export default class MenuBuilder {
     private mainWindow: BrowserWindow;
 
@@ -32,13 +44,19 @@ export default class MenuBuilder {
             this.setupDevelopmentEnvironment();
         }
 
-        this.mainWindow.webContents.on('before-input-event', (_event, input) => {
+        this.mainWindow.webContents.on('before-input-event', (event, input) => {
             if (
                 input.key === 'Escape' &&
                 input.type === 'keyDown' &&
                 this.mainWindow.isFullScreen()
             ) {
                 this.mainWindow.setFullScreen(false);
+                return;
+            }
+
+            if (isDevToolsShortcut(input)) {
+                event.preventDefault();
+                this.mainWindow.webContents.toggleDevTools();
             }
         });
 

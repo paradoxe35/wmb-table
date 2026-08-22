@@ -35,6 +35,7 @@ import {
     TTS_REFERENCE_VOICES,
 } from '@shared/tts.types';
 import { resolveDefaultExport } from '@main/lib/module-interop';
+import { retryNetworkCall } from '@main/lib/network-retry';
 
 const pLimit = resolveDefaultExport(pLimitModule);
 
@@ -90,6 +91,10 @@ export class TtsService {
      * ensureWindow is called repeatedly as segments are consumed.
      */
     private prepared = new Set<number>();
+
+    private static readonly PREFETCH_RETRY_BUDGET_MS = 120_000;
+    private static readonly PREFETCH_RETRY_MIN_MS = 1_000;
+    private static readonly PREFETCH_RETRY_MAX_MS = 15_000;
 
     constructor() {
         this.settings = ttsRepo.ensureSettings();
@@ -463,34 +468,45 @@ export class TtsService {
         }
     }
 
-    /** Synthesize and queue a segment to the renderer. Retries once on failure. */
+    /**
+     * Retries while the budget lasts, so a network outage resumes by itself once it ends.
+     * Giving up un-claims the slot, letting a later window or the user try again.
+     */
     private async prepareAndQueue(index: number, generation: number): Promise<void> {
-        for (let attempt = 0; attempt < 2; attempt++) {
+        const segment = this.segments[index];
+        if (!segment) return;
+
+        try {
+            const prepared = await retryNetworkCall(() => this.prepareSegment(segment), {
+                label: `TTS prefetch ${index}`,
+                retries: Number.POSITIVE_INFINITY,
+                maxRetryTimeMs: TtsService.PREFETCH_RETRY_BUDGET_MS,
+                minTimeoutMs: TtsService.PREFETCH_RETRY_MIN_MS,
+                maxTimeoutMs: TtsService.PREFETCH_RETRY_MAX_MS,
+                shouldContinue: () => generation === this.playbackGeneration,
+            });
             if (generation !== this.playbackGeneration) return;
-            try {
-                const segment = this.segments[index];
-                if (!segment) return;
 
-                const prepared = await this.prepareSegment(segment);
-                if (generation !== this.playbackGeneration) return;
-
-                const win = getMainWindow();
-                if (win) {
-                    sendToRenderer(
-                        win,
-                        PushChannels.ttsSegmentAudio,
-                        this.toSegmentAudioPayload(index, prepared, true),
-                    );
-                }
-                return; // success
-            } catch (err) {
-                if (attempt === 0) {
-                    log.warn(`TTS prefetch ${index} failed, retrying:`, err);
-                } else {
-                    log.error(`TTS prefetch ${index} failed after retry:`, err);
-                }
+            const win = getMainWindow();
+            if (win) {
+                sendToRenderer(
+                    win,
+                    PushChannels.ttsSegmentAudio,
+                    this.toSegmentAudioPayload(index, prepared, true),
+                );
             }
+        } catch (err) {
+            if (generation !== this.playbackGeneration) return;
+            this.prepared.delete(index);
+            log.error(`TTS prefetch ${index} gave up:`, err);
+            this.failPlayback(err);
         }
+    }
+
+    private failPlayback(error: unknown): void {
+        this.status = 'error';
+        this.lastError = error instanceof Error ? error.message : 'Erreur inconnue';
+        this.pushState();
     }
 
     private async playSegment(index: number, generation: number): Promise<void> {

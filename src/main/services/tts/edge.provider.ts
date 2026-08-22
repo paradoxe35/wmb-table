@@ -16,7 +16,7 @@ import type {
     TtsVoice,
 } from '@shared/tts.types';
 import { voiceLanguageCode } from '@shared/tts.types';
-import { retryTtsNetworkCall } from './network-retry';
+import { fetchWithRetry, retryNetworkCall } from '@main/lib/network-retry';
 import { trimMp3Silence } from './silence';
 
 // ── Voice listing ──
@@ -65,7 +65,7 @@ export class EdgeProvider implements TtsProvider {
 
     private async fetchVoices(): Promise<EdgeVoiceEntry[]> {
         return voiceCache.getOrFetch(async () => {
-            const res = await fetch(VOICES_URL);
+            const res = await fetchWithRetry(VOICES_URL, {}, { label: 'Edge TTS voice list' });
             if (!res.ok) throw new Error(`Edge TTS voice list failed: ${res.status}`);
             return (await res.json()) as EdgeVoiceEntry[];
         });
@@ -119,7 +119,7 @@ export class EdgeProvider implements TtsProvider {
 
         const tmpPath = tempMp3Path();
         try {
-            await retryTtsNetworkCall(() => tts.ttsPromise(request.text, tmpPath), {
+            await retryNetworkCall(() => tts.ttsPromise(request.text, tmpPath), {
                 label: 'Edge TTS synthesis',
             });
             const audioBuffer = await readFile(tmpPath);

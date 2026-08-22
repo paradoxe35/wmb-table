@@ -9,7 +9,7 @@ import type {
     TtsCompatibilityResult,
 } from '@shared/tts.types';
 import { voiceLanguageCode } from '@shared/tts.types';
-import { fetchTtsWithRetry } from './network-retry';
+import { fetchWithRetry } from '@main/lib/network-retry';
 import { trimMp3Silence } from './silence';
 
 const OPENAI_VOICES = [
@@ -128,7 +128,7 @@ export class OpenAiProvider implements TtsProvider {
         const voice = request.voiceId ?? this.voiceId;
         const speed = request.rate ?? 1;
 
-        const response = await fetchTtsWithRetry(
+        const response = await fetchWithRetry(
             'https://api.openai.com/v1/audio/speech',
             {
                 method: 'POST',
