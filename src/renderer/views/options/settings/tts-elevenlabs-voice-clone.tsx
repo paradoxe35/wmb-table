@@ -50,6 +50,22 @@ export function ClonedVoicesList({ voices, onDelete }: ClonedVoicesListProps) {
     );
 }
 
+const MAX_NAME_LENGTH = 16;
+
+/**
+ * Providers accept only `[a-zA-Z0-9_]`. Dropping every other character makes letters vanish
+ * as the reader types, so spaces become underscores and accents fold to their plain letter:
+ * "Ma Voix" reads back as "Ma_Voix" instead of "MaVoix".
+ */
+function toVoiceName(input: string): string {
+    return input
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\s-]+/g, '_')
+        .replace(/[^a-zA-Z0-9_]/g, '')
+        .slice(0, MAX_NAME_LENGTH);
+}
+
 export function VoiceCloneForm({ providerType, onCloned, languages }: VoiceCloneFormProps) {
     const { t } = useTranslation();
     const [name, setName] = useState('');
@@ -92,13 +108,13 @@ export function VoiceCloneForm({ providerType, onCloned, languages }: VoiceClone
             <Space orientation="vertical" size="small" style={{ width: '100%' }}>
                 <div style={{ display: 'flex', gap: 8 }}>
                     <Input
-                        placeholder={t('Nom de la voix (ex: MaVoix)')}
+                        placeholder={t('Nom de la voix (ex: Ma Voix)')}
                         size="small"
                         value={name}
-                        maxLength={16}
+                        maxLength={MAX_NAME_LENGTH}
                         style={{ flex: 1 }}
                         onChange={(e) => {
-                            setName(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''));
+                            setName(toVoiceName(e.target.value));
                         }}
                     />
                     {languages && (

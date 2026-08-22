@@ -330,10 +330,6 @@ const pt: Record<string, string> = {
         'Gratuito, funciona sem conexão com a internet. Usa as vozes já instaladas no seu computador.',
     "Gratuit, fonctionne sans connexion internet. Très rapide, permet de cloner une voix à partir d'un court enregistrement. Nécessite un premier téléchargement.":
         'Gratuito, funciona sem ligação à internet. Muito rápido e permite clonar uma voz a partir de uma gravação curta. Requer uma primeira transferência.',
-    'Chaque langue est un modèle distinct à télécharger une seule fois. Tout fonctionne ensuite sans connexion.':
-        'Cada idioma é um modelo distinto, transferido uma única vez. Depois tudo funciona sem ligação.',
-    'Les voix marquées « cloné » parlent avec un enregistrement de référence.':
-        'As vozes marcadas como «clonada» falam com uma gravação de referência.',
     Installer: 'Instalar',
     'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.':
         'Gratuito, funciona sem conexão com a internet. Suporta muitos idiomas e vozes. Requer um download inicial.',
@@ -417,7 +413,7 @@ const pt: Record<string, string> = {
     'Cloner une voix': 'Clonar uma voz',
     'Enregistrez un audio WAV ou MP3 de 10 à 60 secondes pour créer votre propre voix.':
         'Grave um áudio WAV ou MP3 de 10 a 60 segundos para criar sua própria voz.',
-    'Nom de la voix (ex: MaVoix)': 'Nome da voz (ex.: MinhaVoz)',
+    'Nom de la voix (ex: Ma Voix)': 'Nome da voz (ex.: MinhaVoz)',
     'Choisir un fichier audio': 'Escolher um arquivo de áudio',
     Cloner: 'Clonar',
     'Voix clonée avec succès': 'Voz clonada com sucesso',

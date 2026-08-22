@@ -26,8 +26,8 @@ export const PROVIDER_CATALOG = {
     },
     pocket: {
         label: 'Pocket TTS (Kyutai)',
-        locality: 'local',
-        hint: "Gratuit, fonctionne sans connexion internet. Très rapide, permet de cloner une voix à partir d'un court enregistrement. Nécessite un premier téléchargement.",
+        locality: 'remote',
+        hint: 'Gratuit, très bonne qualité, six langues. Nécessite une connexion internet. Aucun compte requis.',
         free: true,
     },
     edge: {

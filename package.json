@@ -74,8 +74,6 @@
         "mpg123-decoder": "^1.0.3",
         "node-downloader-helper": "^2.1.11",
         "node-edge-tts": "^1.2.10",
-        "onnxruntime-common": "1.20.0",
-        "onnxruntime-node": "1.20.0",
         "p-limit": "^7.3.1",
         "p-retry": "^8.0.0",
         "sherpa-onnx": "^1.13.5",
@@ -188,9 +186,7 @@
             "entitlementsInherit": "resources/entitlements.mac.plist",
             "gatekeeperAssess": false,
             "files": [
-                "!node_modules/koffi/**/*",
-                "!node_modules/onnxruntime-node/bin/napi-v3/linux/**/*",
-                "!node_modules/onnxruntime-node/bin/napi-v3/win32/**/*"
+                "!node_modules/koffi/**/*"
             ]
         },
         "dmg": {
@@ -211,10 +207,6 @@
             "target": [
                 "nsis",
                 "zip"
-            ],
-            "files": [
-                "!node_modules/onnxruntime-node/bin/napi-v3/linux/**/*",
-                "!node_modules/onnxruntime-node/bin/napi-v3/darwin/**/*"
             ]
         },
         "nsis": {
@@ -234,9 +226,7 @@
             ],
             "category": "Education",
             "files": [
-                "!node_modules/koffi/**/*",
-                "!node_modules/onnxruntime-node/bin/napi-v3/darwin/**/*",
-                "!node_modules/onnxruntime-node/bin/napi-v3/win32/**/*"
+                "!node_modules/koffi/**/*"
             ]
         },
         "publish": {

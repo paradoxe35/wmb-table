@@ -327,10 +327,6 @@ const sw: Record<string, string> = {
         'Bure, hufanya kazi bila intaneti. Hutumia sauti ambazo tayari zimesakinishwa kwenye kompyuta yako.',
     "Gratuit, fonctionne sans connexion internet. Très rapide, permet de cloner une voix à partir d'un court enregistrement. Nécessite un premier téléchargement.":
         'Bila malipo, hufanya kazi bila intaneti. Haraka sana, na huweza kunakili sauti kutoka kwa rekodi fupi. Inahitaji upakuaji wa kwanza.',
-    'Chaque langue est un modèle distinct à télécharger une seule fois. Tout fonctionne ensuite sans connexion.':
-        'Kila lugha ni modeli tofauti, hupakuliwa mara moja tu. Kisha kila kitu hufanya kazi bila intaneti.',
-    'Les voix marquées « cloné » parlent avec un enregistrement de référence.':
-        'Sauti zilizowekwa alama ya "imenakiliwa" huzungumza kwa rekodi ya marejeleo.',
     Installer: 'Sakinisha',
     'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.':
         'Bure, hufanya kazi bila intaneti. Inasaidia lugha na sauti nyingi. Inahitaji upakuaji wa kwanza.',
@@ -414,7 +410,7 @@ const sw: Record<string, string> = {
     'Cloner une voix': 'Nakili sauti',
     'Enregistrez un audio WAV ou MP3 de 10 à 60 secondes pour créer votre propre voix.':
         'Rekodi sauti ya WAV au MP3 ya sekunde 10 hadi 60 ili kuunda sauti yako mwenyewe.',
-    'Nom de la voix (ex: MaVoix)': 'Jina la sauti (mf.: SautiYangu)',
+    'Nom de la voix (ex: Ma Voix)': 'Jina la sauti (mf.: SautiYangu)',
     'Choisir un fichier audio': 'Chagua faili ya sauti',
     Cloner: 'Nakili',
     'Voix clonée avec succès': 'Sauti imenakiliwa kwa mafanikio',
