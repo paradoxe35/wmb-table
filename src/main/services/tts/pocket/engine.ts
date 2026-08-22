@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { availableParallelism } from 'node:os';
 import { join } from 'node:path';
 import type * as ort from 'onnxruntime-common';
 import { getRuntime } from './runtime';
@@ -17,6 +18,9 @@ const EOS_LOGIT_THRESHOLD = -4;
 const FIRST_DECODE_FRAMES = 3;
 const DECODE_FRAMES = 12;
 const CHUNK_GAP_SECONDS = 0.25;
+
+/** Measured on the flow model: gains flatten past eight threads, and the app needs the rest. */
+const MAX_THREADS = 8;
 
 const SESSION_FILES = {
     textConditioner: 'text_conditioner_int8.onnx',
@@ -92,7 +96,9 @@ export class PocketEngine {
                 async ([name, file]) =>
                     [
                         name,
-                        await getRuntime().InferenceSession.create(join(modelDir, file)),
+                        await getRuntime().InferenceSession.create(join(modelDir, file), {
+                            intraOpNumThreads: Math.min(MAX_THREADS, availableParallelism()),
+                        }),
                     ] as const,
             ),
         );
