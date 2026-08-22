@@ -9,14 +9,17 @@ import * as audioRepo from '@main/database/repositories/audio.repository';
 
 const inProgress = new Set<string>();
 
-/** Delay before starting download so the streaming player can buffer first. */
-const INITIAL_DELAY_MS = 5_000;
-
-/** Pause between chunk reads to throttle bandwidth (~1 MB/s effective). */
-const CHUNK_DELAY_MS = 50;
-
 const RETRIES = 3;
-const RETRY_MIN_DELAY_MS = 2_000;
+
+const TIMINGS = {
+    /** Delay before starting download so the streaming player can buffer first. */
+    initialDelayMs: 5_000,
+    /** Pause between chunk reads to throttle bandwidth (~1 MB/s effective). */
+    chunkDelayMs: 50,
+    retryMinDelayMs: 2_000,
+};
+
+export const __testing = { TIMINGS };
 
 function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -86,7 +89,7 @@ async function streamToFile(
                 });
             }
             // Throttle to avoid competing with the streaming player
-            await delay(CHUNK_DELAY_MS);
+            await delay(TIMINGS.chunkDelayMs);
         }
     } finally {
         reader.cancel().catch(() => {});
@@ -151,12 +154,12 @@ export async function cacheAudio(audioLink: string): Promise<void> {
 
     try {
         // Let the streaming player buffer first
-        await delay(INITIAL_DELAY_MS);
+        await delay(TIMINGS.initialDelayMs);
 
         await retryNetworkCall(() => downloadPart(audioLink, partPath), {
             label: `Audio cache ${fileName}`,
             retries: RETRIES,
-            minTimeoutMs: RETRY_MIN_DELAY_MS,
+            minTimeoutMs: TIMINGS.retryMinDelayMs,
         });
 
         await rename(partPath, filePath);

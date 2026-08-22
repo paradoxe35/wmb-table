@@ -18,7 +18,7 @@ vi.mock('@main/database/repositories/audio.repository', () => ({
     getDownloadByAudioLink: () => getDownloadByAudioLink(),
 }));
 
-const { cacheAudio } = await import('@main/services/audio-cache.service');
+const { cacheAudio, __testing } = await import('@main/services/audio-cache.service');
 
 const AUDIO_URL = 'https://example.invalid/sermons/63-0101.mp3';
 const CACHED_NAME = `${createHash('sha256').update(AUDIO_URL).digest('hex')}.mp3`;
@@ -53,32 +53,10 @@ function rangeHeaderOf(callIndex: number): string | undefined {
     return fetchMock.mock.calls[callIndex]?.[1]?.headers?.Range;
 }
 
-/**
- * Only setTimeout is faked, so the service's start delay and backoff are skipped while the
- * file-system streams it awaits still run on the real event loop.
- */
-async function drainUntil<T>(work: Promise<T>): Promise<T> {
-    let settled = false;
-    const pending = work.finally(() => {
-        settled = true;
-    });
-
-    // Yield for the real file-system work, then jump straight to the next pending timer
-    // rather than stepping blindly, which is far too slow when the suite runs in parallel.
-    for (let turn = 0; turn < 5_000 && !settled; turn++) {
-        await new Promise((resolve) => setImmediate(resolve));
-        if (!settled && vi.getTimerCount() > 0) {
-            await vi.advanceTimersToNextTimerAsync();
-        }
-    }
-
-    const result = await pending;
-    expect(settled).toBe(true);
-    return result;
-}
-
+/** Real timers, with the service's waits collapsed: no fake clock to drive alongside the
+ * file-system streams the download awaits. */
 function runCacheAudio(): Promise<void> {
-    return drainUntil(cacheAudio(AUDIO_URL));
+    return cacheAudio(AUDIO_URL);
 }
 
 beforeEach(() => {
@@ -87,16 +65,20 @@ beforeEach(() => {
     setDownload.mockReset();
     getDownloadByAudioLink.mockReturnValue(null);
     vi.stubGlobal('fetch', fetchMock);
-    vi.useFakeTimers({ toFake: ['setTimeout'] });
+    Object.assign(__testing.TIMINGS, { initialDelayMs: 0, chunkDelayMs: 0, retryMinDelayMs: 1 });
 });
 
 afterEach(() => {
-    vi.useRealTimers();
+    Object.assign(__testing.TIMINGS, {
+        initialDelayMs: 5_000,
+        chunkDelayMs: 50,
+        retryMinDelayMs: 2_000,
+    });
     vi.unstubAllGlobals();
     rmSync(cacheDir, { recursive: true, force: true });
 });
 
-describe('cacheAudio', { timeout: 20_000 }, () => {
+describe('cacheAudio', () => {
     it('downloads, promotes the partial file and records it', async () => {
         fetchMock.mockImplementation(async () => response(200, 'SERMON-AUDIO'));
 
@@ -207,7 +189,7 @@ describe('cacheAudio', { timeout: 20_000 }, () => {
 
         const first = cacheAudio(AUDIO_URL);
         const second = cacheAudio(AUDIO_URL);
-        await drainUntil(Promise.all([first, second]));
+        await Promise.all([first, second]);
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(readFileSync(cachedPath(), 'utf-8')).toBe('SERMON-AUDIO');
