@@ -11,6 +11,7 @@ import type {
 import { voiceLanguageCode } from '@shared/tts.types';
 import { fetchWithRetry } from '@main/lib/network-retry';
 import { trimWavSilence } from './silence';
+import { decodeWav, encodeWav } from './wav';
 
 const API_BASE = 'https://pocket-tts-api.kyutai.org';
 const REQUEST_TIMEOUT_MS = 120_000;
@@ -56,6 +57,15 @@ const VOICES = [
 ] as const;
 
 const DEFAULT_VOICE = 'anna';
+
+/**
+ * The service degrades on long input rather than refusing it: a 1500-character request came
+ * back missing its closing sentence entirely, while 350 to 450 characters read through. Text
+ * is cut on sentence boundaries and the pieces are joined back into one clip.
+ */
+const MAX_CHUNK_CHARS = 350;
+const CHUNK_GAP_SECONDS = 0.15;
+const SENTENCE = /[^.!?…]+[.!?…]+|[^.!?…]+$/g;
 const SEPARATOR = ':';
 
 /** A voice names the language endpoint it speaks and the voice inside it: `<language>:<voice>`. */
@@ -126,12 +136,30 @@ export class PocketProvider implements TtsProvider {
             throw new Error('Pocket TTS ne prend pas en charge la langue de ce document.');
         }
 
+        const voice = pocketVoiceName(voiceId) || DEFAULT_VOICE;
+        const chunks = splitForSynthesis(request.text);
+        if (chunks.length === 0) {
+            throw new Error('Aucun texte à lire.');
+        }
+
+        const clips: Buffer[] = [];
+        for (const chunk of chunks) {
+            clips.push(await this.speak(language.path, voice, chunk));
+        }
+
+        return {
+            audioBase64: joinClips(clips).toString('base64'),
+            mimeType: 'audio/wav',
+        };
+    }
+
+    private async speak(language: string, voice: string, text: string): Promise<Buffer> {
         const form = new FormData();
-        form.append('text', request.text);
-        form.append('voice_url', pocketVoiceName(voiceId) || DEFAULT_VOICE);
+        form.append('text', text);
+        form.append('voice_url', voice);
 
         const response = await fetchWithRetry(
-            `${API_BASE}/${language.path}/tts`,
+            `${API_BASE}/${language}/tts`,
             { method: 'POST', body: form },
             { label: 'Pocket TTS', timeoutMs: REQUEST_TIMEOUT_MS },
         );
@@ -139,11 +167,7 @@ export class PocketProvider implements TtsProvider {
         if (!response.ok) {
             throw new Error(await readError(response));
         }
-
-        return {
-            audioBase64: Buffer.from(await response.arrayBuffer()).toString('base64'),
-            mimeType: 'audio/wav',
-        };
+        return Buffer.from(await response.arrayBuffer());
     }
 
     async previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
@@ -169,6 +193,86 @@ export class PocketProvider implements TtsProvider {
     dispose(): void {
         // Nothing is held open: every request is a single HTTP call.
     }
+}
+
+/** Sentence boundaries first; a sentence longer than the cap is cut on its last space. */
+export function splitForSynthesis(text: string, limit = MAX_CHUNK_CHARS): string[] {
+    const normalized = text.replace(/\s+/g, ' ').trim();
+    if (!normalized) return [];
+    if (normalized.length <= limit) return [normalized];
+
+    const chunks: string[] = [];
+    let pending = '';
+
+    const flush = () => {
+        if (pending.trim()) chunks.push(pending.trim());
+        pending = '';
+    };
+
+    for (const sentence of normalized.match(SENTENCE) ?? [normalized]) {
+        const piece = sentence.trim();
+        if (!piece) continue;
+
+        if (piece.length > limit) {
+            flush();
+            chunks.push(...cutOnSpaces(piece, limit));
+            continue;
+        }
+
+        if (!pending) pending = piece;
+        else if (`${pending} ${piece}`.length <= limit) pending = `${pending} ${piece}`;
+        else {
+            flush();
+            pending = piece;
+        }
+    }
+    flush();
+
+    return chunks;
+}
+
+function cutOnSpaces(sentence: string, limit: number): string[] {
+    const pieces: string[] = [];
+    let rest = sentence;
+
+    while (rest.length > limit) {
+        const window = rest.slice(0, limit);
+        const at = window.lastIndexOf(' ');
+        const cut = at > limit / 2 ? at : limit;
+        pieces.push(rest.slice(0, cut).trim());
+        rest = rest.slice(cut).trim();
+    }
+    if (rest) pieces.push(rest);
+
+    return pieces;
+}
+
+/** Joins the clips into one, with a short gap so the seams do not sound clipped. */
+function joinClips(clips: Buffer[]): Buffer {
+    if (clips.length === 1) return clips[0];
+
+    const decoded = clips.map(decodeWav);
+    const first = decoded.find((clip) => clip !== null);
+    if (!first) return clips[0];
+
+    const sampleRate = first.sampleRate;
+    const gap = new Float32Array(Math.round(CHUNK_GAP_SECONDS * sampleRate));
+    const parts: Float32Array[] = [];
+
+    decoded.forEach((clip, index) => {
+        if (!clip) return;
+        if (index > 0) parts.push(gap);
+        parts.push(clip.samples);
+    });
+
+    const merged = new Float32Array(parts.reduce((total, part) => total + part.length, 0));
+    let offset = 0;
+    for (const part of parts) {
+        merged.set(part, offset);
+        offset += part.length;
+    }
+
+    return encodeWav(merged, sampleRate);
 }
 
 async function readError(response: Response): Promise<string> {
