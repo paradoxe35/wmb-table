@@ -22,13 +22,23 @@ async function fileExists(path: string): Promise<boolean> {
     }
 }
 
+const MAX_SEGMENT_LENGTH = 120;
+/** Windows refuses these as file names whatever the extension. */
+const RESERVED_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i;
+
 /**
  * A voice id carries its speaker after a colon (`…-tom-medium-int8:0`), which Windows reads as
- * a drive separator and refuses to `mkdir`. Every segment is folded: any provider's voice name
- * can hold one of these.
+ * a drive separator and refuses to `mkdir`. Every segment is folded: a voice id is whatever a
+ * provider chose to return, so it is treated as untrusted input rather than a known shape.
  */
 export function pathSafe(segment: string): string {
-    return segment.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_') || '_';
+    const folded = segment.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').slice(0, MAX_SEGMENT_LENGTH);
+
+    // `.` and `..` would walk out of the cache directory instead of naming somewhere in it.
+    if (folded === '.' || folded === '..') return '_';
+    if (RESERVED_NAMES.test(folded)) return `_${folded}`;
+
+    return folded || '_';
 }
 
 export class TtsCache {

@@ -20,4 +20,25 @@ describe('pathSafe', () => {
     it('never returns an empty segment, which would collapse the path', () => {
         expect(pathSafe('')).toBe('_');
     });
+
+    it('folds the colon in a Pocket voice id', () => {
+        expect(pathSafe('french:anna')).toBe('french_anna');
+        expect(pathSafe('english:peter_yearsley')).toBe('english_peter_yearsley');
+    });
+
+    it('refuses to name a segment that would walk out of the cache', () => {
+        expect(pathSafe('.')).toBe('_');
+        expect(pathSafe('..')).toBe('_');
+    });
+
+    it('escapes the names Windows reserves for devices', () => {
+        expect(pathSafe('CON')).toBe('_CON');
+        expect(pathSafe('nul')).toBe('_nul');
+        expect(pathSafe('com1')).toBe('_com1');
+        expect(pathSafe('console')).toBe('console');
+    });
+
+    it('caps a segment a provider returned overlong', () => {
+        expect(pathSafe('x'.repeat(300))).toHaveLength(120);
+    });
 });
