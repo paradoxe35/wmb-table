@@ -238,9 +238,14 @@ export class PocketProvider implements TtsProvider {
         this.loadedBundle = '';
     }
 
+    /** Only an installed bundle can speak: naming another one just fails later at load. */
     private defaultVoiceFor(language?: string): string {
-        const model = language ? findModelForLanguage(voiceLanguageCode(language)) : undefined;
-        const bundle = model?.bundle ?? installedBundles()[0];
+        const installed = installedBundles();
+        const preferred = language
+            ? findModelForLanguage(voiceLanguageCode(language))?.bundle
+            : undefined;
+
+        const bundle = preferred && installed.includes(preferred) ? preferred : installed[0];
         return bundle ? pocketVoiceId(bundle, POCKET_VOICES[0]) : '';
     }
 

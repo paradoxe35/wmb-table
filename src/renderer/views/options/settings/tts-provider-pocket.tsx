@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, List, message, Progress, Select, Space, Tag, Typography } from 'antd';
-import { DownloadOutlined } from '@ant-design/icons';
+import { DownloadOutlined, SoundOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores/app.store';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { useResolvedUiLanguage } from '@renderer/hooks';
 import { getErrorMessage } from '@renderer/utils/functions';
 import { DeleteBtn } from '@renderer/components/delete-btn';
+import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
 import { pocketVoiceBundle } from '@shared/pocket-voice-id';
+import { languageLabel, voiceLanguageCode } from '@shared/tts.types';
 import type { TtsModelInfo, TtsProviderInfo, TtsVoice } from '@shared/tts.types';
 import {
     Field,
@@ -31,9 +33,11 @@ export default function PocketConfig({ settings, info, onUpdate }: PocketConfigP
     const setProviders = useTtsStore((s) => s.setProviders);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const uiLanguage = useResolvedUiLanguage();
+    const documentLanguage = contentLanguage ? voiceLanguageCode(contentLanguage) : '';
 
     const [models, setModels] = useState<TtsModelInfo[]>([]);
     const [clonedVoices, setClonedVoices] = useState<TtsVoice[]>([]);
+    const [auditioning, setAuditioning] = useState(false);
 
     const refresh = useCallback(() => {
         window.api.tts
@@ -53,6 +57,20 @@ export default function PocketConfig({ settings, info, onUpdate }: PocketConfigP
     useEffect(refresh, [refresh]);
 
     const { downloads, start } = useModelDownloads(PROVIDER_TYPE, refresh);
+
+    /** The document's own language first: it is the one the reader is about to need. */
+    const ordered = useMemo(() => {
+        return [...models].sort((a, b) => {
+            const score = (model: TtsModelInfo) =>
+                (model.langCode.includes(documentLanguage) ? -2 : 0) + (model.installed ? -1 : 0);
+            return score(a) - score(b);
+        });
+    }, [documentLanguage, models]);
+
+    const suggested = useMemo(
+        () => models.find((m) => !m.installed && m.langCode.includes(documentLanguage)),
+        [documentLanguage, models],
+    );
 
     const handleDelete = useCallback(
         async (bundle: string) => {
@@ -91,14 +109,60 @@ export default function PocketConfig({ settings, info, onUpdate }: PocketConfigP
         [onUpdate, refresh, settings],
     );
 
+    const audition = useCallback(async () => {
+        if (!cfg.voiceId || auditioning) return;
+        setAuditioning(true);
+        try {
+            const result = await window.api.tts.previewVoice(contentLanguage ?? 'fr', cfg.voiceId);
+            ttsAudioPlayer.play(result.audioBase64, result.mimeType, settings.rate ?? 1);
+        } catch (err) {
+            message.error(t(getErrorMessage(err, 'Erreur lors de la prévisualisation de la voix')));
+        } finally {
+            setAuditioning(false);
+        }
+    }, [auditioning, cfg.voiceId, contentLanguage, settings.rate, t]);
+
     const voiceGroups = groupVoicesByLanguage(
         info?.voices ?? [],
         uiLanguage,
         contentLanguage ?? undefined,
     );
+    const installedBundle = pocketVoiceBundle(cfg.voiceId ?? '');
+    const canAudition = Boolean(
+        cfg.voiceId && models.some((m) => m.modelName === installedBundle && m.installed),
+    );
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="small">
+            {suggested && (
+                <Field
+                    label={t('Voix disponible — {{lang}}', {
+                        lang: languageLabel(documentLanguage, uiLanguage),
+                    })}
+                    hint={t('Téléchargez une voix pour la langue active du document.')}
+                >
+                    {downloads.has(suggested.modelName) ? (
+                        <Progress
+                            percent={downloads.get(suggested.modelName)?.percentage ?? 0}
+                            size="small"
+                        />
+                    ) : (
+                        <Space size="small" align="center">
+                            <Button
+                                size="small"
+                                icon={<DownloadOutlined />}
+                                onClick={() => start(suggested.modelName)}
+                            >
+                                {t('Télécharger « {{name}} »', { name: suggested.voiceName })}
+                            </Button>
+                            <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
+                                ~{suggested.filesizeMb} {t('Mo')}
+                            </Text>
+                        </Space>
+                    )}
+                </Field>
+            )}
+
             <Field
                 label={t('Langue')}
                 hint={t(
@@ -108,7 +172,7 @@ export default function PocketConfig({ settings, info, onUpdate }: PocketConfigP
                 <List
                     size="small"
                     bordered
-                    dataSource={models}
+                    dataSource={ordered}
                     renderItem={(model) => {
                         const progress = downloads.get(model.modelName);
                         return (
@@ -153,17 +217,25 @@ export default function PocketConfig({ settings, info, onUpdate }: PocketConfigP
                 label={t('Voix')}
                 hint={t('Les voix marquées « cloné » parlent avec un enregistrement de référence.')}
             >
-                <Select
-                    style={{ width: '100%' }}
-                    value={cfg.voiceId || undefined}
-                    showSearch
-                    optionFilterProp="label"
-                    placeholder={t('Sélectionnez une voix')}
-                    options={voiceGroups}
-                    onChange={(value) => {
-                        onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'voiceId', value));
-                    }}
-                />
+                <Space.Compact style={{ width: '100%' }}>
+                    <Select
+                        style={{ width: '100%' }}
+                        value={cfg.voiceId || undefined}
+                        showSearch
+                        optionFilterProp="label"
+                        placeholder={t('Sélectionnez une voix')}
+                        options={voiceGroups}
+                        onChange={(value) => {
+                            onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'voiceId', value));
+                        }}
+                    />
+                    <Button
+                        icon={<SoundOutlined />}
+                        loading={auditioning}
+                        disabled={!canAudition}
+                        onClick={() => void audition()}
+                    />
+                </Space.Compact>
             </Field>
 
             <ClonedVoicesList voices={clonedVoices} onDelete={handleDeleteClone} />
