@@ -325,6 +325,13 @@ const sw: Record<string, string> = {
     'Edge TTS (Microsoft)': 'Edge TTS (Microsoft)',
     'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.':
         'Bure, hufanya kazi bila intaneti. Hutumia sauti ambazo tayari zimesakinishwa kwenye kompyuta yako.',
+    "Gratuit, fonctionne sans connexion internet. Très rapide, permet de cloner une voix à partir d'un court enregistrement. Nécessite un premier téléchargement.":
+        'Bila malipo, hufanya kazi bila intaneti. Haraka sana, na huweza kunakili sauti kutoka kwa rekodi fupi. Inahitaji upakuaji wa kwanza.',
+    'Chaque langue est un modèle distinct à télécharger une seule fois. Tout fonctionne ensuite sans connexion.':
+        'Kila lugha ni modeli tofauti, hupakuliwa mara moja tu. Kisha kila kitu hufanya kazi bila intaneti.',
+    'Les voix marquées « cloné » parlent avec un enregistrement de référence.':
+        'Sauti zilizowekwa alama ya "imenakiliwa" huzungumza kwa rekodi ya marejeleo.',
+    Installer: 'Sakinisha',
     'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.':
         'Bure, hufanya kazi bila intaneti. Inasaidia lugha na sauti nyingi. Inahitaji upakuaji wa kwanza.',
     'Gratuit, fonctionne sans connexion internet. Bonne qualité, nécessite un premier téléchargement.':

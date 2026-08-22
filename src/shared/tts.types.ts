@@ -24,6 +24,12 @@ export const PROVIDER_CATALOG = {
         hint: 'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.',
         free: true,
     },
+    pocket: {
+        label: 'Pocket TTS (Kyutai)',
+        locality: 'local',
+        hint: "Gratuit, fonctionne sans connexion internet. Très rapide, permet de cloner une voix à partir d'un court enregistrement. Nécessite un premier téléchargement.",
+        free: true,
+    },
     edge: {
         label: 'Edge TTS (Microsoft)',
         locality: 'remote',
@@ -579,6 +585,7 @@ export function createDefaultTtsSettings(): TtsSettings {
         providers: {
             browser: {},
             sherpa: {},
+            pocket: {},
             elevenlabs: {},
             openai: {},
             edge: {},

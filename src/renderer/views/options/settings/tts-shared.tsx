@@ -1,4 +1,5 @@
-import { Tag, Typography } from 'antd';
+import { useCallback, useEffect, useState } from 'react';
+import { message, Tag, Typography } from 'antd';
 import { CloudOutlined, LaptopOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -149,4 +150,66 @@ export function ApiKeyLink({ provider }: { provider: TtsProviderType }) {
             <a style={{ fontSize: 'inherit' }}>{t('Obtenir une clé API')}</a>
         </Text>
     );
+}
+
+export interface ModelDownloadState {
+    percentage: number;
+    phase?: string;
+}
+
+/**
+ * Follows the main process download push for one provider. Progress arrives per model, so a
+ * reader can queue several and watch each independently.
+ */
+export function useModelDownloads(
+    provider: TtsProviderType,
+    onInstalled: () => void,
+): {
+    downloads: Map<string, ModelDownloadState>;
+    start: (modelName: string) => void;
+} {
+    const { t } = useTranslation();
+    const [downloads, setDownloads] = useState(new Map<string, ModelDownloadState>());
+
+    const forget = useCallback((modelName: string) => {
+        setDownloads((previous) => {
+            const next = new Map(previous);
+            next.delete(modelName);
+            return next;
+        });
+    }, []);
+
+    useEffect(() => {
+        return window.api.on.ttsModelDownloadProgress((event) => {
+            if (event.provider !== provider || !event.modelName) return;
+
+            if (event.status === 'complete') {
+                forget(event.modelName);
+                message.success(t('Voix installée'));
+                onInstalled();
+            } else if (event.status === 'error') {
+                forget(event.modelName);
+                message.error(t('Erreur: {{error}}', { error: t(event.error ?? '') }));
+            } else {
+                setDownloads((previous) =>
+                    new Map(previous).set(event.modelName!, {
+                        percentage: event.percentage,
+                        phase: event.phase,
+                    }),
+                );
+            }
+        });
+    }, [forget, onInstalled, provider, t]);
+
+    const start = useCallback(
+        (modelName: string) => {
+            setDownloads((previous) =>
+                new Map(previous).set(modelName, { percentage: 0, phase: 'downloading' }),
+            );
+            void window.api.tts.downloadModel(provider, modelName).catch(() => {});
+        },
+        [provider],
+    );
+
+    return { downloads, start };
 }

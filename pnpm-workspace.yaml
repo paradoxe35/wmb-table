@@ -9,5 +9,6 @@ allowBuilds:
     'simple-git-hooks': true
     '@turbodocx/html-to-docx': false
     'koffi': true
+    protobufjs: true
 minimumReleaseAgeExclude:
     - sherpa-onnx@1.13.5

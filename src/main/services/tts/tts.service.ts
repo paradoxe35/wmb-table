@@ -13,6 +13,7 @@ import { disposeSilenceTrimming } from './silence';
 import type { CacheHit } from './tts-cache';
 import { OpenAiProvider } from './openai.provider';
 import { SherpaProvider } from './sherpa.provider';
+import { PocketProvider } from './pocket.provider';
 import { ElevenLabsProvider } from './elevenlabs.provider';
 import { EdgeProvider } from './edge.provider';
 import { CartesiaProvider } from './cartesia.provider';
@@ -104,12 +105,14 @@ export class TtsService {
 
     private initProviders(): void {
         const sherpa = new SherpaProvider();
+        const pocket = new PocketProvider();
         const elevenlabs = new ElevenLabsProvider();
         const openai = new OpenAiProvider();
         const edge = new EdgeProvider();
         const cartesia = new CartesiaProvider();
 
         this.providers.set('sherpa', sherpa);
+        this.providers.set('pocket', pocket);
         this.providers.set('elevenlabs', elevenlabs);
         this.providers.set('openai', openai);
         this.providers.set('edge', edge);

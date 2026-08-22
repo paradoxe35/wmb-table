@@ -74,6 +74,7 @@
         "mpg123-decoder": "^1.0.3",
         "node-downloader-helper": "^2.1.11",
         "node-edge-tts": "^1.2.10",
+        "onnxruntime-web": "1.20.0",
         "p-limit": "^7.3.1",
         "p-retry": "^8.0.0",
         "sherpa-onnx": "^1.13.5",
@@ -151,8 +152,14 @@
             "buildResources": "resources",
             "output": "release"
         },
+        "asarUnpack": [
+            "node_modules/onnxruntime-web/dist/*.wasm",
+            "node_modules/onnxruntime-web/dist/*.mjs"
+        ],
         "files": [
             "out/**/*",
+            "!node_modules/onnxruntime-web/dist/*.min.js",
+            "!node_modules/onnxruntime-web/dist/**/*.map",
             "!node_modules/better-sqlite3/deps/**/*",
             "!node_modules/better-sqlite3/src/**/*",
             "!node_modules/better-sqlite3/binding.gyp",

@@ -35,6 +35,7 @@ import { LocalityTag, FreeTag, Field, Hint, formatBytes } from './tts-shared';
 import { debounce, getErrorMessage } from '@renderer/utils/functions';
 import BrowserConfig from './tts-provider-browser';
 import SherpaConfig from './tts-provider-sherpa';
+import PocketConfig from './tts-provider-pocket';
 import ElevenLabsConfig from './tts-provider-elevenlabs';
 import OpenAIConfig from './tts-provider-openai';
 import EdgeConfig from './tts-provider-edge';
@@ -71,6 +72,10 @@ function ActiveProviderConfig({
         case 'sherpa':
             return (
                 <SherpaConfig settings={settings} info={getInfo('sherpa')} onUpdate={onUpdate} />
+            );
+        case 'pocket':
+            return (
+                <PocketConfig settings={settings} info={getInfo('pocket')} onUpdate={onUpdate} />
             );
         case 'elevenlabs':
             return (

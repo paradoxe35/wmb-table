@@ -327,6 +327,13 @@ const es: Record<string, string> = {
     'Edge TTS (Microsoft)': 'Edge TTS (Microsoft)',
     'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.':
         'Gratis, funciona sin conexión a internet. Usa las voces instaladas en su ordenador.',
+    "Gratuit, fonctionne sans connexion internet. Très rapide, permet de cloner une voix à partir d'un court enregistrement. Nécessite un premier téléchargement.":
+        'Gratuito, funciona sin conexión a internet. Muy rápido y permite clonar una voz a partir de una grabación corta. Requiere una primera descarga.',
+    'Chaque langue est un modèle distinct à télécharger une seule fois. Tout fonctionne ensuite sans connexion.':
+        'Cada idioma es un modelo distinto que se descarga una sola vez. Después todo funciona sin conexión.',
+    'Les voix marquées « cloné » parlent avec un enregistrement de référence.':
+        'Las voces marcadas como «clonada» hablan con una grabación de referencia.',
+    Installer: 'Instalar',
     'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.':
         'Gratis, funciona sin conexión. Soporta muchos idiomas y voces. Requiere una descarga inicial.',
     'Gratuit, fonctionne sans connexion internet. Bonne qualité, nécessite un premier téléchargement.':
