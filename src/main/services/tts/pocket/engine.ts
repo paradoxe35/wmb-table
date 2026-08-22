@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import * as ort from 'onnxruntime-web';
+import type * as ort from 'onnxruntime-common';
+import { getRuntime } from './runtime';
 import { SentencePieceTokenizer } from './sentencepiece';
 import { parseNpyFloat32 } from './npy';
 import { parseSafetensors } from './safetensors';
@@ -43,7 +44,7 @@ export interface PocketAudio {
 type Sessions = Record<keyof typeof SESSION_FILES, ort.InferenceSession>;
 
 const tensor = (dtype: 'float32' | 'int64' | 'bool', data: unknown, shape: number[]) =>
-    new ort.Tensor(dtype, data as never, shape);
+    new (getRuntime().Tensor)(dtype, data as never, shape);
 
 function gaussian(size: number, deviation: number): Float32Array {
     const values = new Float32Array(size);
@@ -91,9 +92,7 @@ export class PocketEngine {
                 async ([name, file]) =>
                     [
                         name,
-                        await ort.InferenceSession.create(join(modelDir, file), {
-                            executionProviders: ['wasm'],
-                        }),
+                        await getRuntime().InferenceSession.create(join(modelDir, file)),
                     ] as const,
             ),
         );

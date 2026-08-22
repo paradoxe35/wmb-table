@@ -1,19 +1,7 @@
 import { parentPort } from 'node:worker_threads';
-import { createRequire } from 'node:module';
-import { dirname } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import * as ort from 'onnxruntime-web';
 import { PocketEngine, type PocketOptions, type VoiceSource } from './pocket/engine';
 import { bundleDir, installBundle } from './pocket/installer';
 import { encodeWav } from './wav';
-
-ort.env.wasm.numThreads = 1;
-ort.env.logLevel = 'error';
-// Packaged, the runtime sits in an unpacked asar, so its wasm has to be pointed at explicitly.
-// It is loaded as an ES module, which on Windows rejects a bare `C:\...` path.
-ort.env.wasm.wasmPaths = `${
-    pathToFileURL(dirname(createRequire(import.meta.url).resolve('onnxruntime-web'))).href
-}/`;
 
 interface WorkerRequest {
     id: number;

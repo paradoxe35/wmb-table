@@ -1,4 +1,4 @@
-import type { Tensor, InferenceSession } from 'onnxruntime-web';
+import type { Tensor, InferenceSession } from 'onnxruntime-common';
 import type { PocketStateEntry, PocketTensor } from './types';
 
 export type ModelState = Record<string, Tensor>;

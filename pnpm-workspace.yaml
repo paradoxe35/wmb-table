@@ -10,5 +10,6 @@ allowBuilds:
     '@turbodocx/html-to-docx': false
     'koffi': true
     protobufjs: true
+    onnxruntime-node: true
 minimumReleaseAgeExclude:
     - sherpa-onnx@1.13.5
