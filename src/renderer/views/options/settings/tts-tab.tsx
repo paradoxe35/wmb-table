@@ -30,7 +30,7 @@ import {
     type TtsProviderType,
     type TtsSettings,
 } from '@shared/tts.types';
-import { PROVIDER_CATALOG } from '@shared/tts.types';
+import { DEFAULT_TTS_PROVIDER, PROVIDER_CATALOG } from '@shared/tts.types';
 import { LocalityTag, FreeTag, Field, Hint, formatBytes } from './tts-shared';
 import { debounce, getErrorMessage } from '@renderer/utils/functions';
 import BrowserConfig from './tts-provider-browser';
@@ -268,7 +268,10 @@ export default function TtsTab() {
 
     if (!settings) return null;
 
-    const activeMeta = PROVIDER_CATALOG[settings.activeProvider];
+    const activeProvider = PROVIDER_CATALOG[settings.activeProvider]
+        ? settings.activeProvider
+        : DEFAULT_TTS_PROVIDER;
+    const activeMeta = PROVIDER_CATALOG[activeProvider];
 
     function openDocs() {
         const url = buildDocsGuideLink('audio-and-tts', contentLanguage);
@@ -305,7 +308,7 @@ export default function TtsTab() {
                 >
                     <Select
                         style={{ width: '100%' }}
-                        value={settings.activeProvider}
+                        value={activeProvider}
                         onChange={(v) => handleUpdate({ activeProvider: v })}
                         options={Object.entries(PROVIDER_CATALOG).map(([key, meta]) => ({
                             label: (

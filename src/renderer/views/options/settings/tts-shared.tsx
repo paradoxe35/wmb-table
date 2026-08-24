@@ -136,8 +136,8 @@ export function FreeTag() {
 
 export function ApiKeyLink({ provider }: { provider: TtsProviderType }) {
     const { t } = useTranslation();
-    const meta = PROVIDER_CATALOG[provider] as TtsProviderMeta;
-    const url = meta.apiKeyUrl;
+    const meta = PROVIDER_CATALOG[provider] as TtsProviderMeta | undefined;
+    const url = meta?.apiKeyUrl;
     if (!url) return null;
 
     return (

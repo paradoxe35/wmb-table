@@ -13,7 +13,13 @@ import {
     MAX_MAX_TABS,
     type UiLanguagePreference,
 } from '@shared/constants';
-import type { ThemeMode } from '@shared/theme';
+import { DEFAULT_THEME_MODE, THEME_MODES, type ThemeMode } from '@shared/theme';
+
+/** Settings outlive the build that wrote them: a renamed mode must not reach the interface. */
+function knownThemeMode(stored: string | null): ThemeMode | null {
+    if (stored === null) return null;
+    return THEME_MODES.includes(stored as ThemeMode) ? (stored as ThemeMode) : DEFAULT_THEME_MODE;
+}
 
 export function getConfig(): AppSettingsStatus | null {
     const row = getDb().select().from(configurations).get();
@@ -31,7 +37,7 @@ export function getConfig(): AppSettingsStatus | null {
         maxTabs: row.maxTabs ?? DEFAULT_MAX_TABS,
         uiLanguage: (row.uiLanguage as UiLanguagePreference) ?? null,
         sidebarHidden: row.sidebarHidden ?? false,
-        themeMode: (row.themeMode as ThemeMode | null) ?? null,
+        themeMode: knownThemeMode(row.themeMode),
     };
 }
 
