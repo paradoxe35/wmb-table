@@ -8,7 +8,12 @@ import type {
     TtsSettings,
     TtsProviderType,
 } from '@shared/tts.types';
-import { createDefaultTtsSettings, SEGMENT_GAP_MS } from '@shared/tts.types';
+import {
+    createDefaultTtsSettings,
+    DEFAULT_TTS_PROVIDER,
+    SEGMENT_GAP_MS,
+    TTS_PROVIDER_TYPES,
+} from '@shared/tts.types';
 
 // Fixed ID so that all devices share the same row via Google Drive sync.
 // Using a deterministic ID ensures INSERT OR REPLACE merges correctly.
@@ -19,6 +24,13 @@ const TTS_SETTINGS_ID = 'tts_settings';
 // - This table is synced across devices via Google Drive (appDataFolder, not publicly accessible)
 // - Encrypting would break cross-device sync and force users to re-enter keys on each device
 
+/** Settings outlive the build that wrote them: a renamed provider must not reach the interface. */
+function knownProvider(stored: string | null): TtsProviderType {
+    return TTS_PROVIDER_TYPES.includes(stored as TtsProviderType)
+        ? (stored as TtsProviderType)
+        : DEFAULT_TTS_PROVIDER;
+}
+
 function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
     const defaults = createDefaultTtsSettings();
     let storedProviders: Record<string, Record<string, unknown>> = {};
@@ -28,12 +40,14 @@ function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
         // Corrupted config — fall back to defaults
     }
     const providers = { ...defaults.providers };
-    for (const key of Object.keys(storedProviders) as TtsProviderType[]) {
-        providers[key] = { ...providers[key], ...storedProviders[key] };
+    for (const key of TTS_PROVIDER_TYPES) {
+        if (storedProviders[key]) {
+            providers[key] = { ...providers[key], ...storedProviders[key] };
+        }
     }
 
     return {
-        activeProvider: row.activeProvider as TtsProviderType,
+        activeProvider: knownProvider(row.activeProvider),
         highlightMode: row.highlightMode as TtsHighlightMode,
         autoSwitchVoice: row.autoSwitchVoice ?? true,
         rate: row.rate,

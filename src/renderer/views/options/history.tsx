@@ -265,7 +265,9 @@ export default function History() {
                     <div className="history-timeline">
                         <Timeline
                             items={historyItems.map((item) => {
-                                const meta = DOC_TYPE_META[item.documentIdentity.documentType];
+                                const meta =
+                                    DOC_TYPE_META[item.documentIdentity.documentType] ??
+                                    DOC_TYPE_META.sermon;
                                 return {
                                     key: item.id,
                                     dot: meta.icon,
