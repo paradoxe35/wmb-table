@@ -329,6 +329,7 @@ const sw: Record<string, string> = {
     'Recherche dans les documents': 'Utafutaji katika nyaraka',
     'Recherche biblique': 'Utafutaji wa Biblia',
     'Recherche approfondie': 'Utafiti wa kina',
+    'Recherche incomplète': 'Utafiti haujakamilika',
     'Langues disponibles': 'Lugha zinazopatikana',
     'Documents personnalisés': 'Nyaraka maalum',
     'Lecture du document': 'Usomaji wa waraka',

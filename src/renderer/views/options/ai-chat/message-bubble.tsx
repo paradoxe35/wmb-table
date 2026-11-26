@@ -76,7 +76,12 @@ function ToolResultsList({ results }: { results: AiToolResult[] }) {
     return (
         <div className="ai-chat__tool-results">
             {visible.map((g) => (
-                <ChatToolResult key={g.name} name={g.name} count={g.count} />
+                <ChatToolResult
+                    key={g.name}
+                    name={g.name}
+                    count={g.count}
+                    incomplete={g.incomplete}
+                />
             ))}
             {shouldCollapse && (
                 <button

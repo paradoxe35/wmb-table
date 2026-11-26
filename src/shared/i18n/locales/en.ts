@@ -341,6 +341,7 @@ const en: Record<string, string> = {
     'Recherche dans les documents': 'Document search',
     'Recherche biblique': 'Bible search',
     'Recherche approfondie': 'In-depth research',
+    'Recherche incomplète': 'Research incomplete',
     'Langues disponibles': 'Available languages',
     'Documents personnalisés': 'Custom documents',
     'Lecture du document': 'Reading document',

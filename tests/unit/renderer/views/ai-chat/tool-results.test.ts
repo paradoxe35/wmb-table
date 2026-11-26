@@ -9,7 +9,7 @@ function result(name: string, isError?: boolean): AiToolResult {
 describe('groupToolResults', () => {
     it('counts repeated calls to the same tool', () => {
         expect(groupToolResults([result('searchContent'), result('searchContent')])).toEqual([
-            { name: 'searchContent', count: 2 },
+            { name: 'searchContent', count: 2, incomplete: false },
         ]);
     });
 
@@ -21,8 +21,20 @@ describe('groupToolResults', () => {
         expect(
             groupToolResults([result('editNote'), result('editNote', true), result('getNotes')]),
         ).toEqual([
-            { name: 'editNote', count: 1 },
-            { name: 'getNotes', count: 1 },
+            { name: 'editNote', count: 1, incomplete: false },
+            { name: 'getNotes', count: 1, incomplete: false },
+        ]);
+    });
+
+    it('marks research a sub-agent could not finish', () => {
+        const incomplete: AiToolResult = {
+            toolCallId: 'r1',
+            name: 'researchTopic',
+            output: { status: 'incomplete', reason: 'step-limit', response: '…' },
+        };
+
+        expect(groupToolResults([result('researchTopic'), incomplete])).toEqual([
+            { name: 'researchTopic', count: 2, incomplete: true },
         ]);
     });
 });

@@ -66,13 +66,24 @@ function resolveToolMeta(name: string): { meta: ToolMeta | undefined; isAgent: b
     return { meta: undefined, isAgent: false };
 }
 
-export default function ChatToolResult({ name, count }: { name: string; count?: number }) {
+/** U+203A is in every UI font, unlike "↳", which shows as a missing glyph on some systems. */
+const SUB_AGENT_STEP_MARK = '› ';
+
+export default function ChatToolResult({
+    name,
+    count,
+    incomplete = false,
+}: {
+    name: string;
+    count?: number;
+    incomplete?: boolean;
+}) {
     const { t } = useTranslation();
     const { meta, isAgent } = resolveToolMeta(name);
     const label = meta?.label ?? name;
     const icon = meta?.icon ?? <SearchOutlined />;
-    const color = meta?.color ?? 'processing';
-    const prefix = isAgent ? '↳ ' : '';
+    const color = incomplete ? 'warning' : (meta?.color ?? 'processing');
+    const prefix = isAgent ? SUB_AGENT_STEP_MARK : '';
     const suffix = count && count > 1 ? ` x${count}` : '';
 
     return (
@@ -80,6 +91,7 @@ export default function ChatToolResult({ name, count }: { name: string; count?: 
             {prefix}
             {t(label)}
             {suffix}
+            {incomplete ? ` · ${t('Recherche incomplète')}` : null}
         </Tag>
     );
 }

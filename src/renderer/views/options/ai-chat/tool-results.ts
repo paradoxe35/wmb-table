@@ -3,6 +3,16 @@ import type { AiToolResult } from '@shared/ai.types';
 export interface GroupedToolResult {
     name: string;
     count: number;
+    /** A sub-agent stopped before it finished its research (step, time or context limit). */
+    incomplete: boolean;
+}
+
+function isIncompleteSubAgentResult(output: unknown): boolean {
+    return (
+        typeof output === 'object' &&
+        output !== null &&
+        (output as { status?: unknown }).status === 'incomplete'
+    );
 }
 
 /**
@@ -13,12 +23,15 @@ export interface GroupedToolResult {
  * failed would tell them something untrue.
  */
 export function groupToolResults(results: AiToolResult[]): GroupedToolResult[] {
-    const counts = new Map<string, number>();
+    const groups = new Map<string, GroupedToolResult>();
 
     for (const result of results) {
         if (result.isError) continue;
-        counts.set(result.name, (counts.get(result.name) ?? 0) + 1);
+        const group = groups.get(result.name) ?? { name: result.name, count: 0, incomplete: false };
+        group.count += 1;
+        group.incomplete ||= isIncompleteSubAgentResult(result.output);
+        groups.set(result.name, group);
     }
 
-    return [...counts.entries()].map(([name, count]) => ({ name, count }));
+    return [...groups.values()];
 }

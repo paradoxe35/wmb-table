@@ -332,6 +332,7 @@ const pt: Record<string, string> = {
     'Recherche dans les documents': 'Pesquisa nos documentos',
     'Recherche biblique': 'Pesquisa bíblica',
     'Recherche approfondie': 'Pesquisa aprofundada',
+    'Recherche incomplète': 'Pesquisa incompleta',
     'Langues disponibles': 'Idiomas disponíveis',
     'Documents personnalisés': 'Documentos personalizados',
     'Lecture du document': 'Leitura do documento',
