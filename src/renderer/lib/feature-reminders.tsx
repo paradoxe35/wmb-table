@@ -45,6 +45,8 @@ export interface FeatureReminderVisibilityInput {
     loaded: boolean;
     syncing: boolean;
     readingMode: boolean;
+    /** A reminder must not cover the chat while the assistant is answering. */
+    aiRunActive: boolean;
     hasInteracted: boolean;
     sessionDelayElapsed: boolean;
     sessionHiddenUntil: number | null;
@@ -147,6 +149,7 @@ export function canDisplayFeatureReminders({
     loaded,
     syncing,
     readingMode,
+    aiRunActive,
     hasInteracted,
     sessionDelayElapsed,
     sessionHiddenUntil,
@@ -160,6 +163,7 @@ export function canDisplayFeatureReminders({
         loaded &&
         !syncing &&
         !readingMode &&
+        !aiRunActive &&
         hasInteracted &&
         sessionDelayElapsed &&
         (!sessionHiddenUntil || sessionHiddenUntil <= now)
