@@ -328,6 +328,7 @@
 
 .ai-chat__messages {
     height: 100%;
+    overflow-x: hidden;
     overflow-y: auto;
     @include thin-scrollbar;
 }
@@ -546,6 +547,17 @@
 
 .ai-markdown {
     min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.ai-markdown blockquote,
+.ai-markdown li {
+    min-width: 0;
+}
+
+.ai-markdown pre {
+    overflow-x: auto;
+    @include thin-scrollbar;
 }
 
 .ai-markdown > *:first-child {
