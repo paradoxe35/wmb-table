@@ -192,6 +192,16 @@ export class ChatPage {
         );
     }
 
+    /** Clicks, with a real mouse event, the element `elementExpression` evaluates to. */
+    async clickElement(elementExpression: string, label: string): Promise<void> {
+        await this.clickAt(elementExpression, label);
+    }
+
+    /** Types into the focused element, as a user would. */
+    async insertText(text: string): Promise<void> {
+        await this.cdp.send('Input.insertText', { text });
+    }
+
     noticeTexts(): Promise<string[]> {
         return this.cdp.evaluate<string[]>(
             `[...document.querySelectorAll('.ai-chat__run-notice')].map((el) => el.innerText.trim())`,
@@ -220,6 +230,7 @@ export class ChatPage {
         await this.setTheme('light');
     }
 
+    /** Waits for a paint, because mouse events sent before the new layout get lost. */
     async setViewport(width: number, height: number): Promise<void> {
         await this.cdp.send('Emulation.setDeviceMetricsOverride', {
             width,
@@ -227,10 +238,12 @@ export class ChatPage {
             deviceScaleFactor: 1,
             mobile: false,
         });
+        await this.waitForPaint();
     }
 
     async resetViewport(): Promise<void> {
         await this.cdp.send('Emulation.clearDeviceMetricsOverride', {});
+        await this.waitForPaint();
     }
 
     facts(): Promise<ChatFacts> {

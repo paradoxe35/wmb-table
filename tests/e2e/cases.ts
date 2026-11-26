@@ -3,6 +3,7 @@ import { LONG_RESEARCH_TOOL_STEPS, OVERFLOW_TOOL_STEPS } from './mock-llm/scenar
 import { lastAssistantText, type CaseContext, type E2eCase } from './case-runner';
 import type { ChatFacts } from './driver/chat-page';
 import { lifecycleCases } from './lifecycle-cases';
+import { uiReviewCases } from './ui-review-cases';
 
 const hasAssistantText = (facts: ChatFacts) => lastAssistantText(facts).length > 0;
 const TRUNCATION_NOTICE_FR = /Réponse coupée/;
@@ -912,3 +913,4 @@ const subagentStop: E2eCase = {
 };
 
 cases.push(subagentStepLimit, subagentStop);
+cases.push(...uiReviewCases);
