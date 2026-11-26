@@ -21,6 +21,7 @@ export interface ChatFacts {
     typingIndicator: boolean;
     spinner: boolean;
     conversationTitles: string[];
+    activeTitle: string | null;
     theme: string | null;
 }
 
@@ -50,6 +51,7 @@ const READ_FACTS = `(() => {
         typingIndicator: Boolean(document.querySelector('.ai-chat__typing-indicator')),
         spinner: Boolean(document.querySelector('.ai-chat__bubble .ant-spin')),
         conversationTitles: texts('.ai-chat__conv-title'),
+        activeTitle: document.querySelector('.ai-chat__header-title-text')?.innerText.trim() ?? null,
         theme: document.documentElement.getAttribute('data-theme'),
     };
 })()`;

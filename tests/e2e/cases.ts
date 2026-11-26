@@ -316,7 +316,7 @@ const title: E2eCase = {
         await sendAndCapture(ctx, 'Deuxième question', null);
         const final = await ctx
             .waitUntil(
-                (f) => f.conversationTitles.includes('Mock conversation title'),
+                (f) => f.activeTitle === 'Mock conversation title',
                 'the generated title',
                 20_000,
             )
@@ -324,8 +324,8 @@ const title: E2eCase = {
         await ctx.shot('titled');
         ctx.check(
             'the conversation gets the generated title',
-            final.conversationTitles.includes('Mock conversation title'),
-            final.conversationTitles,
+            final.activeTitle === 'Mock conversation title',
+            final.activeTitle,
         );
         ctx.check(
             'the title request was sent',
