@@ -11,7 +11,8 @@ export interface DebouncedCommit<T> {
 
 /**
  * Debounces `commit` while always calling its latest version, so a parent that re-renders with a
- * new inline callback does not reset the timer. A pending value is committed on unmount.
+ * new inline callback does not reset the timer. A pending value is committed on unmount and when
+ * the page unloads (reload or quit), so the last keystrokes are never lost.
  */
 export function useDebouncedCommit<T>(
     commit: (value: T) => void,
@@ -30,6 +31,16 @@ export function useDebouncedCommit<T>(
     );
 
     useEffect(() => () => debounced.flush(), [debounced]);
+
+    useEffect(() => {
+        const flushBeforeUnload = () => debounced.flush();
+        window.addEventListener('beforeunload', flushBeforeUnload);
+        window.addEventListener('pagehide', flushBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', flushBeforeUnload);
+            window.removeEventListener('pagehide', flushBeforeUnload);
+        };
+    }, [debounced]);
 
     return useMemo(
         () => ({

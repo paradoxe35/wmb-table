@@ -58,6 +58,45 @@ describe('DebouncedInput', () => {
         expect(field().value).toBe('Saint-Esprit');
     });
 
+    it.each(['beforeunload', 'pagehide'])(
+        'saves a value typed right before the page fires %s',
+        (eventName) => {
+            const onChange = vi.fn();
+            render(<DebouncedInput value="" onChange={onChange} />);
+
+            type('sk-typed-before-reload');
+            act(() => vi.advanceTimersByTime(DELAY_MS / 3));
+            window.dispatchEvent(new Event(eventName));
+
+            expect(onChange).toHaveBeenCalledTimes(1);
+            expect(onChange).toHaveBeenCalledWith('sk-typed-before-reload');
+            act(() => vi.advanceTimersByTime(DELAY_MS * 2));
+            expect(onChange).toHaveBeenCalledTimes(1);
+        },
+    );
+
+    it('does not save again on unload when nothing is pending', () => {
+        const onChange = vi.fn();
+        render(<DebouncedInput value="" onChange={onChange} />);
+
+        type('saved');
+        act(() => vi.advanceTimersByTime(DELAY_MS));
+        window.dispatchEvent(new Event('beforeunload'));
+        window.dispatchEvent(new Event('pagehide'));
+
+        expect(onChange).toHaveBeenCalledTimes(1);
+    });
+
+    it('stops listening for unload once unmounted', () => {
+        const onChange = vi.fn();
+        const { unmount } = render(<DebouncedInput value="" onChange={onChange} />);
+        unmount();
+
+        window.dispatchEvent(new Event('beforeunload'));
+
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
     it('saves at once on blur', () => {
         const onChange = vi.fn();
         render(<DebouncedInput value="" onChange={onChange} />);
