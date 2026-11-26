@@ -167,20 +167,21 @@ Vuelva aquí si:
 Si ya usa una aplicación de IA en su ordenador, como Claude Desktop, Claude Code o Codex, puede leer su biblioteca de Wmb Table: prédicas, Biblia, sus documentos, notas y temas. Se usa su propia suscripción; Wmb Table no necesita una clave API para esto.
 
 1. Al final de esta pestaña, marque `Servidor MCP`. Mientras la casilla no esté marcada, no se muestra nada más.
-2. En `Configuración`, elija una forma de conectarse y luego la pestaña de su aplicación (Claude Code, Codex o Claude Desktop).
-3. Copie el ejemplo y siga la breve explicación que aparece encima. Los ejemplos ya contienen la ruta completa de Wmb Table en su ordenador: no tiene que buscar nada.
+2. En `Configuración`, abra la pestaña de su aplicación: `Claude Code`, `Codex`, `Claude Desktop` u `Otra aplicación`.
+3. Copie el ejemplo marcado `(recomendado)` y siga la breve explicación que aparece encima. Los ejemplos ya contienen la ruta completa de Wmb Table en su ordenador: no tiene que buscar nada.
 
-Las tres formas de conectarse:
+Cada pestaña ofrece dos métodos:
 
-- `Comando (recomendado)`: su aplicación de IA inicia Wmb Table por sí misma, sin ventana, con el comando `wmb-table mcp`. Wmb Table no necesita estar abierto. Es lo más sencillo, y Claude Desktop no necesita Node.js.
-- `HTTP`: su aplicación se conecta a la dirección mostrada, por ejemplo `http://127.0.0.1:23132/mcp`. Wmb Table debe permanecer abierto.
-- `HTTP sin interfaz`: usted inicia el servidor en una terminal con `wmb-table mcp --http --port 23132`, sin abrir Wmb Table, y su aplicación se conecta a la dirección. `Ctrl+C` detiene el servidor. Cierre primero Wmb Table si está abierto, porque ya usa este puerto.
+- `HTTP`: su aplicación se conecta a la dirección mostrada, por ejemplo `http://127.0.0.1:23132/mcp`. Wmb Table debe estar abierto. Es el método recomendado para Claude Code y Codex.
+- `Comando`: su aplicación inicia Wmb Table por sí misma, sin ventana, con el comando `wmb-table mcp`. Funciona incluso con Wmb Table cerrado. Es el método recomendado para Claude Desktop, que así no necesita Node.js.
+
+La parte `Avanzado`, abajo, da el comando `wmb-table mcp --http --port 23132`: inicia el servidor HTTP en una terminal sin abrir Wmb Table. `Ctrl+C` lo detiene. Cierre primero Wmb Table si está abierto, porque ya usa este puerto.
 
 Conviene saber:
 
 - El servidor está desactivado por defecto. Mientras `Servidor MCP` no esté marcado, el comando `wmb-table mcp` se niega a iniciarse y explica por qué.
 - El servidor HTTP se inicia con Wmb Table mientras la casilla está marcada y se detiene al desmarcarla o al salir de Wmb Table.
-- Por defecto, su aplicación de IA solo puede leer. Marque `Permitir cambios (notas y temas)` para que también pueda crear y modificar sus notas y temas. Esto vale para las tres formas de conectarse.
+- Por defecto, su aplicación de IA solo puede leer. Marque `Permitir cambios (notas y temas)` para que también pueda crear y modificar sus notas y temas. Esto vale para todos los métodos.
 - Wmb Table puede permanecer abierto mientras el comando funciona: ambos usan la misma biblioteca sin molestarse.
 - Las herramientas usan su idioma de contenido. Añada `--language en` (por ejemplo) al comando para otro idioma instalado.
 - Solo se puede acceder al servidor desde su propio ordenador. Los sitios web abiertos en su navegador no pueden usarlo.
