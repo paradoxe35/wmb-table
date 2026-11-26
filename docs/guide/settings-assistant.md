@@ -197,18 +197,27 @@ Revenez ici si :
 
 Si vous utilisez déjà une application d'IA sur votre ordinateur, comme Claude Desktop, Claude Code ou Codex, elle peut lire votre bibliothèque Wmb Table : prédications, Bible, vos documents, vos notes et vos sujets. C'est votre propre abonnement qui est utilisé ; Wmb Table n'a pas besoin de clé API pour cela.
 
-1. Tout en bas de cet onglet, cochez `Serveur MCP`.
-2. Wmb Table affiche l'adresse du serveur, par exemple `http://127.0.0.1:23132/mcp`, et des exemples à copier pour Claude Code, Codex et Claude Desktop.
-3. Copiez l'exemple de votre application et suivez la petite explication au-dessus.
+1. Tout en bas de cet onglet, cochez `Serveur MCP`. Tant que la case n'est pas cochée, rien d'autre ne s'affiche.
+2. Dans `Configuration`, choisissez une façon de vous connecter, puis l'onglet de votre application (Claude Code, Codex ou Claude Desktop).
+3. Copiez l'exemple et suivez la petite explication au-dessus. Les exemples contiennent déjà le chemin complet de Wmb Table sur votre ordinateur : vous n'avez rien à chercher.
+
+Les trois façons de se connecter :
+
+- `Commande (recommandé)` : votre application d'IA lance Wmb Table elle-même, sans fenêtre, avec la commande `wmb-table mcp`. Wmb Table n'a pas besoin d'être ouvert. C'est le plus simple, et Claude Desktop n'a pas besoin de Node.js.
+- `HTTP` : votre application se connecte à l'adresse affichée, par exemple `http://127.0.0.1:23132/mcp`. Wmb Table doit rester ouvert.
+- `HTTP sans interface` : vous lancez vous-même le serveur dans un terminal avec `wmb-table mcp --http --port 23132`, sans ouvrir Wmb Table, et votre application se connecte à l'adresse. `Ctrl+C` arrête le serveur. Fermez d'abord Wmb Table s'il est ouvert, car il utilise déjà ce port.
 
 Bon à savoir :
 
-- Le serveur est désactivé par défaut. Il démarre avec Wmb Table quand la case est cochée, et s'arrête quand vous la décochez ou quand vous quittez Wmb Table.
-- Par défaut, votre application d'IA peut seulement lire. Cochez `Autoriser les modifications (notes et sujets)` pour qu'elle puisse aussi créer et modifier vos notes et vos sujets.
+- Le serveur est désactivé par défaut. Tant que la case `Serveur MCP` n'est pas cochée, la commande `wmb-table mcp` refuse de démarrer et l'explique.
+- Le serveur HTTP démarre avec Wmb Table quand la case est cochée, et s'arrête quand vous la décochez ou quand vous quittez Wmb Table.
+- Par défaut, votre application d'IA peut seulement lire. Cochez `Autoriser les modifications (notes et sujets)` pour qu'elle puisse aussi créer et modifier vos notes et vos sujets. Ce choix vaut pour les trois façons de se connecter.
+- Wmb Table peut rester ouvert pendant que la commande tourne : les deux utilisent la même bibliothèque sans se gêner.
+- Les outils utilisent votre langue de contenu. Ajoutez `--language en` (par exemple) à la commande pour une autre langue installée.
 - Le serveur n'est joignable que depuis votre ordinateur. Les sites web ouverts dans votre navigateur ne peuvent pas l'utiliser.
 - Si le port habituel est déjà pris, Wmb Table utilise le suivant et l'affiche. Gardez alors cette nouvelle adresse dans votre application.
 - Ce réglage reste propre à chaque ordinateur : il n'est pas synchronisé avec Google Drive.
-- Pour Claude Desktop, Node.js doit être installé sur l'ordinateur.
+- Pour Claude Desktop en `HTTP`, Node.js doit être installé sur l'ordinateur.
 
 ## Voir aussi
 

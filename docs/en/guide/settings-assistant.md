@@ -191,18 +191,27 @@ Come back here if:
 
 If you already use an AI app on your computer, such as Claude Desktop, Claude Code or Codex, it can read your Wmb Table library: sermons, Bible, your documents, notes and subjects. Your own subscription is used; Wmb Table needs no API key for this.
 
-1. At the bottom of this tab, check `MCP server`.
-2. Wmb Table shows the server address, for example `http://127.0.0.1:23132/mcp`, and examples to copy for Claude Code, Codex and Claude Desktop.
-3. Copy the example for your app and follow the short note above it.
+1. At the bottom of this tab, check `MCP server`. Until the box is checked, nothing else shows.
+2. Under `Configuration`, pick a way to connect, then the tab for your app (Claude Code, Codex or Claude Desktop).
+3. Copy the example and follow the short note above it. The examples already hold the full path of Wmb Table on your computer: there is nothing to look up.
+
+The three ways to connect:
+
+- `Command (recommended)`: your AI app starts Wmb Table itself, without a window, with the command `wmb-table mcp`. Wmb Table does not need to be open. This is the simplest, and Claude Desktop does not need Node.js.
+- `HTTP`: your app connects to the address shown, for example `http://127.0.0.1:23132/mcp`. Wmb Table must stay open.
+- `Headless HTTP`: you start the server yourself in a terminal with `wmb-table mcp --http --port 23132`, without opening Wmb Table, and your app connects to the address. `Ctrl+C` stops the server. Close Wmb Table first if it is open, since it already uses this port.
 
 Good to know:
 
-- The server is off by default. It starts with Wmb Table while the box is checked, and stops when you uncheck it or quit Wmb Table.
-- By default your AI app can only read. Check `Allow changes (notes and subjects)` so it can also create and change your notes and subjects.
+- The server is off by default. Until `MCP server` is checked, the `wmb-table mcp` command refuses to start and says why.
+- The HTTP server starts with Wmb Table while the box is checked, and stops when you uncheck it or quit Wmb Table.
+- By default your AI app can only read. Check `Allow changes (notes and subjects)` so it can also create and change your notes and subjects. This applies to all three ways to connect.
+- Wmb Table can stay open while the command runs: both use the same library without getting in each other's way.
+- The tools use your content language. Add `--language en` (for example) to the command for another installed language.
 - The server can only be reached from your own computer. Websites open in your browser cannot use it.
 - If the usual port is already taken, Wmb Table uses the next one and shows it. Keep that new address in your app.
 - This setting belongs to each computer: it is not synced through Google Drive.
-- For Claude Desktop, Node.js must be installed on the computer.
+- For Claude Desktop over `HTTP`, Node.js must be installed on the computer.
 
 ## See also
 
