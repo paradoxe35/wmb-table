@@ -83,6 +83,35 @@ const sw: Record<string, string> = {
     "Utilisez l'identifiant exact du modèle fourni par ce service.":
         'Tumia kitambulisho halisi cha mfano kilichotolewa na huduma hii.',
 
+    // ── MCP server ──
+    'Serveur MCP': 'Seva ya MCP',
+    'Permet à votre propre application d’IA (Claude Desktop, Claude Code, Codex…) d’utiliser votre bibliothèque Wmb Table.':
+        'Inaruhusu programu yako mwenyewe ya AI (Claude Desktop, Claude Code, Codex…) kutumia maktaba yako ya Wmb Table.',
+    'Autoriser les modifications (notes et sujets)': 'Ruhusu mabadiliko (maelezo na mada)',
+    'Votre application d’IA peut créer et modifier vos notes et vos sujets.':
+        'Programu yako ya AI inaweza kuunda na kubadilisha maelezo na mada zako.',
+    'Votre application d’IA peut seulement lire votre bibliothèque.':
+        'Programu yako ya AI inaweza kusoma maktaba yako tu.',
+    'Adresse du serveur': 'Anwani ya seva',
+    'Le port habituel {{defaultPort}} était occupé : Wmb Table utilise le port {{port}}.':
+        'Mlango wa kawaida {{defaultPort}} ulikuwa unatumika: Wmb Table inatumia mlango {{port}}.',
+    'Connecter votre application': 'Unganisha programu yako',
+    'Lancez cette commande dans un terminal.': 'Endesha amri hii kwenye terminal.',
+    'Ajoutez ces lignes au fichier ~/.codex/config.toml.':
+        'Ongeza mistari hii kwenye faili ~/.codex/config.toml.',
+    'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop. Node.js doit être installé.':
+        'Ongeza hii kwenye faili claude_desktop_config.json (Settings, Developer, Edit Config), kisha anzisha upya Claude Desktop. Node.js lazima iwe imesakinishwa.',
+    'Dans une autre application, ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
+        'Katika programu nyingine, ongeza seva ya MCP ya “Streamable HTTP” yenye anwani hii.',
+    'Copier {{label}}': 'Nakili {{label}}',
+    Copié: 'Imenakiliwa',
+    'Le serveur MCP n’a pas pu démarrer : les ports {{firstPort}} à {{lastPort}} sont déjà utilisés. Fermez l’application qui les occupe, puis réactivez le serveur.':
+        'Seva ya MCP haikuweza kuanza: milango {{firstPort}} hadi {{lastPort}} tayari inatumika. Funga programu inayoitumia, kisha washa seva tena.',
+    'Le serveur MCP n’a pas pu démarrer. Réessayez ou redémarrez Wmb Table.':
+        'Seva ya MCP haikuweza kuanza. Jaribu tena au anzisha upya Wmb Table.',
+    'Le réglage du serveur MCP n’a pas pu être enregistré.':
+        'Mpangilio wa seva ya MCP haukuweza kuhifadhiwa.',
+
     // ── AI provider descriptions ──
     'Fonctionne sans connexion internet, directement sur votre ordinateur.':
         'Hufanya kazi bila intaneti, moja kwa moja kwenye kompyuta yako.',

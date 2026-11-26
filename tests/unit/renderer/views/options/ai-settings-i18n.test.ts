@@ -8,7 +8,7 @@ import sw from '@shared/i18n/locales/sw';
 
 const settingsDir = resolve(__dirname, '../../../../../src/renderer/views/options/settings');
 const aiSettingsFiles = readdirSync(settingsDir)
-    .filter((file) => /^(ai-|use-save-ai-)/.test(file))
+    .filter((file) => /^(ai-|use-save-ai-|mcp-|use-mcp-)/.test(file))
     .map((file) => join(settingsDir, file));
 
 const LITERAL_KEY = /\bt\(\s*(['"])((?:\\.|(?!\1).)+)\1/g;
@@ -28,6 +28,7 @@ describe('AI settings translations', () => {
     it('finds the keys it checks', () => {
         expect(keys).toContain("L'URL doit commencer par http:// ou https://.");
         expect(keys).toContain("Choisissez un fournisseur pour utiliser l'assistant.");
+        expect(keys).toContain('Serveur MCP');
     });
 
     it.each([

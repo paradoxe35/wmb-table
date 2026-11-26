@@ -82,6 +82,35 @@ const pt: Record<string, string> = {
     "Utilisez l'identifiant exact du modèle fourni par ce service.":
         'Use o identificador exato do modelo fornecido por este serviço.',
 
+    // ── MCP server ──
+    'Serveur MCP': 'Servidor MCP',
+    'Permet à votre propre application d’IA (Claude Desktop, Claude Code, Codex…) d’utiliser votre bibliothèque Wmb Table.':
+        'Permite que o seu próprio aplicativo de IA (Claude Desktop, Claude Code, Codex…) use a sua biblioteca do Wmb Table.',
+    'Autoriser les modifications (notes et sujets)': 'Permitir alterações (notas e assuntos)',
+    'Votre application d’IA peut créer et modifier vos notes et vos sujets.':
+        'O seu aplicativo de IA pode criar e alterar as suas notas e os seus assuntos.',
+    'Votre application d’IA peut seulement lire votre bibliothèque.':
+        'O seu aplicativo de IA só pode ler a sua biblioteca.',
+    'Adresse du serveur': 'Endereço do servidor',
+    'Le port habituel {{defaultPort}} était occupé : Wmb Table utilise le port {{port}}.':
+        'A porta habitual {{defaultPort}} estava ocupada: o Wmb Table usa a porta {{port}}.',
+    'Connecter votre application': 'Conectar o seu aplicativo',
+    'Lancez cette commande dans un terminal.': 'Execute este comando em um terminal.',
+    'Ajoutez ces lignes au fichier ~/.codex/config.toml.':
+        'Adicione estas linhas ao arquivo ~/.codex/config.toml.',
+    'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop. Node.js doit être installé.':
+        'Adicione isto ao arquivo claude_desktop_config.json (Configurações, Desenvolvedor, Editar configuração) e reinicie o Claude Desktop. O Node.js precisa estar instalado.',
+    'Dans une autre application, ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
+        'Em outro aplicativo, adicione um servidor MCP “Streamable HTTP” com este endereço.',
+    'Copier {{label}}': 'Copiar {{label}}',
+    Copié: 'Copiado',
+    'Le serveur MCP n’a pas pu démarrer : les ports {{firstPort}} à {{lastPort}} sont déjà utilisés. Fermez l’application qui les occupe, puis réactivez le serveur.':
+        'O servidor MCP não pôde iniciar: as portas {{firstPort}} a {{lastPort}} já estão em uso. Feche o aplicativo que as usa e ative o servidor novamente.',
+    'Le serveur MCP n’a pas pu démarrer. Réessayez ou redémarrez Wmb Table.':
+        'O servidor MCP não pôde iniciar. Tente novamente ou reinicie o Wmb Table.',
+    'Le réglage du serveur MCP n’a pas pu être enregistré.':
+        'Não foi possível salvar a configuração do servidor MCP.',
+
     // ── AI provider descriptions ──
     'Fonctionne sans connexion internet, directement sur votre ordinateur.':
         'Funciona sem conexão com a internet, diretamente no seu computador.',

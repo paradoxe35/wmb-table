@@ -21,6 +21,7 @@ import InlineHelpPopover from '../components/inline-help-popover';
 import { getAiSettingsHelp } from '../components/option-help-content';
 import { LocalityTag } from './tts-shared';
 import { useSaveAiSettings } from './use-save-ai-settings';
+import McpServerSettings from './mcp-server-settings';
 
 function missingSetupWarning(settings: AiSettings): string | null {
     const providerId = settings.activeProvider;
@@ -215,6 +216,8 @@ export default function AiTab() {
                     />
                 </Field>
             </Card>
+
+            <McpServerSettings />
 
             <AiCustomProviderModal
                 open={customModalOpen}
