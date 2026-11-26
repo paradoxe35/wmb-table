@@ -10,6 +10,7 @@ import {
     relaunchWithSameProfile,
     type HeldPort,
 } from './mcp-server-checks';
+import { McpCliChecks } from './mcp-cli-checks';
 import { AppProcess } from './driver/app-process';
 import { MOCK_PROVIDER_ID, setUpApp } from './driver/app-setup';
 import type { CdpSession } from './driver/cdp';
@@ -465,6 +466,7 @@ class SettingsRun {
 
     mcpChecks(): McpServerChecks {
         return new McpServerChecks({
+            repoRoot,
             cdp: this.cdp,
             settings: this.settings,
             check: (...args) => this.check(...args),
@@ -487,6 +489,13 @@ class SettingsRun {
     }
 }
 
+/** Quits the app the way a user does, so the command-line checks run with no app open. */
+async function closeWindow(cdp: CdpSession): Promise<void> {
+    await cdp.evaluate('window.close()').catch(() => undefined);
+    cdp.close();
+    await sleep(3000);
+}
+
 async function main(): Promise<boolean> {
     const { values } = parseArgs({
         args: process.argv.slice(2).filter((arg) => arg !== '--'),
@@ -506,7 +515,7 @@ async function main(): Promise<boolean> {
     const usualPort: { held: HeldPort | null } = { held: null };
     try {
         cdp = await app.start();
-        await setUpApp(cdp, app, {
+        const { languageCode } = await setUpApp(cdp, app, {
             repoRoot,
             cacheDir: resolve(values['cache-dir'] ?? join(repoRoot, 'tmp/e2e-cache')),
             mockBaseUrl: server.baseUrl,
@@ -526,6 +535,23 @@ async function main(): Promise<boolean> {
         const probe = await holdPort(DEFAULT_MCP_PORT);
         await probe?.release();
         const mcpUrl = await run.mcpChecks().firstLaunch(probe !== null);
+        const guiCdp = cdp;
+        await new McpCliChecks({
+            repoRoot,
+            app,
+            languageCode,
+            check: (...args) => run?.check(...args),
+        }).whileGuiRuns(
+            async () =>
+                (await guiCdp.evaluate<{ name: string }[]>('window.api.notes.getAll()')).map(
+                    (note) => note.name,
+                ),
+            async (allowWrites) => {
+                await guiCdp.evaluate(
+                    `window.api.mcp.updateSettings(${JSON.stringify({ allowWrites })})`,
+                );
+            },
+        );
         const relaunched = await relaunchWithSameProfile(app, cdp, mcpUrl, appOptions, async () => {
             usualPort.held = await holdPort(DEFAULT_MCP_PORT);
         });
@@ -538,6 +564,13 @@ async function main(): Promise<boolean> {
         run.checks.push(...previousChecks);
         await run.reload();
         await run.mcpChecks().afterRelaunch(usualPort.held !== null);
+        await closeWindow(cdp);
+        await new McpCliChecks({
+            repoRoot,
+            app,
+            languageCode,
+            check: (...args) => run?.check(...args),
+        }).withoutGui();
     } catch (error) {
         if (cdp) writeFileSync(join(outDir, 'failure.png'), await cdp.screenshot());
         throw error;

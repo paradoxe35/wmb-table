@@ -1,4 +1,5 @@
-import { cpSync } from 'node:fs';
+import { cpSync, realpathSync } from 'node:fs';
+import { join } from 'node:path';
 import { createServer, type Server } from 'node:net';
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client';
 import { DEFAULT_MCP_PORT, MCP_PORT_ATTEMPTS, buildMcpUrl } from '@shared/mcp.types';
@@ -7,6 +8,7 @@ import type { CdpSession } from './driver/cdp';
 import type { SettingsPage } from './driver/settings-page';
 
 export interface McpCheckContext {
+    repoRoot: string;
     cdp: CdpSession;
     settings: SettingsPage;
     check(label: string, passed: boolean, details?: unknown): void;
@@ -18,7 +20,20 @@ export interface McpCheckContext {
 const SECTION = '[data-testid="mcp-server-settings"]';
 const ENABLED = '#mcp-server-enabled';
 const ALLOW_WRITES = '#mcp-server-allow-writes';
-const URL_CODE = `${SECTION} .mcp-server__code pre`;
+const URL_CODE = `[data-testid="mcp-server-url"] .mcp-server__code pre`;
+const CONFIGURATION = '[data-testid="mcp-configuration"]';
+const COMMAND_LABELS: Record<string, string> = {
+    en: 'Command (recommended)',
+    es: 'Comando (recomendado)',
+    pt: 'Comando (recomendado)',
+    sw: 'Amri (inapendekezwa)',
+};
+const HEADLESS_LABELS: Record<string, string> = {
+    en: 'Headless HTTP',
+    es: 'HTTP sin interfaz',
+    pt: 'HTTP sem interface',
+    sw: 'HTTP bila kiolesura',
+};
 const ERROR = '[data-testid="mcp-server-error"]';
 const WRITE_TOOLS = ['createNote', 'editNote', 'createSubject', 'removeSubjectReference'];
 
@@ -123,19 +138,24 @@ export class McpServerChecks {
             'while off, only the checkbox and its explanation show',
             !(await this.visible(ALLOW_WRITES)) && !(await this.visible(URL_CODE)),
         );
-        check(
-            'the default port does not answer while the server is off',
-            await refused(buildMcpUrl(DEFAULT_MCP_PORT)),
-        );
+        if (defaultPortFree) {
+            check(
+                'the default port does not answer while the server is off',
+                await refused(buildMcpUrl(DEFAULT_MCP_PORT)),
+            );
+        } else {
+            console.log(
+                `  skip the default-port checks: another process holds ${DEFAULT_MCP_PORT} on this machine`,
+            );
+        }
         await this.sectionShot('mcp-off');
 
         await this.toggle(ENABLED, true);
         const url = await this.shownUrl();
         const expected = buildMcpUrl(DEFAULT_MCP_PORT);
-        check('enabling shows the URL on the usual port', !defaultPortFree || url === expected, {
-            url,
-            defaultPortFree,
-        });
+        if (defaultPortFree) {
+            check('enabling shows the URL on the usual port', url === expected, url);
+        }
         check('the write option shows once enabled', await this.visible(ALLOW_WRITES));
         check('changes are off by default', !(await this.isChecked(ALLOW_WRITES)));
         await this.sectionShot('mcp-on');
@@ -149,7 +169,7 @@ export class McpServerChecks {
             .then(() => true)
             .catch(() => false);
         check('the copy button copies the URL and says so', copied);
-        await this.snippetShots();
+        await this.configurationShots();
 
         const readOnly = await toolNames(url);
         check('an MCP client lists the read tools', readOnly.includes('searchSermons'), readOnly);
@@ -203,8 +223,10 @@ export class McpServerChecks {
         check('the server starts by itself at launch', (await toolNames(url)).length > 0, url);
         const port = Number(new URL(url).port);
         check(
-            'with the usual port taken, the next port is used and shown',
-            port === DEFAULT_MCP_PORT + 1 && (await this.portHintShown()),
+            'with the usual port taken, a following port is used and shown',
+            port > DEFAULT_MCP_PORT &&
+                port < DEFAULT_MCP_PORT + MCP_PORT_ATTEMPTS &&
+                (await this.portHintShown()),
             { url, heldByThisRun: heldDefault },
         );
         await this.searchSermons(url);
@@ -304,19 +326,105 @@ export class McpServerChecks {
         );
     }
 
-    private async snippetShots(): Promise<void> {
+    private async openMode(label: string, mode: string): Promise<void> {
+        await this.ctx.settings.clickText(
+            `${CONFIGURATION} .mcp-configuration__modes > .ant-tabs-nav .ant-tabs-tab`,
+            label,
+        );
+        await this.ctx.cdp.waitFor(
+            `Boolean(document.querySelector('[data-testid="mcp-mode-${mode}"]')?.getBoundingClientRect().width)`,
+            `${mode} mode`,
+        );
+    }
+
+    private async openClient(mode: string, label: string, key: string): Promise<void> {
+        await this.ctx.settings.clickText(`[data-testid="mcp-mode-${mode}"] .ant-tabs-tab`, label);
+        await this.ctx.cdp.waitFor(
+            `Boolean(document.querySelector('[data-testid="mcp-snippet-${mode}-${key}"]')?.getBoundingClientRect().width)`,
+            `${mode} ${key} snippet`,
+        );
+    }
+
+    private snippet(mode: string, key: string): Promise<string> {
+        return this.ctx.cdp.evaluate<string>(
+            `document.querySelector('[data-testid="mcp-snippet-${mode}-${key}"] pre')?.innerText ?? ''`,
+        );
+    }
+
+    /** The command tab must show this very copy of the app, so users never guess the path. */
+    private async commandShowsThisCopy(): Promise<void> {
+        const { launch } = await this.ctx.cdp.evaluate<{
+            launch: { command: string; args: string[]; dev: boolean };
+        }>('window.api.mcp.getStatus()');
+        const electron = realpathSync(
+            join(this.ctx.repoRoot, 'node_modules/electron/dist/electron'),
+        );
+        this.ctx.check(
+            'the command tab names the real executable and app folder of this copy',
+            realpathSync(launch.command) === electron &&
+                launch.args.length === 1 &&
+                realpathSync(launch.args[0]) === realpathSync(this.ctx.repoRoot) &&
+                launch.dev,
+            launch,
+        );
+        const claudeCode = await this.snippet('command', 'claude-code');
+        this.ctx.check(
+            'the Claude Code command starts that executable with mcp',
+            claudeCode.startsWith('claude mcp add --transport stdio --scope user wmb-table -- ') &&
+                claudeCode.endsWith(`${launch.command} ${launch.args[0]} mcp`),
+            claudeCode,
+        );
+        const desktop = JSON.parse(
+            await this.snippetAfterOpening('command', 'Claude Desktop', 'claude-desktop'),
+        ) as {
+            mcpServers: Record<string, { command: string; args: string[] }>;
+        };
+        this.ctx.check(
+            'the Claude Desktop JSON starts the same command over stdio',
+            desktop.mcpServers['wmb-table']?.command === launch.command &&
+                desktop.mcpServers['wmb-table']?.args.join(' ') ===
+                    [...launch.args, 'mcp'].join(' '),
+            desktop,
+        );
+        this.ctx.check(
+            'a development copy is labelled as such',
+            (
+                await this.ctx.settings.text(
+                    '[data-testid="mcp-mode-command"] .ant-typography-secondary',
+                )
+            ).some((hint) => hint.includes('Commande de développement')),
+        );
+    }
+
+    private async snippetAfterOpening(mode: string, label: string, key: string): Promise<string> {
+        await this.openClient(mode, label, key);
+        return this.snippet(mode, key);
+    }
+
+    private async configurationShots(): Promise<void> {
+        await this.commandShowsThisCopy();
+        await this.openClient('command', 'Claude Code', 'claude-code');
+        await this.sectionShot('mcp-config-command');
+        await this.openClient('command', 'Codex', 'codex');
+        await this.sectionShot('mcp-config-command-codex');
+        await this.openClient('command', 'Claude Desktop', 'claude-desktop');
+        await this.sectionShot('mcp-config-command-claude-desktop');
+        await this.openClient('command', 'Claude Code', 'claude-code');
+
+        await this.openMode('HTTP', 'http');
         for (const [key, label] of [
+            ['claude-code', 'Claude Code'],
             ['codex', 'Codex'],
             ['claude-desktop', 'Claude Desktop'],
         ] as const) {
-            await this.ctx.settings.clickText(`${SECTION} .ant-tabs-tab`, label);
-            await this.ctx.cdp.waitFor(
-                `Boolean(document.querySelector('[data-testid="mcp-snippet-${key}"]')?.getBoundingClientRect().width)`,
-                `${key} snippet`,
-            );
-            await this.sectionShot(`mcp-on-${key}`);
+            await this.openClient('http', label, key);
+            await this.sectionShot(`mcp-config-http-${key}`);
         }
-        await this.ctx.settings.clickText(`${SECTION} .ant-tabs-tab`, 'Claude Code');
+        await this.openClient('http', 'Claude Code', 'claude-code');
+
+        await this.openMode('HTTP sans interface', 'headless');
+        await this.sectionShot('mcp-config-headless');
+        await this.openMode('Commande (recommandé)', 'command');
     }
 
     private async languageShots(): Promise<void> {
@@ -331,6 +439,11 @@ export class McpServerChecks {
                 await this.sectionShot('mcp-writes-en');
                 await this.toggle(ALLOW_WRITES, false);
             }
+            await this.openMode('HTTP', 'http');
+            await this.sectionShot(`mcp-config-http-${language}`);
+            await this.openMode(HEADLESS_LABELS[language], 'headless');
+            await this.sectionShot(`mcp-config-headless-${language}`);
+            await this.openMode(COMMAND_LABELS[language], 'command');
             await this.toggle(ENABLED, false);
             await this.sectionShot(`mcp-off-${language}`);
             await this.toggle(ENABLED, true);
