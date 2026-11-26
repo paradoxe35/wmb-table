@@ -34,7 +34,7 @@ export function MarkdownImagePlaceholder({ src, alt }: ComponentProps<'img'> & {
     if (!label) return null;
 
     return (
-        <Text type="secondary">
+        <Text type="secondary" style={{ fontSize: 'inherit' }}>
             <PictureOutlined /> {label}
         </Text>
     );
