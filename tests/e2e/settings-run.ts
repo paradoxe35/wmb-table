@@ -3,6 +3,13 @@ import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { parseArgs } from 'node:util';
 import { AssistantOnboarding } from './assistant-onboarding';
+import { DEFAULT_MCP_PORT } from '@shared/mcp.types';
+import {
+    McpServerChecks,
+    holdPort,
+    relaunchWithSameProfile,
+    type HeldPort,
+} from './mcp-server-checks';
 import { AppProcess } from './driver/app-process';
 import { MOCK_PROVIDER_ID, setUpApp } from './driver/app-setup';
 import type { CdpSession } from './driver/cdp';
@@ -456,6 +463,17 @@ class SettingsRun {
         await this.reload();
     }
 
+    mcpChecks(): McpServerChecks {
+        return new McpServerChecks({
+            cdp: this.cdp,
+            settings: this.settings,
+            check: (...args) => this.check(...args),
+            shot: (name) => this.shot(name),
+            setUiLanguage: (language) => this.setUiLanguage(language),
+            reload: () => this.reload(),
+        });
+    }
+
     async smallWindow(): Promise<void> {
         await this.cdp.send('Emulation.setDeviceMetricsOverride', {
             width: 700,
@@ -472,14 +490,20 @@ class SettingsRun {
 async function main(): Promise<boolean> {
     const { values } = parseArgs({
         args: process.argv.slice(2).filter((arg) => arg !== '--'),
-        options: { out: { type: 'string' }, 'cache-dir': { type: 'string' } },
+        options: {
+            out: { type: 'string' },
+            'cache-dir': { type: 'string' },
+            'mcp-only': { type: 'boolean' },
+        },
     });
     const outDir = resolve(values.out ?? join(repoRoot, 'tmp/e2e-output/settings'));
     mkdirSync(outDir, { recursive: true });
     const server = await startMockLlmServer({ logFile: join(outDir, 'llm-requests.jsonl') });
-    const app = new AppProcess({ repoRoot, profileParent: join(repoRoot, 'tmp/e2e-profiles') });
+    const appOptions = { repoRoot, profileParent: join(repoRoot, 'tmp/e2e-profiles') };
+    let app = new AppProcess(appOptions);
     let cdp: CdpSession | null = null;
     let run: SettingsRun | null = null;
+    const usualPort: { held: HeldPort | null } = { held: null };
     try {
         cdp = await app.start();
         await setUpApp(cdp, app, {
@@ -490,16 +514,35 @@ async function main(): Promise<boolean> {
         });
         await cdp.send('Emulation.setDeviceMetricsOverride', DESKTOP_VIEWPORT);
         run = new SettingsRun(cdp, join(outDir, 'screens'), server.baseUrl);
-        await run.onboarding(app);
-        await run.run();
-        await run.saveError(app);
-        await run.ttsKeys();
-        await run.smallWindow();
-        await run.languages();
+        if (!values['mcp-only']) {
+            await run.onboarding(app);
+            await run.run();
+            await run.saveError(app);
+            await run.ttsKeys();
+            await run.smallWindow();
+            await run.languages();
+        }
+
+        const probe = await holdPort(DEFAULT_MCP_PORT);
+        await probe?.release();
+        const mcpUrl = await run.mcpChecks().firstLaunch(probe !== null);
+        const relaunched = await relaunchWithSameProfile(app, cdp, mcpUrl, appOptions, async () => {
+            usualPort.held = await holdPort(DEFAULT_MCP_PORT);
+        });
+        run.check('quitting the app stops the MCP server', relaunched.quitClosedServer);
+        app = relaunched.app;
+        cdp = relaunched.cdp;
+        await cdp.send('Emulation.setDeviceMetricsOverride', DESKTOP_VIEWPORT);
+        const previousChecks = run.checks;
+        run = new SettingsRun(cdp, join(outDir, 'screens'), server.baseUrl);
+        run.checks.push(...previousChecks);
+        await run.reload();
+        await run.mcpChecks().afterRelaunch(usualPort.held !== null);
     } catch (error) {
         if (cdp) writeFileSync(join(outDir, 'failure.png'), await cdp.screenshot());
         throw error;
     } finally {
+        await usualPort.held?.release();
         writeFileSync(join(outDir, 'main.log'), app.mainLog());
         writeFileSync(
             join(outDir, 'renderer-console-errors.json'),
