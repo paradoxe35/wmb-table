@@ -110,11 +110,12 @@
     border: none;
     box-shadow: none;
     background: transparent;
-    opacity: 0.5;
+    opacity: 0.75;
     transition: opacity 0.15s;
 }
 
-.ai-chat__sidebar-footer .ant-btn:hover {
+.ai-chat__sidebar-footer .ant-btn:hover,
+.ai-chat__sidebar-footer .ant-btn:focus-visible {
     opacity: 1;
     background: transparent;
 }
@@ -734,7 +735,25 @@
 }
 
 .ai-chat__run-notice .ant-alert-section {
-    min-width: min(100%, 220px);
+    flex: 1 1 0;
+    min-width: min(100%, 140px);
+}
+
+/* A detail line must not switch the banner to Ant Design's large layout: every banner looks alike */
+.ai-chat__run-notice.ant-alert-with-description {
+    padding: 8px 12px;
+    align-items: flex-start;
+}
+
+.ai-chat__run-notice.ant-alert-with-description .ant-alert-icon {
+    font-size: var(--ant-font-size);
+    margin-top: 0.3em;
+    margin-inline-end: 8px;
+}
+
+.ai-chat__run-notice.ant-alert-with-description .ant-alert-title {
+    font-size: inherit;
+    margin-bottom: 2px;
 }
 
 .ai-chat__run-notice-detail.ant-typography {
@@ -936,6 +955,11 @@
     resize: none;
 }
 
+/* The whole input box shows the focus ring */
+textarea.ai-chat__input-textarea:focus-visible {
+    outline: none;
+}
+
 .ai-chat__input-placeholder {
     position: absolute;
     left: 14px;
@@ -1035,6 +1059,29 @@
     .ai-chat__notice-row {
         margin-left: 0;
         max-width: 100%;
+    }
+}
+
+/* ── Narrow chat: the conversation list gives room to the thread ── */
+@container ai-chat (max-width: 520px) {
+    .ai-chat__sidebar {
+        width: 136px;
+    }
+
+    .ai-chat__sidebar-header {
+        padding-inline: 8px;
+    }
+
+    .ai-chat__sidebar-search {
+        padding-inline: 6px;
+    }
+
+    .ai-chat__sidebar-list {
+        padding-inline: 4px;
+    }
+
+    .ai-chat__conv-item {
+        padding-inline: 6px;
     }
 }
 
