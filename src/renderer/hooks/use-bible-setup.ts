@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { message } from 'antd';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { BibleDownloadedEvent } from '@shared/types';
 import { buildDownloadErrorMessage } from '@renderer/lib/download-feedback';
 import { useAppStore } from '@renderer/stores';
@@ -22,11 +23,7 @@ function refreshRemoteBibleIndex(): Promise<void> {
     return remoteRefreshPromise;
 }
 
-function showDownloadFailedMessage(
-    t: (key: string, options?: Record<string, string>) => string,
-    abbreviation: string,
-    error: unknown,
-): void {
+function showDownloadFailedMessage(t: TFunction, abbreviation: string, error: unknown): void {
     message.open({
         type: 'error',
         key: `bible-download-failed:${abbreviation}`,

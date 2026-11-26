@@ -198,12 +198,13 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                         },
                         experimental_onToolCallFinish(event) {
                             if (ctx.dispatch) {
+                                const failed = event.toolOutput.type === 'tool-error';
                                 dispatchAgentToolComplete(
                                     ctx.dispatch,
                                     AGENT_NAME,
                                     event.toolCall.toolName,
                                     event.toolCall.toolCallId,
-                                    event.success ? undefined : event.error,
+                                    failed ? event.toolOutput.error : undefined,
                                 );
                             }
                         },

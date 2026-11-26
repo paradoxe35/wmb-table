@@ -1,5 +1,5 @@
 import { tool } from 'ai';
-import type { LanguageModel } from 'ai';
+import type { LanguageModel, ToolSet } from 'ai';
 import type { BrowserWindow } from 'electron';
 import { buildBibleTools } from './bible.tools';
 import { buildDocumentTools } from './document.tools';
@@ -36,7 +36,10 @@ export function buildToolExecutors(
     };
 }
 
-export function buildAiTools(defaultContentLanguage: string, options?: BuildAiToolsOptions) {
+export function buildAiTools(
+    defaultContentLanguage: string,
+    options?: BuildAiToolsOptions,
+): ToolSet {
     const executors = buildToolExecutors(defaultContentLanguage, options?.activeBibleVersion);
 
     const dispatch =

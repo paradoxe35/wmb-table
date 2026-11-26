@@ -9,5 +9,8 @@ allowBuilds:
     'simple-git-hooks': true
     '@turbodocx/html-to-docx': false
     'koffi': true
+
+onlyBuiltDependencies: ['electron', 'esbuild']
+
 minimumReleaseAgeExclude:
     - sherpa-onnx@1.13.5
