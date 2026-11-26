@@ -8,12 +8,16 @@ import { buildNoteTools } from './note.tools';
 import { buildSermonTools } from './sermon.tools';
 import { buildSubjectTools } from './subject.tools';
 import { buildAgentTools } from '../agents';
+import type { ChatTimeouts } from '../model-timeouts';
 
 export interface BuildAiToolsOptions {
     model?: LanguageModel;
     uiLanguage?: string;
     activeBibleVersion?: string;
+    contextWindow?: number;
     maxOutputTokens?: number;
+    timeouts?: ChatTimeouts;
+    reasoningControl?: boolean;
     abortSignal?: AbortSignal;
     /** Required for subagent progress dispatch to the renderer. */
     browserWindow?: BrowserWindow;
@@ -61,7 +65,10 @@ export function buildAiTools(
               contentLanguage: defaultContentLanguage,
               uiLanguage: options.uiLanguage ?? defaultContentLanguage,
               activeBibleVersion: options.activeBibleVersion,
+              contextWindow: options.contextWindow,
               maxOutputTokens: options.maxOutputTokens,
+              timeouts: options.timeouts,
+              reasoningControl: options.reasoningControl,
               abortSignal: options.abortSignal,
               dispatch,
           })

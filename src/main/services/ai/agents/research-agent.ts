@@ -1,19 +1,14 @@
-import { generateText, tool, stepCountIs } from 'ai';
 import { z } from 'zod';
-import log from '@main/lib/logger';
 import { buildBibleTools } from '../tools/bible.tools';
 import { buildDocumentTools } from '../tools/document.tools';
 import { buildSermonTools } from '../tools/sermon.tools';
 import type { AiToolDefinition } from '../tools/types';
 import type { AgentContext } from './types';
 import { buildResearchAgentPrompt, buildResearchAgentTaskPrompt } from './agent-prompts';
-import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
-import { capAgentOutputTokens } from './output-limit';
+import type { SubAgentRunner } from './run-sub-agent';
 
 const AGENT_NAME = 'researchTopic';
 const MAX_STEPS = 50;
-const MAX_OUTPUT_TOKENS = 4096;
-const AGENT_MAX_RETRIES = 3;
 
 function buildResearchToolSubset(
     languageCode: string,
@@ -36,7 +31,10 @@ function buildResearchToolSubset(
     };
 }
 
-export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiToolDefinition> {
+export function buildResearchAgentTool(
+    ctx: AgentContext,
+    runSubAgent: SubAgentRunner,
+): Record<string, AiToolDefinition> {
     return {
         researchTopic: {
             description:
@@ -73,95 +71,26 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                     .optional()
                     .describe('Language code for content search (defaults to content language)'),
             }),
-            execute: async ({ topic, description, alreadyKnown, followUpGoal, languageCode }) => {
+            execute: ({ topic, description, alreadyKnown, followUpGoal, languageCode }) => {
                 const lang = languageCode ?? ctx.contentLanguage;
-                const executors = buildResearchToolSubset(lang, ctx.activeBibleVersion);
-                const agentTools = Object.fromEntries(
-                    Object.entries(executors).map(([name, def]) => [name, tool(def)]),
-                );
-                const prompt = buildResearchAgentTaskPrompt({
-                    topic,
-                    description,
-                    alreadyKnown,
-                    followUpGoal,
-                });
-
-                log.info('Research agent starting', { topic, description, languageCode: lang });
-
-                try {
-                    const result = await generateText({
-                        model: ctx.model,
-                        system: buildResearchAgentPrompt(
-                            lang,
-                            ctx.uiLanguage,
-                            ctx.activeBibleVersion,
-                        ),
-                        prompt,
-                        tools: agentTools,
-                        stopWhen: stepCountIs(MAX_STEPS),
-                        maxOutputTokens: capAgentOutputTokens(
-                            MAX_OUTPUT_TOKENS,
-                            ctx.maxOutputTokens,
-                        ),
-                        maxRetries: AGENT_MAX_RETRIES,
-                        abortSignal: ctx.abortSignal,
-                        experimental_onToolCallStart(event) {
-                            if (ctx.dispatch) {
-                                dispatchAgentToolStart(
-                                    ctx.dispatch,
-                                    AGENT_NAME,
-                                    event.toolCall.toolName,
-                                    event.toolCall.toolCallId,
-                                    (event.toolCall.input as Record<string, unknown>) ?? {},
-                                );
-                            }
-                        },
-                        experimental_onToolCallFinish(event) {
-                            if (ctx.dispatch) {
-                                const failed = event.toolOutput.type === 'tool-error';
-                                dispatchAgentToolComplete(
-                                    ctx.dispatch,
-                                    AGENT_NAME,
-                                    event.toolCall.toolName,
-                                    event.toolCall.toolCallId,
-                                    failed ? event.toolOutput.error : undefined,
-                                );
-                            }
-                        },
-                    });
-
-                    const truncated = result.finishReason === 'length';
-                    if (truncated) {
-                        log.warn('Research agent output truncated', { topic });
-                    }
-
-                    log.info('Research agent completed', {
+                return runSubAgent({
+                    name: AGENT_NAME,
+                    label: 'Research',
+                    instructions: buildResearchAgentPrompt(
+                        lang,
+                        ctx.uiLanguage,
+                        ctx.activeBibleVersion,
+                    ),
+                    prompt: buildResearchAgentTaskPrompt({
                         topic,
-                        steps: result.steps.length,
-                        outputTokens: result.usage?.outputTokens || null,
-                        truncated,
-                    });
-
-                    return {
-                        status: 'completed',
-                        response: truncated
-                            ? `${result.text}\n\n[Research output was truncated due to length limit]`
-                            : result.text,
-                    };
-                } catch (error) {
-                    // Re-throw abort errors so the outer runner stops
-                    if (ctx.abortSignal?.aborted) throw error;
-
-                    const message =
-                        error instanceof Error ? error.message : 'Research agent failed';
-
-                    log.error('Research agent failed', { topic, error: message });
-                    return {
-                        status: 'failed',
-                        response: `Research failed: ${message}`,
-                        error: message,
-                    };
-                }
+                        description,
+                        alreadyKnown,
+                        followUpGoal,
+                    }),
+                    tools: buildResearchToolSubset(lang, ctx.activeBibleVersion),
+                    maxSteps: MAX_STEPS,
+                    logContext: { topic, description, languageCode: lang },
+                });
             },
         },
     };

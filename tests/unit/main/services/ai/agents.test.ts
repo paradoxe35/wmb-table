@@ -69,7 +69,7 @@ describe('AI agents prompt builders', () => {
     });
 
     it('tells the sermon reader it may read more for whole-sermon tasks', () => {
-        const prompt = buildSermonReaderAgentPrompt('fr', 'en', 'kjv');
+        const prompt = buildSermonReaderAgentPrompt('fr', 'en');
 
         expect(prompt).toContain('whole-sermon summaries');
         expect(prompt).toContain('up to 8 pages (160 paragraphs)');
