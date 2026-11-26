@@ -227,6 +227,8 @@ const en: Record<string, string> = {
     "L'arrêt de la génération a échoué.": 'Stopping the generation failed.',
     "L'envoi du message a échoué.": 'Sending the message failed.',
     'La création de la conversation a échoué.': 'Creating the conversation failed.',
+    'Le message est trop long. Raccourcissez-le puis réessayez.':
+        'The message is too long. Shorten it and try again.',
     'Le chargement de la conversation a échoué.': 'Loading the conversation failed.',
     'Le chargement des anciennes conversations a échoué.': 'Loading older conversations failed.',
     'Le chargement des conversations a échoué.': 'Loading conversations failed.',

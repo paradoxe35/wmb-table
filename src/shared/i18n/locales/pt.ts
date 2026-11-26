@@ -1168,6 +1168,8 @@ const pt: Record<string, string> = {
     "L'arrêt de la génération a échoué.": 'Falha ao interromper a geração.',
     "L'envoi du message a échoué.": 'Falha ao enviar a mensagem.',
     'La création de la conversation a échoué.': 'Falha ao criar a conversa.',
+    'Le message est trop long. Raccourcissez-le puis réessayez.':
+        'A mensagem é muito longa. Encurte-a e tente novamente.',
     'Le chargement de la conversation a échoué.': 'Falha ao carregar a conversa.',
     'Le chargement des anciennes conversations a échoué.':
         'Falha ao carregar as conversas antigas.',

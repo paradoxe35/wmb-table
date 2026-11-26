@@ -1171,6 +1171,8 @@ const es: Record<string, string> = {
     "L'arrêt de la génération a échoué.": 'No se pudo detener la generación.',
     "L'envoi du message a échoué.": 'No se pudo enviar el mensaje.',
     'La création de la conversation a échoué.': 'No se pudo crear la conversación.',
+    'Le message est trop long. Raccourcissez-le puis réessayez.':
+        'El mensaje es demasiado largo. Acórtalo e inténtalo de nuevo.',
     'Le chargement de la conversation a échoué.': 'No se pudo cargar la conversación.',
     'Le chargement des anciennes conversations a échoué.':
         'No se pudieron cargar las conversaciones antiguas.',

@@ -1166,6 +1166,8 @@ const sw: Record<string, string> = {
     "L'arrêt de la génération a échoué.": 'Imeshindikana kusimamisha uzalishaji.',
     "L'envoi du message a échoué.": 'Imeshindikana kutuma ujumbe.',
     'La création de la conversation a échoué.': 'Imeshindikana kuunda mazungumzo.',
+    'Le message est trop long. Raccourcissez-le puis réessayez.':
+        'Ujumbe ni mrefu mno. Ufupishe kisha ujaribu tena.',
     'Le chargement de la conversation a échoué.': 'Imeshindikana kupakia mazungumzo.',
     'Le chargement des anciennes conversations a échoué.':
         'Imeshindikana kupakia mazungumzo ya zamani.',
