@@ -70,10 +70,10 @@ describe('ai chat store settings saves', () => {
             throw new Error('Invalid base URL');
         });
 
-        await expect(store.getState().saveSettings({ enabled: true })).rejects.toThrow(
-            'Invalid base URL',
-        );
-        expect(store.getState().settings?.enabled).toBe(false);
+        await expect(
+            store.getState().saveSettings({ languagePreference: 'explicit-only' }),
+        ).rejects.toThrow('Invalid base URL');
+        expect(store.getState().settings?.languagePreference).toBe('active');
         expect(dispatchEvent).not.toHaveBeenCalled();
     });
 
@@ -83,9 +83,9 @@ describe('ai chat store settings saves', () => {
             return { ...stored, ...partial };
         });
 
-        void store.getState().saveSettings({ enabled: true });
+        void store.getState().saveSettings({ languagePreference: 'explicit-only' });
         await store.getState().whenSettingsSaved();
 
-        expect(store.getState().settings?.enabled).toBe(true);
+        expect(store.getState().settings?.languagePreference).toBe('explicit-only');
     });
 });

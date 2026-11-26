@@ -247,13 +247,14 @@ describe('ai.repository', () => {
     describe('settings', () => {
         it('ensureSettings creates defaults', () => {
             const settings = aiRepo.ensureSettings();
-            expect(settings.enabled).toBe(false);
+            expect(settings.enabled).toBe(true);
+            expect(settings.activeProvider).toBeNull();
         });
 
         it('updateSettings merges partial', () => {
             aiRepo.ensureSettings();
-            const updated = aiRepo.updateSettings({ enabled: true });
-            expect(updated.enabled).toBe(true);
+            const updated = aiRepo.updateSettings({ enabled: false });
+            expect(updated.enabled).toBe(false);
         });
 
         it('a provider update keeps the other fields and providers', () => {

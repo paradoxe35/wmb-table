@@ -1,43 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Empty, Typography } from 'antd';
-import { RobotOutlined } from '@ant-design/icons';
+import { Alert } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { useAiChatStore, useAppStore } from '@renderer/stores';
+import { isAiConfigured } from '@renderer/lib/feature-reminders';
+import { useAiChatStore } from '@renderer/stores';
 import type { AiMessage } from '@shared/ai.types';
+import AssistantSetupCard from './assistant-setup-card';
 import ChatConversationList from './chat-conversation-list';
 import ChatHeader from './chat-header';
 import ChatInput from './chat-input';
 import ChatMessageList from './chat-message-list';
 import './ai-chat.scss';
 
-const { Text } = Typography;
 const EMPTY_MESSAGES: AiMessage[] = [];
 const EMPTY_QUEUED_MESSAGES: { id: string; content: string }[] = [];
-
-function DisabledState() {
-    const { t } = useTranslation();
-    const showOptions = useAppStore((s) => s.showOptions);
-
-    return (
-        <div className="ai-chat__disabled">
-            <Empty
-                image={
-                    <RobotOutlined
-                        style={{
-                            fontSize: 'var(--fs-11xl)',
-                            color: 'var(--ant-color-text-quaternary)',
-                        }}
-                    />
-                }
-                description={<Text type="secondary">{t("L'assistant IA est désactivé.")}</Text>}
-            >
-                <Button type="primary" onClick={() => showOptions('settings')}>
-                    {t('Ouvrir les paramètres')}
-                </Button>
-            </Empty>
-        </div>
-    );
-}
 
 export default function AiChatView() {
     const { t } = useTranslation();
@@ -191,8 +166,8 @@ export default function AiChatView() {
         return null;
     }
 
-    if (!settings.enabled) {
-        return <DisabledState />;
+    if (!isAiConfigured(settings)) {
+        return <AssistantSetupCard />;
     }
 
     return (

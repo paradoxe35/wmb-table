@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Card, Divider, Select, Space, Switch, Tag, Typography } from 'antd';
+import { Alert, Button, Card, Divider, Select, Space, Tag } from 'antd';
 import { BookOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -14,7 +14,7 @@ import {
 import { isLocalBaseUrl } from '@shared/ai-provider-input';
 import { useAiChatStore, useAppStore } from '@renderer/stores';
 import { buildDocsGuideLink } from '@renderer/utils/constants';
-import { Field, Hint } from './ai-shared';
+import { Field } from './ai-shared';
 import { BuiltinProviderConfig, CustomProviderConfig } from './ai-provider-config';
 import AiCustomProviderModal from './ai-custom-provider';
 import InlineHelpPopover from '../components/inline-help-popover';
@@ -22,11 +22,8 @@ import { getAiSettingsHelp } from '../components/option-help-content';
 import { LocalityTag } from './tts-shared';
 import { useSaveAiSettings } from './use-save-ai-settings';
 
-const { Text } = Typography;
-
 function missingSetupWarning(settings: AiSettings): string | null {
     const providerId = settings.activeProvider;
-    if (!settings.enabled) return null;
     if (!providerId) return "Choisissez un fournisseur pour utiliser l'assistant.";
     const needsApiKey =
         isBuiltinProviderId(providerId) && BUILTIN_PROVIDER_REQUIRES_API_KEY[providerId];
@@ -117,7 +114,6 @@ export default function AiTab() {
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
-            {/* Enable toggle */}
             <Card
                 size="small"
                 title={
@@ -139,25 +135,6 @@ export default function AiTab() {
                     </Button>
                 }
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Switch
-                        id="ai-enabled"
-                        checked={settings.enabled}
-                        onChange={(enabled) => saveSettings({ enabled })}
-                    />
-                    <div>
-                        <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
-                            <label htmlFor="ai-enabled">{t("Activer l'assistant IA")}</label>
-                        </Text>
-                        <Hint>
-                            {t("Une fois activé, l'assistant apparaît dans la barre latérale.")}
-                        </Hint>
-                    </div>
-                </div>
-            </Card>
-
-            {/* Provider selector */}
-            <Card size="small">
                 <Field
                     label={t('Fournisseur actif')}
                     htmlFor="ai-active-provider"

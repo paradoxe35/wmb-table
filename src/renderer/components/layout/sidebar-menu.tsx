@@ -12,7 +12,6 @@ import {
 import { Menu, Layout } from 'antd';
 import type { MenuProps } from 'antd';
 import { useAppStore } from '@renderer/stores';
-import { APP_UI_EVENT } from '@renderer/utils/events';
 import { BibleIcons } from '../icons';
 import AudioDocumentPlayerIndicator from '../audio-document-player-indicator';
 
@@ -48,7 +47,6 @@ export default function SidebarMenu({
     const mainView = useAppStore((s) => s.mainView);
     const optionView = useAppStore((s) => s.optionView);
     const showOptions = useAppStore((s) => s.showOptions);
-    const [aiEnabled, setAiEnabled] = React.useState(false);
     const optionViewRef = useRef(optionView);
     optionViewRef.current = optionView;
 
@@ -62,35 +60,19 @@ export default function SidebarMenu({
         [showOptions, t],
     );
 
-    useEffect(() => {
-        const refreshAiEnabled = () => {
-            window.api.ai
-                .getSettings()
-                .then((settings) => setAiEnabled(settings.enabled))
-                .catch(() => setAiEnabled(false));
-        };
-        refreshAiEnabled();
-        window.addEventListener(APP_UI_EVENT.aiSettingsUpdated, refreshAiEnabled);
-        return () => window.removeEventListener(APP_UI_EVENT.aiSettingsUpdated, refreshAiEnabled);
-    }, []);
-
     const menuItems: MenuProps['items'] = useMemo(
         () => [
             ...mainOptions.map(toItem),
             { type: 'divider' as const },
-            ...(aiEnabled
-                ? [
-                      {
-                          key: 'ai-chat',
-                          icon: <CommentOutlined />,
-                          label: t('Assistant'),
-                          onClick: () => showOptions('ai-chat'),
-                      },
-                  ]
-                : []),
+            {
+                key: 'ai-chat',
+                icon: <CommentOutlined />,
+                label: t('Assistant'),
+                onClick: () => showOptions('ai-chat'),
+            },
             ...secondaryOptions.map(toItem),
         ],
-        [aiEnabled, showOptions, t, toItem],
+        [showOptions, t, toItem],
     );
 
     const bottomMenuItems: MenuProps['items'] = useMemo(

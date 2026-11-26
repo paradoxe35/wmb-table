@@ -52,9 +52,6 @@ const sw: Record<string, string> = {
     'Gérez les préférences de votre application.': 'Dhibiti mapendeleo ya programu yako.',
     Assistant: 'Msaidizi',
     'Assistant IA': 'Msaidizi wa AI',
-    "Activer l'assistant IA": 'Washa msaidizi wa AI',
-    "Une fois activé, l'assistant apparaît dans la barre latérale.":
-        'Baada ya kuwashwa, msaidizi huonekana kwenye upau wa pembeni.',
     'Clé API': 'Ufunguo wa API',
     'URL de base': 'URL ya msingi',
     Modèle: 'Mfano',
@@ -159,12 +156,16 @@ const sw: Record<string, string> = {
         'Hakuna mfano uliosanidiwa kwa mtoa huduma huyu. Weka mfano kwenye mipangilio.',
 
     // ── AI chat ──
-    "L'assistant IA est désactivé.": 'Msaidizi wa AI amezimwa.',
-    'Ouvrir les paramètres': 'Fungua mipangilio',
+    "Posez une question sur un sujet d'étude : l'assistant développe le thème, rapproche ce que disent les prédications et les Écritures, et vous donne les références pour vérifier par vous-même.":
+        'Uliza swali kuhusu mada ya kujifunza: msaidizi huikuza mada, huunganisha yale yanayosemwa na mahubiri na Maandiko, na hukupa marejeo ili ujithibitishie mwenyewe.',
+    "Pour l'utiliser, choisissez un service d'IA — par exemple OpenAI, Claude, Gemini, OpenRouter, ou Ollama sur votre ordinateur — et ajoutez votre clé API si le service en demande une.":
+        'Ili kumtumia, chagua huduma ya AI — kwa mfano OpenAI, Claude, Gemini, OpenRouter, au Ollama kwenye kompyuta yako — kisha ongeza ufunguo wako wa API ikiwa huduma inauhitaji.',
+    "Configurer l'assistant": 'Sanidi msaidizi',
+    'Voir le guide': 'Soma mwongozo',
     'Le saviez-vous ? <u>{{feature}}</u> peut vous aider à explorer un sujet et comprendre plus vite ce que vous cherchez.':
         'Je, unajua? <u>{{feature}}</u> inaweza kukusaidia kuchunguza mada na kuelewa haraka zaidi unachotafuta.',
-    'Activez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
-        'Washa <u>{{feature}}</u> ili kuuliza maswali, kuchunguza mada kwa kina, kulinganisha mahubiri mengi, kupata vifungu vya Biblia na kupata majibu wazi bila kupitia kila kitu kwa mkono.',
+    'Configurez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
+        'Sanidi <u>{{feature}}</u> ili kuuliza maswali, kuchunguza mada kwa kina, kulinganisha mahubiri mengi, kupata vifungu vya Biblia na kupata majibu wazi bila kupitia kila kitu kwa mkono.',
     "Ouvrir les réglages de l'assistant": 'Fungua mipangilio ya msaidizi',
     'Le saviez-vous ? <u>{{feature}}</u> peut lire vos documents.':
         'Je, unajua? <u>{{feature}}</u> inaweza kusoma nyaraka zako kwa sauti.',
@@ -1013,10 +1014,8 @@ const sw: Record<string, string> = {
     'Si vous voulez quelque chose de simple, gardez le fournisseur proposé puis testez une voix.':
         'Ukihitaji jambo rahisi, tumia mtoa huduma uliopendekezwa kisha ujaribu sauti.',
     "À quoi servent les réglages de l'assistant ?": 'Mipangilio ya msaidizi hutumika kwa nini?',
-    "Cet onglet active l'assistant IA et choisit comment il répond dans l'application.":
-        'Kichupo hiki huwasha msaidizi wa AI na kuchagua jinsi anavyojibu ndani ya programu.',
-    "Activez ou masquez l'assistant dans la barre latérale.":
-        'Washa au ficha msaidizi kwenye upau wa pembeni.',
+    "Cet onglet choisit le service d'IA de l'assistant et la façon dont il répond.":
+        'Kichupo hiki huchagua huduma ya AI ya msaidizi na jinsi anavyojibu.',
     'Sélectionnez un fournisseur local, cloud ou personnalisé.':
         'Chagua mtoa huduma wa ndani, wa mtandaoni au maalum.',
     'Définissez la langue et le modèle utilisés pour les réponses.':
@@ -1093,12 +1092,12 @@ const sw: Record<string, string> = {
         'Pia kinadhibiti uzoefu wa kusikiliza: sauti, kasi, uangaziaji na tabia ya sauti.',
     "L'assistant peut aider à explorer un thème, retrouver des références et comparer plus vite plusieurs contenus.":
         'Msaidizi anaweza kusaidia kuchunguza mada, kupata marejeo na kulinganisha maudhui mengi kwa haraka.',
-    "Cet onglet détermine s'il est disponible, quel service il utilise et dans quelle langue il travaille.":
-        'Kichupo hiki kinaamua kama anapatikana, anatumia huduma gani na anafanya kazi kwa lugha gani.',
+    'Cet onglet détermine quel service il utilise et dans quelle langue il travaille.':
+        'Kichupo hiki kinaamua anatumia huduma gani na anafanya kazi kwa lugha gani.',
     'Vous pouvez choisir une solution locale, cloud ou personnalisée selon vos besoins.':
         'Unaweza kuchagua suluhisho la ndani, la mtandaoni au maalum kulingana na mahitaji yako.',
-    "Activez l'assistant pour le rendre disponible dans la barre latérale.":
-        'Washa msaidizi ili apatikane kwenye upau wa pembeni.',
+    'Ajoutez votre clé API si le service en demande une.':
+        'Ongeza ufunguo wako wa API ikiwa huduma inauhitaji.',
     'Elle sert à retrouver rapidement un mot, un thème, un lieu ou une expression dans les prédications.':
         'Kinatumika kupata kwa haraka neno, mada, mahali au usemi ndani ya mahubiri.',
     'Elle évite de parcourir manuellement plusieurs documents quand vous savez déjà ce que vous cherchez.':

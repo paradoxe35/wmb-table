@@ -111,7 +111,7 @@ export function createDefaultAiSettings(): AiSettings {
         };
     }
     return {
-        enabled: false,
+        enabled: true,
         activeProvider: null,
         languagePreference: 'active',
         maxHistoryConversations: 50,

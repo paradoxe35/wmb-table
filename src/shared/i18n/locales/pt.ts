@@ -51,9 +51,6 @@ const pt: Record<string, string> = {
     'Gérez les préférences de votre application.': 'Gerencie as preferências do seu aplicativo.',
     Assistant: 'Assistente',
     'Assistant IA': 'Assistente de IA',
-    "Activer l'assistant IA": 'Ativar o assistente de IA',
-    "Une fois activé, l'assistant apparaît dans la barre latérale.":
-        'Depois de ativado, o assistente aparece na barra lateral.',
     'Clé API': 'Chave de API',
     'URL de base': 'URL base',
     Modèle: 'Modelo',
@@ -160,12 +157,16 @@ const pt: Record<string, string> = {
         'Nenhum modelo configurado para este provedor. Defina um modelo nas configurações.',
 
     // ── AI chat ──
-    "L'assistant IA est désactivé.": 'O assistente de IA está desativado.',
-    'Ouvrir les paramètres': 'Abrir configurações',
+    "Posez une question sur un sujet d'étude : l'assistant développe le thème, rapproche ce que disent les prédications et les Écritures, et vous donne les références pour vérifier par vous-même.":
+        'Faça uma pergunta sobre um tema de estudo: o assistente desenvolve o tema, relaciona o que dizem os sermões e as Escrituras, e lhe dá as referências para você mesmo conferir.',
+    "Pour l'utiliser, choisissez un service d'IA — par exemple OpenAI, Claude, Gemini, OpenRouter, ou Ollama sur votre ordinateur — et ajoutez votre clé API si le service en demande une.":
+        'Para usá-lo, escolha um serviço de IA — por exemplo OpenAI, Claude, Gemini, OpenRouter ou Ollama no seu computador — e adicione sua chave de API se o serviço pedir uma.',
+    "Configurer l'assistant": 'Configurar o assistente',
+    'Voir le guide': 'Ver o guia',
     'Le saviez-vous ? <u>{{feature}}</u> peut vous aider à explorer un sujet et comprendre plus vite ce que vous cherchez.':
         'Você sabia? <u>{{feature}}</u> pode ajudar você a explorar um tema e entender mais rapidamente o que está procurando.',
-    'Activez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
-        'Ative <u>{{feature}}</u> para fazer perguntas, aprofundar um tema, comparar vários sermões, encontrar passagens bíblicas e obter respostas claras sem precisar percorrer tudo manualmente.',
+    'Configurez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
+        'Configure <u>{{feature}}</u> para fazer perguntas, aprofundar um tema, comparar vários sermões, encontrar passagens bíblicas e obter respostas claras sem precisar percorrer tudo manualmente.',
     "Ouvrir les réglages de l'assistant": 'Abrir configurações do assistente',
     'Le saviez-vous ? <u>{{feature}}</u> peut lire vos documents.':
         'Você sabia? <u>{{feature}}</u> pode ler seus documentos em voz alta.',
@@ -1015,10 +1016,8 @@ const pt: Record<string, string> = {
         'Se você quiser algo simples, mantenha o provedor sugerido e teste uma voz.',
     "À quoi servent les réglages de l'assistant ?":
         'Para que servem as configurações do assistente?',
-    "Cet onglet active l'assistant IA et choisit comment il répond dans l'application.":
-        'Esta aba ativa o assistente de IA e define como ele responde no aplicativo.',
-    "Activez ou masquez l'assistant dans la barre latérale.":
-        'Ative ou oculte o assistente na barra lateral.',
+    "Cet onglet choisit le service d'IA de l'assistant et la façon dont il répond.":
+        'Esta aba escolhe o serviço de IA do assistente e como ele responde.',
     'Sélectionnez un fournisseur local, cloud ou personnalisé.':
         'Selecione um provedor local, em nuvem ou personalizado.',
     'Définissez la langue et le modèle utilisés pour les réponses.':
@@ -1095,12 +1094,12 @@ const pt: Record<string, string> = {
         'Ela também controla a experiência de escuta: voz, velocidade, destaque e comportamento de áudio.',
     "L'assistant peut aider à explorer un thème, retrouver des références et comparer plus vite plusieurs contenus.":
         'O assistente pode ajudar a explorar um tema, encontrar referências e comparar vários conteúdos mais rápido.',
-    "Cet onglet détermine s'il est disponible, quel service il utilise et dans quelle langue il travaille.":
-        'Esta aba determina se ele está disponível, qual serviço usa e em que idioma trabalha.',
+    'Cet onglet détermine quel service il utilise et dans quelle langue il travaille.':
+        'Esta aba determina qual serviço ele usa e em que idioma trabalha.',
     'Vous pouvez choisir une solution locale, cloud ou personnalisée selon vos besoins.':
         'Você pode escolher uma solução local, em nuvem ou personalizada conforme sua necessidade.',
-    "Activez l'assistant pour le rendre disponible dans la barre latérale.":
-        'Ative o assistente para deixá-lo disponível na barra lateral.',
+    'Ajoutez votre clé API si le service en demande une.':
+        'Adicione sua chave de API se o serviço pedir uma.',
     'Elle sert à retrouver rapidement un mot, un thème, un lieu ou une expression dans les prédications.':
         'Ela serve para encontrar rapidamente uma palavra, um tema, um lugar ou uma expressão nos sermões.',
     'Elle évite de parcourir manuellement plusieurs documents quand vous savez déjà ce que vous cherchez.':

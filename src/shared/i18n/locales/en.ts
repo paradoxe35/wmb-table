@@ -51,9 +51,6 @@ const en: Record<string, string> = {
     'Gérez les préférences de votre application.': 'Manage your application preferences.',
     Assistant: 'Assistant',
     'Assistant IA': 'AI Assistant',
-    "Activer l'assistant IA": 'Enable AI assistant',
-    "Une fois activé, l'assistant apparaît dans la barre latérale.":
-        'Once enabled, the assistant appears in the sidebar.',
     'Clé API': 'API key',
     'URL de base': 'Base URL',
     Modèle: 'Model',
@@ -156,12 +153,16 @@ const en: Record<string, string> = {
         'No model configured for this provider. Set a model in settings.',
 
     // ── AI chat ──
-    "L'assistant IA est désactivé.": 'The AI assistant is disabled.',
-    'Ouvrir les paramètres': 'Open settings',
+    "Posez une question sur un sujet d'étude : l'assistant développe le thème, rapproche ce que disent les prédications et les Écritures, et vous donne les références pour vérifier par vous-même.":
+        'Ask a question about a study topic: the assistant develops the theme, brings together what the sermons and the Scriptures say, and gives you the references so you can check for yourself.',
+    "Pour l'utiliser, choisissez un service d'IA — par exemple OpenAI, Claude, Gemini, OpenRouter, ou Ollama sur votre ordinateur — et ajoutez votre clé API si le service en demande une.":
+        'To use it, choose an AI service — for example OpenAI, Claude, Gemini, OpenRouter, or Ollama on your computer — and add your API key if the service asks for one.',
+    "Configurer l'assistant": 'Set up the assistant',
+    'Voir le guide': 'Read the guide',
     'Le saviez-vous ? <u>{{feature}}</u> peut vous aider à explorer un sujet et comprendre plus vite ce que vous cherchez.':
         'Did you know? <u>{{feature}}</u> can help you explore a topic and understand what you are looking for faster.',
-    'Activez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
-        'Enable <u>{{feature}}</u> to ask questions, dig deeper into a theme, compare multiple sermons, find Bible passages, and get clear answers without reading through everything manually.',
+    'Configurez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
+        'Set up <u>{{feature}}</u> to ask questions, dig deeper into a theme, compare multiple sermons, find Bible passages, and get clear answers without reading through everything manually.',
     "Ouvrir les réglages de l'assistant": 'Open assistant settings',
     'Le saviez-vous ? <u>{{feature}}</u> peut lire vos documents.':
         'Did you know? <u>{{feature}}</u> can read your documents aloud.',
@@ -1022,10 +1023,8 @@ const en: Record<string, string> = {
     'Si vous voulez quelque chose de simple, gardez le fournisseur proposé puis testez une voix.':
         'If you want something simple, keep the suggested provider and test a voice.',
     "À quoi servent les réglages de l'assistant ?": 'What are the assistant settings for?',
-    "Cet onglet active l'assistant IA et choisit comment il répond dans l'application.":
-        'This tab enables the AI assistant and chooses how it responds in the application.',
-    "Activez ou masquez l'assistant dans la barre latérale.":
-        'Enable or hide the assistant in the sidebar.',
+    "Cet onglet choisit le service d'IA de l'assistant et la façon dont il répond.":
+        "This tab chooses the assistant's AI service and how it responds.",
     'Sélectionnez un fournisseur local, cloud ou personnalisé.':
         'Select a local, cloud, or custom provider.',
     'Définissez la langue et le modèle utilisés pour les réponses.':
@@ -1102,12 +1101,12 @@ const en: Record<string, string> = {
         'It also controls the listening experience: voice, speed, highlighting, and audio behavior.',
     "L'assistant peut aider à explorer un thème, retrouver des références et comparer plus vite plusieurs contenus.":
         'The assistant can help explore a theme, find references, and compare multiple contents faster.',
-    "Cet onglet détermine s'il est disponible, quel service il utilise et dans quelle langue il travaille.":
-        'This tab determines whether it is available, which service it uses, and which language it works in.',
+    'Cet onglet détermine quel service il utilise et dans quelle langue il travaille.':
+        'This tab determines which service it uses and which language it works in.',
     'Vous pouvez choisir une solution locale, cloud ou personnalisée selon vos besoins.':
         'You can choose a local, cloud, or custom solution depending on your needs.',
-    "Activez l'assistant pour le rendre disponible dans la barre latérale.":
-        'Enable the assistant to make it available in the sidebar.',
+    'Ajoutez votre clé API si le service en demande une.':
+        'Add your API key if the service asks for one.',
     'Elle sert à retrouver rapidement un mot, un thème, un lieu ou une expression dans les prédications.':
         'It is used to quickly find a word, theme, place, or expression in sermons.',
     'Elle évite de parcourir manuellement plusieurs documents quand vous savez déjà ce que vous cherchez.':
