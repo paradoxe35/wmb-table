@@ -255,5 +255,67 @@ describe('ai.repository', () => {
             const updated = aiRepo.updateSettings({ enabled: true });
             expect(updated.enabled).toBe(true);
         });
+
+        it('a provider update keeps the other fields and providers', () => {
+            const current = aiRepo.ensureSettings();
+            aiRepo.updateSettings({
+                providers: {
+                    ...current.providers,
+                    gemini: { ...current.providers.gemini, apiKey: 'gm-key' },
+                },
+            });
+            const updated = aiRepo.updateSettings({
+                providers: { openai: { apiKey: 'oa-key' } } as never,
+            });
+
+            expect(updated.providers.gemini.apiKey).toBe('gm-key');
+            expect(updated.providers.openai).toMatchObject({
+                apiKey: 'oa-key',
+                model: current.providers.openai.model,
+            });
+        });
+
+        it('trims builtin API keys and base URLs, and drops blank ones', () => {
+            const current = aiRepo.ensureSettings();
+            const updated = aiRepo.updateSettings({
+                providers: {
+                    ...current.providers,
+                    openai: { ...current.providers.openai, apiKey: '  sk-abc \n' },
+                    ollama: { ...current.providers.ollama, apiKey: '   ', baseUrl: '  ' },
+                },
+            });
+
+            expect(updated.providers.openai.apiKey).toBe('sk-abc');
+            expect(updated.providers.ollama.apiKey).toBeUndefined();
+            expect(updated.providers.ollama.baseUrl).toBeUndefined();
+        });
+
+        it('clears the active provider when its custom provider is deleted', () => {
+            aiRepo.updateSettings({
+                activeProvider: 'lm',
+                customProviders: [
+                    {
+                        id: 'lm',
+                        name: 'LM',
+                        baseUrl: 'http://127.0.0.1:1234/v1',
+                        defaultModel: 'm',
+                    },
+                ],
+            });
+
+            const updated = aiRepo.updateSettings({ customProviders: [] });
+
+            expect(updated.customProviders).toEqual([]);
+            expect(updated.activeProvider).toBeNull();
+        });
+
+        it('keeps a builtin active provider when custom providers change', () => {
+            aiRepo.updateSettings({ activeProvider: 'ollama' });
+            expect(aiRepo.updateSettings({ customProviders: [] }).activeProvider).toBe('ollama');
+        });
+
+        it('does not activate a custom provider that does not exist', () => {
+            expect(aiRepo.updateSettings({ activeProvider: 'ghost' }).activeProvider).toBeNull();
+        });
     });
 });

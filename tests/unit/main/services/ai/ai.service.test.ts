@@ -585,4 +585,58 @@ describe('AiService', () => {
             expect.any(AbortSignal),
         );
     });
+
+    describe('updateSettings custom provider checks', () => {
+        const lm = {
+            id: 'lm',
+            name: ' LM Studio ',
+            baseUrl: ' http://127.0.0.1:1234/v1/ ',
+            apiKey: ' key\n',
+            defaultModel: ' qwen ',
+        };
+
+        it('saves custom providers trimmed and with a normalized base URL', async () => {
+            const { updateSettings } = await import('@main/database/repositories/ai.repository');
+            vi.mocked(updateSettings).mockReturnValue(ensureSettingsMock());
+
+            new AiService().updateSettings({ customProviders: [lm], activeProvider: 'lm' });
+
+            expect(updateSettings).toHaveBeenCalledWith({
+                activeProvider: 'lm',
+                customProviders: [
+                    {
+                        id: 'lm',
+                        name: 'LM Studio',
+                        baseUrl: 'http://127.0.0.1:1234/v1',
+                        apiKey: 'key',
+                        defaultModel: 'qwen',
+                        model: undefined,
+                    },
+                ],
+            });
+        });
+
+        it.each(['localhost:1234', 'ftp://host/v1', '', 'http://exa mple'])(
+            'refuses the base URL %j',
+            async (baseUrl) => {
+                const { updateSettings } =
+                    await import('@main/database/repositories/ai.repository');
+
+                expect(() =>
+                    new AiService().updateSettings({ customProviders: [{ ...lm, baseUrl }] }),
+                ).toThrow(/Invalid base URL/);
+                expect(updateSettings).not.toHaveBeenCalled();
+            },
+        );
+
+        it('still refuses builtin and duplicate ids', () => {
+            const service = new AiService();
+            expect(() =>
+                service.updateSettings({ customProviders: [{ ...lm, id: 'openai' }] }),
+            ).toThrow(/builtin/);
+            expect(() => service.updateSettings({ customProviders: [lm, lm] })).toThrow(
+                /Duplicate/,
+            );
+        });
+    });
 });

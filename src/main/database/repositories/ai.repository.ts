@@ -10,6 +10,7 @@ import {
     BUILTIN_PROVIDER_IDS,
     AI_MESSAGE_HISTORY_PAGE_SIZE,
     createDefaultAiSettings,
+    isBuiltinProviderId,
     type AiConversation,
     type AiConversationHistoryPage,
     type AiConversationHistoryPageRequest,
@@ -17,11 +18,13 @@ import {
     type AiMessageHistoryPageRequest,
     type AiMessage,
     type AiMessageRole,
+    type AiProviderConfig,
     type AiProviders,
     type AiSettings,
     type AiToolCall,
     type AiToolResult,
 } from '@shared/ai.types';
+import { normalizeApiKey } from '@shared/ai-provider-input';
 
 const AI_SETTINGS_ID = 'ai_settings';
 function toConversation(row: typeof aiConversations.$inferSelect): AiConversation {
@@ -102,12 +105,29 @@ export function ensureSettings(): AiSettings {
     return getSettings()!;
 }
 
+function trimProviderConfig(config: Partial<AiProviderConfig>): Partial<AiProviderConfig> {
+    const trimmed = { ...config };
+    if ('apiKey' in config) trimmed.apiKey = normalizeApiKey(config.apiKey);
+    if ('baseUrl' in config) trimmed.baseUrl = config.baseUrl?.trim() || undefined;
+    return trimmed;
+}
+
 function mergeProviders(current: AiProviders, partial: Partial<AiProviders>): AiProviders {
     const result = {} as AiProviders;
     for (const id of BUILTIN_PROVIDER_IDS) {
-        result[id] = partial[id] ? { ...current[id], ...partial[id] } : current[id];
+        result[id] = partial[id]
+            ? { ...current[id], ...trimProviderConfig(partial[id]) }
+            : current[id];
     }
     return result;
+}
+
+function resolveActiveProviderId(
+    requested: AiSettings['activeProvider'],
+    customProviders: AiSettings['customProviders'],
+): AiSettings['activeProvider'] {
+    if (!requested || isBuiltinProviderId(requested)) return requested;
+    return customProviders.some((provider) => provider.id === requested) ? requested : null;
 }
 
 export function updateSettings(partial: Partial<AiSettings>): AiSettings {
@@ -115,18 +135,22 @@ export function updateSettings(partial: Partial<AiSettings>): AiSettings {
     const mergedProviders = partial.providers
         ? mergeProviders(current.providers, partial.providers as Partial<AiProviders>)
         : current.providers;
+    const customProviders = partial.customProviders ?? current.customProviders;
+    const activeProvider = resolveActiveProviderId(
+        'activeProvider' in partial ? (partial.activeProvider ?? null) : current.activeProvider,
+        customProviders,
+    );
 
     getDb()
         .update(aiSettings)
         .set({
             enabled: partial.enabled ?? current.enabled,
-            activeProvider:
-                'activeProvider' in partial ? partial.activeProvider : current.activeProvider,
+            activeProvider,
             languagePreference: partial.languagePreference ?? current.languagePreference,
             maxHistoryConversations:
                 partial.maxHistoryConversations ?? current.maxHistoryConversations,
             providers: JSON.stringify(mergedProviders),
-            customProviders: JSON.stringify(partial.customProviders ?? current.customProviders),
+            customProviders: JSON.stringify(customProviders),
             updatedAt: new Date().toISOString(),
         })
         .where(eq(aiSettings.id, AI_SETTINGS_ID))

@@ -34,6 +34,7 @@ import type {
     AiRemoteModel,
 } from '@shared/ai.types';
 import type { InstalledLanguage } from '@shared/types';
+import { normalizeCustomProvider } from '@shared/ai-provider-input';
 import { buildSystemPrompt } from './system-prompt';
 import { buildAiTools } from './tools';
 import { sendToRenderer } from '@main/ipc/register';
@@ -119,10 +120,14 @@ export class AiService {
     }
 
     updateSettings(partial: Partial<AiSettings>): AiSettings {
-        if (partial.customProviders) {
-            this.validateCustomProviders(partial.customProviders);
-        }
-        const settings = aiRepo.updateSettings(partial);
+        const settings = aiRepo.updateSettings(
+            partial.customProviders
+                ? {
+                      ...partial,
+                      customProviders: this.validateCustomProviders(partial.customProviders),
+                  }
+                : partial,
+        );
         aiRepo.trimConversationHistory(settings.maxHistoryConversations);
         return settings;
     }
@@ -395,7 +400,9 @@ export class AiService {
 
     // ── Private ──
 
-    private validateCustomProviders(providers: AiSettings['customProviders']): void {
+    private validateCustomProviders(
+        providers: AiSettings['customProviders'],
+    ): AiSettings['customProviders'] {
         const reservedIds = new Set<string>(BUILTIN_PROVIDER_IDS as readonly string[]);
         const seen = new Set<string>();
         for (const provider of providers) {
@@ -414,6 +421,7 @@ export class AiService {
             }
             seen.add(provider.id);
         }
+        return providers.map(normalizeCustomProvider);
     }
 
     private async resolveGenerationEnvironment(): Promise<GenerationEnvironment> {
