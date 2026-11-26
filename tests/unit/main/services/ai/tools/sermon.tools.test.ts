@@ -368,4 +368,39 @@ describe('sermon.tools', () => {
         expect(result.hasMore).toBe(false);
         expect(result.nextCursor).toBeUndefined();
     });
+    describe('searchContent with no searchable word', () => {
+        it.each([
+            ['punctuation only', '??', undefined],
+            ['single letters in all mode', 'a b', 'all'],
+            ['single letters in any mode', 'a b', 'any'],
+        ])('refuses %s instead of matching every sermon', async (_case, query, mode) => {
+            const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
+
+            const result = (await buildSermonTools('fr').searchContent.execute({
+                query,
+                mode,
+            })) as { error?: string };
+
+            expect(result.error).toContain('no searchable word');
+            expect(searchSermonsMock).not.toHaveBeenCalled();
+        });
+
+        it('still searches single letters as a phrase in exact mode', async () => {
+            searchSermonsMock.mockResolvedValue({
+                matches: [],
+                rawHitCount: 0,
+                total: 0,
+                totalIsExact: true,
+            });
+            const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
+
+            const result = (await buildSermonTools('fr').searchContent.execute({
+                query: 'a b',
+                mode: 'exact',
+            })) as { error?: string };
+
+            expect(result.error).toBeUndefined();
+            expect(searchSermonsMock).toHaveBeenCalledOnce();
+        });
+    });
 });

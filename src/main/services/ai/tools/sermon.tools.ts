@@ -2,7 +2,7 @@ import { z } from 'zod';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 import * as searchService from '@main/services/search.service';
-import { filterBySearchQuery, parseSearchQuery } from '@shared/searchable';
+import { filterBySearchQuery, parseSearchQuery, tokenizeQuery } from '@shared/searchable';
 import { buildSermonWmbLink } from '@shared/wmb-link';
 import type {
     AiToolDefinition,
@@ -257,6 +257,12 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                 const langError = validateLanguage(page.languageCode);
                 if (langError) {
                     return langError;
+                }
+
+                if (tokenizeQuery(page.query, page.mode).length === 0) {
+                    return {
+                        error: `Query "${page.query}" contains no searchable word for mode "${page.mode}". Search for at least one word of two or more letters, or use mode "exact".`,
+                    };
                 }
 
                 try {
