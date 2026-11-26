@@ -40,10 +40,15 @@ export function unsavedReply(conversationId: string): AiMessage {
  */
 export class ChatRuns {
     private readonly runs = new Map<string, ChatRun>();
-    private readonly text = new AssistantTextBuffer({
-        isCurrent: (run) => this.isCurrent(run),
-        onReplyLost: (run) => this.stop(run.conversationId),
-    });
+    private readonly text: AssistantTextBuffer;
+
+    // The bytecode build cannot compile arrow functions in class field initializers.
+    constructor() {
+        this.text = new AssistantTextBuffer({
+            isCurrent: (run) => this.isCurrent(run),
+            onReplyLost: (run) => this.stop(run.conversationId),
+        });
+    }
 
     begin(browserWindow: BrowserWindow, conversationId: string, generationId: string): ChatRun {
         this.stop(conversationId);
