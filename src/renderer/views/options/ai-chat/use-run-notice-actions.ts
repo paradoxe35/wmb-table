@@ -14,7 +14,25 @@ export function useRunNoticeActions(conversationId: string): (action: RunNoticeA
     const { t } = useTranslation();
     const sendMessage = useAiChatStore((s) => s.sendMessage);
     const retryLastUserMessage = useAiChatStore((s) => s.retryLastUserMessage);
+    const flushQueuedMessages = useAiChatStore((s) => s.flushQueuedMessages);
     const openSettingsTab = useAppStore((s) => s.openSettingsTab);
+
+    const retry = useCallback(() => {
+        const state = useAiChatStore.getState();
+        const refusedBeforeStart =
+            state.runNoticeByConversation[conversationId]?.messageId === null;
+        if (refusedBeforeStart && state.queuedMessagesByConversation[conversationId]?.length) {
+            void flushQueuedMessages(conversationId);
+            return;
+        }
+
+        const messages = state.messagesByConversation[conversationId] ?? [];
+        const userMessageId = findLastRetryableUserMessageId(messages);
+        // Main only reruns a question with no answer text yet; a cut answer resumes
+        void (userMessageId
+            ? retryLastUserMessage(conversationId, userMessageId)
+            : sendMessage(t(CONTINUE_ANSWER_PROMPT)));
+    }, [conversationId, flushQueuedMessages, retryLastUserMessage, sendMessage, t]);
 
     return useCallback(
         (action: RunNoticeAction) => {
@@ -28,17 +46,10 @@ export function useRunNoticeActions(conversationId: string): (action: RunNoticeA
                 case 'open-settings':
                     openSettingsTab('ai');
                     return;
-                case 'retry': {
-                    const messages =
-                        useAiChatStore.getState().messagesByConversation[conversationId] ?? [];
-                    const userMessageId = findLastRetryableUserMessageId(messages);
-                    // Main only reruns a question with no answer text yet; a cut answer resumes
-                    void (userMessageId
-                        ? retryLastUserMessage(conversationId, userMessageId)
-                        : sendMessage(t(CONTINUE_ANSWER_PROMPT)));
-                }
+                case 'retry':
+                    retry();
             }
         },
-        [conversationId, openSettingsTab, retryLastUserMessage, sendMessage, t],
+        [openSettingsTab, retry, sendMessage, t],
     );
 }
