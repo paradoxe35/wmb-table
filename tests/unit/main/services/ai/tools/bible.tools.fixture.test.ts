@@ -13,7 +13,7 @@ import {
     step,
 } from '../../../../../helpers/mock-model';
 
-const getInstalledLanguagesMock = vi.fn(() => ['fr', 'en']);
+const getInstalledLanguagesMock = vi.fn(() => ['fr']);
 const createSubjectItemMock = vi.fn((..._args: unknown[]) => ({ id: 'item-1' }));
 
 vi.mock('@main/services/tantivy.service', () => ({
@@ -74,8 +74,104 @@ beforeAll(createBibleFixture);
 afterAll(removeBibleFixture);
 beforeEach(() => {
     vi.clearAllMocks();
-    getInstalledLanguagesMock.mockReturnValue(['fr', 'en']);
+    getInstalledLanguagesMock.mockReturnValue(['fr']);
     setActiveFixtureVersion('lsg');
+});
+
+describe('a Bible installed without its sermon language', () => {
+    it('lists the English Bible when only French sermons are installed', async () => {
+        expect(await tools().getBibleVersions.execute({ languageCode: 'en' })).toEqual([
+            { bibleVersionAbbreviation: 'kjv', languageCode: 'en', name: 'King James' },
+        ]);
+    });
+
+    it('reads and searches the English Bible', async () => {
+        const read = await passage({
+            bookCode: '43N',
+            chapter: '3',
+            fromVerse: '16',
+            languageCode: 'en',
+        });
+        expect(read.verses?.[0].content).toContain('For God so loved');
+
+        const found = await search({ query: 'Holy Ghost', languageCode: 'en' });
+        expect(found.total).toBe(1);
+    });
+
+    it('works with no sermon language installed at all', async () => {
+        getInstalledLanguagesMock.mockReturnValue([]);
+        expect(
+            (await passage({ bookCode: 'Jean', chapter: '3', fromVerse: '16' })).verseCount,
+        ).toBe(1);
+    });
+
+    it('explains a language whose Bible is not downloaded', async () => {
+        expect(await tools().getBibleVersions.execute({ languageCode: 'es' })).toEqual({
+            error: 'No Bible versions available for language "es". Bibles are installed for: fr, en.',
+        });
+        expect((await passage({ bookCode: '43N', chapter: '3', languageCode: 'es' })).error).toBe(
+            'No Bible found for language "es". Use getBibleVersions to find available versions.',
+        );
+        expect((await search({ query: 'amor', languageCode: 'es' })).error).toContain('"es"');
+    });
+});
+
+describe('the language the model asks for', () => {
+    it('reads English when asked, even with the French version active', async () => {
+        const result = await passage({
+            bookCode: '43N',
+            chapter: '3',
+            fromVerse: '16',
+            languageCode: 'en',
+        });
+        expect(result.bibleVersionAbbreviation).toBe('kjv');
+    });
+
+    it('keeps the active version for its own language', async () => {
+        const result = await passage({
+            bookCode: '43N',
+            chapter: '3',
+            fromVerse: '16',
+            languageCode: 'fr',
+        });
+        expect(result.bibleVersionAbbreviation).toBe('lsg');
+    });
+
+    it('keeps the active version when no language is given', async () => {
+        expect(
+            (await passage({ bookCode: '43N', chapter: '3', fromVerse: '16' }))
+                .bibleVersionAbbreviation,
+        ).toBe('lsg');
+    });
+
+    it('lets an explicit version win over the language', async () => {
+        const result = await passage({
+            bookCode: '43N',
+            chapter: '3',
+            fromVerse: '16',
+            bibleVersionAbbreviation: 'kjv',
+            languageCode: 'fr',
+        });
+        expect(result.bibleVersionAbbreviation).toBe('kjv');
+    });
+
+    it('searches English when asked, and keeps that version across pages', async () => {
+        const first = await search({ query: 'Blessed', languageCode: 'en', limit: 25 });
+        expect(first.bibleVersionAbbreviation).toBe('kjv');
+        expect(first.hasMore).toBe(true);
+
+        const second = await search({ cursor: first.nextCursor });
+        expect(second.bibleVersionAbbreviation).toBe('kjv');
+        expect(second.results?.[0].verse).toBe('26');
+    });
+
+    it('falls back to the content language when the active version is gone', async () => {
+        const result = await passage(
+            { bookCode: '43N', chapter: '3', fromVerse: '16' },
+            buildBibleTools('en', 'rv'),
+        );
+        expect(result.bibleVersionAbbreviation).toBe('kjv');
+    });
 });
 
 describe('verse ranges', () => {

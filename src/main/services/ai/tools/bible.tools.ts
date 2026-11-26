@@ -12,7 +12,6 @@ import type {
     BibleVersionOption,
 } from './types';
 import { parsePassageRange } from './bible-passage-range';
-import { validateLanguage } from './shared';
 import { encodeSearchCursor, ensureSameField, parseSearchCursor } from './search-pagination';
 
 const BIBLE_SEARCH_LIMIT_SCHEMA = z.number().int().min(1).max(40);
@@ -80,18 +79,35 @@ interface VersionDefaults {
     abbreviation?: string;
 }
 
+/**
+ * An explicit version wins, then the active version unless the model asked for another
+ * language, then the first installed Bible of that language. Bibles install separately
+ * from sermon languages, so no sermon-index check applies here.
+ */
 function resolveRequestedVersion(
     request: VersionRequest,
     defaults: VersionDefaults,
 ): aiBibleRepo.ResolvedBibleVersion | { error: string } {
     const languageCode = request.languageCode ?? defaults.languageCode;
-    const langError = validateLanguage(languageCode);
-    if (langError) return langError;
 
-    const abbreviation = request.abbreviation ?? defaults.abbreviation;
+    if (request.abbreviation) {
+        return (
+            aiBibleRepo.resolveBibleVersion(request.abbreviation, languageCode) ?? {
+                error: `No Bible found for abbreviation "${request.abbreviation}". Use getBibleVersions to find available versions.`,
+            }
+        );
+    }
+
+    const active = defaults.abbreviation
+        ? aiBibleRepo.resolveBibleVersion(defaults.abbreviation, languageCode)
+        : null;
+    if (active && (!request.languageCode || active.languageCode === request.languageCode)) {
+        return active;
+    }
+
     return (
-        aiBibleRepo.resolveBibleVersion(abbreviation, languageCode) ?? {
-            error: `No Bible found${abbreviation ? ` for abbreviation "${abbreviation}"` : ''}. Use getBibleVersions to find available versions.`,
+        aiBibleRepo.resolveBibleVersion(undefined, languageCode) ?? {
+            error: `No Bible found for language "${languageCode}". Use getBibleVersions to find available versions.`,
         }
     );
 }
@@ -227,10 +243,9 @@ export function buildBibleTools(
                 'List Bible versions available for a language or the current active version.',
             inputSchema: z.object({ languageCode: z.string().optional() }),
             execute: async ({ languageCode }) => {
-                const lang = languageCode ?? defaultContentLanguage;
-                const langError = validateLanguage(lang);
-                if (langError) return langError;
-                const versions = aiBibleRepo.getAvailableVersions(lang);
+                const versions = aiBibleRepo.getAvailableVersions(
+                    languageCode ?? defaultContentLanguage,
+                );
                 if ('error' in versions) {
                     return versions;
                 }

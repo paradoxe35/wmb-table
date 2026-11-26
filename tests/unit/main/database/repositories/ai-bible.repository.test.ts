@@ -149,6 +149,33 @@ describe('searchVerses pagination', () => {
     });
 });
 
+describe('version resolution', () => {
+    it('uses the active version when nothing is asked for', () => {
+        expect(resolveBibleVersion()?.abbreviation).toBe('lsg');
+    });
+
+    it('uses the asked language even when another version is active', () => {
+        expect(resolveBibleVersion(undefined, 'en')?.abbreviation).toBe('kjv');
+    });
+
+    it('returns null for a language whose Bible is not downloaded', () => {
+        expect(resolveBibleVersion(undefined, 'es')).toBeNull();
+        expect(resolveBibleVersion('rv')).toBeNull();
+    });
+
+    it('lists the languages that do have a Bible when one is missing', () => {
+        expect(getAvailableVersions('es')).toEqual({
+            error: 'No Bible versions available for language "es". Bibles are installed for: fr, en.',
+        });
+    });
+
+    it('searches the English Bible by language', () => {
+        expect(references(searchVerses({ query: 'Holy Ghost', languageCode: 'en' }))).toEqual([
+            'Acts 2:4',
+        ]);
+    });
+});
+
 describe('getPassage', () => {
     function verses(result: ReturnType<typeof getPassage>): string[] {
         if ('error' in result) throw new Error(result.error);

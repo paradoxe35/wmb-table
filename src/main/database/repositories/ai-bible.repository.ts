@@ -56,6 +56,14 @@ export function resolveBibleVersion(
     };
 }
 
+function installedBibleLanguages(): string[] {
+    const languages = bibleService
+        .getAllBibleVersions()
+        .filter((version) => bibleService.isBibleAvailable(version))
+        .map((version) => version.langCode);
+    return [...new Set(languages)];
+}
+
 export function getAvailableVersions(languageCode: string) {
     const versions = bibleService
         .getBibleVersionsForLanguage(languageCode)
@@ -67,7 +75,12 @@ export function getAvailableVersions(languageCode: string) {
         }));
 
     if (versions.length === 0) {
-        return { error: `No Bible versions available for language "${languageCode}".` };
+        const installed = installedBibleLanguages();
+        const hint =
+            installed.length > 0
+                ? `Bibles are installed for: ${installed.join(', ')}.`
+                : 'No Bible is installed.';
+        return { error: `No Bible versions available for language "${languageCode}". ${hint}` };
     }
     return versions;
 }
