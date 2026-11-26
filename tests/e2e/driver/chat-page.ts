@@ -113,6 +113,25 @@ export class ChatPage {
         await this.waitForFacts((facts) => !facts.stopButton, 'the run to stop', 15_000);
     }
 
+    evaluate<T>(expression: string): Promise<T> {
+        return this.cdp.evaluate<T>(expression);
+    }
+
+    /** Clicks, with a real mouse event, the innermost element of the last answer showing `text`. */
+    async clickInLastAnswer(text: string): Promise<void> {
+        await this.clickAt(
+            `(() => {
+                const bubbles = document.querySelectorAll('.ai-chat__bubble:not(.ai-chat__bubble--user)');
+                const answer = bubbles[bubbles.length - 1];
+                const matches = [...(answer?.querySelectorAll('*') ?? [])].filter(
+                    (el) => el.textContent.trim() === ${JSON.stringify(text)},
+                );
+                return matches[matches.length - 1] ?? null;
+            })()`,
+            `"${text}" in the last answer`,
+        );
+    }
+
     facts(): Promise<ChatFacts> {
         return this.cdp.evaluate<ChatFacts>(READ_FACTS);
     }
@@ -169,14 +188,21 @@ export class ChatPage {
     }
 
     private async click(selector: string): Promise<void> {
+        await this.clickAt(
+            `document.querySelector(${JSON.stringify(selector)})`,
+            `visible ${selector}`,
+        );
+    }
+
+    private async clickAt(elementExpression: string, label: string): Promise<void> {
         const box = await this.cdp.waitFor<{ x: number; y: number }>(
             `(() => {
-                const el = document.querySelector(${JSON.stringify(selector)});
+                const el = ${elementExpression};
                 if (!el) return null;
                 const rect = el.getBoundingClientRect();
                 return rect.width > 0 ? { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 } : null;
             })()`,
-            `visible ${selector}`,
+            label,
         );
         const mouse = { x: box.x, y: box.y, button: 'left', clickCount: 1 };
         await this.cdp.send('Input.dispatchMouseEvent', { ...mouse, type: 'mouseMoved' });

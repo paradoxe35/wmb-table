@@ -62,9 +62,10 @@ async function runCase(
     testCase: E2eCase,
     page: ChatPage,
     server: MockLlmServer,
+    app: AppProcess,
     label: string,
 ): Promise<CaseResult> {
-    const ctx = new CaseContext(label, page, server);
+    const ctx = new CaseContext(label, page, server, () => app.mainLog());
     const startedAt = Date.now();
     let error: string | undefined;
     try {
@@ -158,7 +159,7 @@ async function run(options: RunOptions): Promise<boolean> {
             for (const testCase of options.selected) {
                 const label = options.repeat > 1 ? `${testCase.name}-run${round}` : testCase.name;
                 console.log(`running ${label}...`);
-                results.push(await runCase(testCase, page, server, label));
+                results.push(await runCase(testCase, page, server, app, label));
             }
         }
     } finally {
