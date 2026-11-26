@@ -129,22 +129,27 @@ export function buildNoteTools(): Record<string, AiToolDefinition> {
             }),
             execute: async ({ name, content }) => {
                 const title = name.trim();
-                const note = notesRepo.create(title);
-                notesRepo.rename(note.id, title);
-
-                if (content.trim()) {
-                    try {
-                        notesRepo.updateContent(note.id, await buildNoteHtml(content, title));
-                    } catch (err) {
-                        return {
-                            noteId: note.id,
-                            name: title,
-                            error: `Note created but empty — writing its content failed: ${failureMessage(err)}. Add the content with updateNoteContent.`,
-                        };
-                    }
+                let noteId: string;
+                try {
+                    noteId = notesRepo.create(title).id;
+                } catch (err) {
+                    return { error: `Failed to create the note: ${failureMessage(err)}` };
                 }
 
-                return { noteId: note.id, name: title };
+                try {
+                    notesRepo.rename(noteId, title);
+                    if (content.trim()) {
+                        notesRepo.updateContent(noteId, await buildNoteHtml(content, title));
+                    }
+                } catch (err) {
+                    return {
+                        noteId,
+                        name: title,
+                        error: `Note created but empty — writing its content failed: ${failureMessage(err)}. Add the content with updateNoteContent.`,
+                    };
+                }
+
+                return { noteId, name: title };
             },
         },
         editNote: {
@@ -223,7 +228,12 @@ export function buildNoteTools(): Record<string, AiToolDefinition> {
                 const note = notesRepo.getById(noteId);
                 if (!note) return noteNotFound(noteId);
 
-                const appended = await markdownToNoteHtml(content);
+                let appended: string;
+                try {
+                    appended = await markdownToNoteHtml(content);
+                } catch (err) {
+                    return { error: `Failed to convert the content: ${failureMessage(err)}` };
+                }
                 if (!appended) return { error: 'The content to append is empty.' };
 
                 const existing = note.content?.trim();

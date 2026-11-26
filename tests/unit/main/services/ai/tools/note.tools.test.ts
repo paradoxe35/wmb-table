@@ -329,6 +329,52 @@ describe('note.tools', () => {
         });
     });
 
+    describe('write failures come back as tool errors', () => {
+        it('appendToNote reports a markdown conversion failure', async () => {
+            mockNote(NOTE_HTML);
+            markdownFailure.error = new Error('parser crashed');
+
+            const result = (await tools.appendToNote.execute({
+                noteId: 'note-1',
+                content: 'Suite',
+            })) as { error: string };
+
+            expect(result.error).toContain('parser crashed');
+            expect(updateContentMock).not.toHaveBeenCalled();
+        });
+
+        it('createNote reports a failure to create the note', async () => {
+            createMock.mockImplementation(() => {
+                throw new Error('database is locked');
+            });
+
+            const result = (await tools.createNote.execute({
+                name: 'Etude',
+                content: 'Texte',
+            })) as { error: string; noteId?: string };
+
+            expect(result.error).toContain('database is locked');
+            expect(result.noteId).toBeUndefined();
+        });
+
+        it('createNote keeps the note id when naming it fails', async () => {
+            createMock.mockReturnValue({ id: 'note-1' });
+            renameMock.mockImplementation(() => {
+                throw new Error('disk full');
+            });
+
+            const result = (await tools.createNote.execute({
+                name: 'Etude',
+                content: 'Texte',
+            })) as { error: string; noteId?: string };
+
+            expect(result).toMatchObject({
+                noteId: 'note-1',
+                error: expect.stringContaining('disk full'),
+            });
+        });
+    });
+
     describe('getNotes', () => {
         it('lists notes with their ids', async () => {
             getAllSummaryMock.mockReturnValue([{ id: 'note-1', name: 'Etude' }]);
