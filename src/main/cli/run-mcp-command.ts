@@ -18,6 +18,7 @@ import { RELAUNCHED_ENV, type McpCliCommand } from './command-line';
 
 const SERVER_STOP_TIMEOUT_MS = 2_000;
 const PARENT_CHECK_INTERVAL_MS = 1_000;
+const SETTINGS_CHECK_INTERVAL_MS = 2_000;
 
 /** An expected refusal: only its message is shown, without a stack trace. */
 class CliExit extends Error {}
@@ -31,13 +32,14 @@ function applyUiLanguage(): void {
     void i18n.changeLanguage(resolveUiLanguage(config?.uiLanguage, config?.contentLanguage));
 }
 
-function ensureEnabled(): void {
-    if (loadMcpSettings().enabled) return;
-    throw new CliExit(
-        i18n.t(
-            'Le serveur MCP est désactivé. Activez « Serveur MCP » dans Wmb Table → Paramètres → Assistant.',
-        ),
+function disabledMessage(): string {
+    return i18n.t(
+        'Le serveur MCP est désactivé. Activez « Serveur MCP » dans Wmb Table → Paramètres → Assistant.',
     );
+}
+
+function ensureEnabled(): void {
+    if (!loadMcpSettings().enabled) throw new CliExit(disabledMessage());
 }
 
 function ensureLanguageInstalled(language: string | undefined): void {
@@ -78,6 +80,7 @@ async function serveOverHttp(command: McpCliCommand): Promise<RunningTransport> 
             firstPort: command.port ?? loadMcpSettings().port,
             portAttempts: command.port ? 1 : undefined,
             createServer: libraryServerFactory(command),
+            refusal: () => (loadMcpSettings().enabled ? null : disabledMessage()),
         });
         process.stdout.write(
             `${i18n.t('Serveur MCP de Wmb Table : {{url}}', { url: server.url })}\n`,
@@ -108,6 +111,17 @@ function stopWhenParentDies(stop: () => void): void {
     setInterval(() => {
         if (process.ppid !== parentPid) stop();
     }, PARENT_CHECK_INTERVAL_MS).unref();
+}
+
+/** A stdio session has no request to refuse, so unticking « Serveur MCP » ends it. */
+function stopWhenDisabled(stop: () => void): void {
+    const timer = setInterval(() => {
+        if (loadMcpSettings().enabled) return;
+        clearInterval(timer);
+        process.stderr.write(`${disabledMessage()}\n`);
+        stop();
+    }, SETTINGS_CHECK_INTERVAL_MS);
+    timer.unref();
 }
 
 async function closeWithTimeout(transport: RunningTransport | null): Promise<void> {
@@ -164,10 +178,12 @@ export function runMcpCommand(command: McpCliCommand): void {
         await app.whenReady();
         await initializeTantivy();
         ensureLanguageInstalled(command.language);
-        transport =
-            command.transport === 'stdio'
-                ? serveOverStdio(command, () => void stop())
-                : await serveOverHttp(command);
+        if (command.transport === 'stdio') {
+            transport = serveOverStdio(command, () => void stop());
+            stopWhenDisabled(() => void stop());
+        } else {
+            transport = await serveOverHttp(command);
+        }
         log.info(`[mcp-cli] Serving over ${command.transport}`);
     };
     start().catch(fail);

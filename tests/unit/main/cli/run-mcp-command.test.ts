@@ -181,6 +181,44 @@ describe('wmb-table mcp', () => {
         ]);
     });
 
+    it('refuses HTTP requests once « Serveur MCP » is unticked, and serves again when ticked', async () => {
+        const exit = run({ kind: 'mcp', transport: 'http' });
+        await started();
+        const { refusal } = vi.mocked(startMcpHttpServer).mock.calls[0][0] as {
+            refusal: () => string | null;
+        };
+        expect(refusal()).toBeNull();
+        state.settings = { ...state.settings, enabled: false };
+        expect(refusal()).toContain('Turn on “MCP server” in Wmb Table → Settings → Assistant.');
+        state.settings = { ...state.settings, enabled: true };
+        expect(refusal()).toBeNull();
+        processListeners.get('SIGTERM')?.();
+        await exit;
+    });
+
+    it('ends a stdio session cleanly once « Serveur MCP » is unticked', async () => {
+        vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+        try {
+            const exit = run({ kind: 'mcp', transport: 'stdio' });
+            await started();
+            vi.advanceTimersByTime(2_000);
+            expect(calls).not.toContain('stdio closed');
+
+            state.settings = { ...state.settings, enabled: false };
+            vi.advanceTimersByTime(2_000);
+            expect(await exit).toBe(0);
+            expect(stderr).toContain('Turn on “MCP server”');
+            expect(calls.slice(-4)).toEqual([
+                'stdio closed',
+                'indexes closed',
+                'database closed',
+                'exit 0',
+            ]);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('uses exactly the port asked for', async () => {
         const exit = run({ kind: 'mcp', transport: 'http', port: 24000 });
         await started();

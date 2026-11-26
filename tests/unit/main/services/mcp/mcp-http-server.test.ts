@@ -26,10 +26,11 @@ function emptyLibrary(): McpServer {
     return mcp;
 }
 
-async function start(): Promise<McpHttpServer> {
+async function start(refusal?: () => string | null): Promise<McpHttpServer> {
     server = await startMcpHttpServer({
         firstPort: await freeLoopbackPort(),
         createServer: emptyLibrary,
+        refusal,
     });
     return server;
 }
@@ -105,6 +106,24 @@ describe('startMcpHttpServer', () => {
         const { port } = await start();
         const response = await post(port, headers);
         expect(response.status).toBe(403);
+    });
+
+    it('refuses each request with a JSON-RPC error while it is turned off, and serves again once on', async () => {
+        let enabled = true;
+        const { port } = await start(() => (enabled ? null : 'The MCP server is turned off.'));
+        expect((await post(port, {})).status).toBe(200);
+
+        enabled = false;
+        const refused = await post(port, {});
+        expect(refused.status).toBe(503);
+        expect(JSON.parse(refused.body)).toEqual({
+            jsonrpc: '2.0',
+            id: null,
+            error: { code: -32000, message: 'The MCP server is turned off.' },
+        });
+
+        enabled = true;
+        expect((await post(port, {})).status).toBe(200);
     });
 
     it('answers 404 outside the MCP path', async () => {

@@ -16,6 +16,8 @@ export interface McpHttpServerOptions {
     /** How many ports from `firstPort` on to try; 1 means exactly that port. */
     portAttempts?: number;
     createServer: McpServerFactory;
+    /** Read on every request: a reason to refuse it, or null to serve it. */
+    refusal?: () => string | null;
 }
 
 function isMcpPath(req: IncomingMessage): boolean {
@@ -31,6 +33,13 @@ function refuseBrowserRequest(req: IncomingMessage, res: ServerResponse): boolea
     if (req.headers.origin === undefined) return false;
     res.writeHead(403, { 'Content-Type': 'text/plain' }).end('Browser requests are not allowed');
     return true;
+}
+
+/** The server is up but turned off: a JSON-RPC error the AI app can show as is. */
+function refuseUnavailable(res: ServerResponse, message: string): void {
+    res.writeHead(503, { 'Content-Type': 'application/json' }).end(
+        JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32000, message } }),
+    );
 }
 
 function notFound(res: ServerResponse): void {
@@ -51,6 +60,8 @@ export async function startMcpHttpServer(options: McpHttpServerOptions): Promise
     const server = createServer((req, res) => {
         if (!validateHost(req, res) || refuseBrowserRequest(req, res)) return;
         if (!isMcpPath(req)) return notFound(res);
+        const refusal = options.refusal?.();
+        if (refusal) return refuseUnavailable(res, refusal);
         handleMcpRequest(req, res).catch((error: unknown) => {
             log.warn('[mcp] Request failed:', error);
             if (!res.headersSent) res.writeHead(500);
