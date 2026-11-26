@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Input } from 'antd';
-import { debounce } from '@renderer/utils/functions';
+import { useEffect, useState } from 'react';
+import { Input, Typography } from 'antd';
+import { useDebouncedCommit } from '@renderer/hooks/use-debounced-commit';
 
 interface DebouncedInputProps {
     value: string;
@@ -8,6 +8,11 @@ interface DebouncedInputProps {
     password?: boolean;
     placeholder?: string;
     delay?: number;
+    id?: string;
+    /** Returns an error text for a value that must not be saved. */
+    validate?: (val: string) => string | undefined;
+    /** Cleans up the shown value when the field loses focus (e.g. trims it). */
+    normalize?: (val: string) => string;
 }
 
 export default function DebouncedInput({
@@ -16,24 +21,57 @@ export default function DebouncedInput({
     password,
     placeholder,
     delay = 600,
+    id,
+    validate,
+    normalize,
 }: DebouncedInputProps) {
     const [localValue, setLocalValue] = useState(externalValue);
+    const commit = useDebouncedCommit(onChange, delay);
+    const error = validate?.(localValue);
+    const errorId = id ? `${id}-error` : undefined;
 
     useEffect(() => {
+        if (commit.isPending()) return;
         setLocalValue((current) => (current === externalValue ? current : externalValue));
-    }, [externalValue]);
+    }, [externalValue, commit]);
 
-    const debouncedOnChange = useMemo(() => debounce(onChange, delay), [onChange, delay]);
-    useEffect(() => () => debouncedOnChange.cancel(), [debouncedOnChange]);
+    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const next = e.target.value;
+        setLocalValue(next);
+        if (validate?.(next)) {
+            commit.cancel();
+            return;
+        }
+        commit.schedule(next);
+    }
 
-    const handleChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            setLocalValue(e.target.value);
-            debouncedOnChange(e.target.value);
-        },
-        [debouncedOnChange],
-    );
+    function handleBlur() {
+        commit.flush();
+        if (normalize && !validate?.(localValue)) setLocalValue(normalize(localValue));
+    }
 
     const InputComponent = password ? Input.Password : Input;
-    return <InputComponent value={localValue} onChange={handleChange} placeholder={placeholder} />;
+    return (
+        <>
+            <InputComponent
+                id={id}
+                value={localValue}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder={placeholder}
+                status={error ? 'error' : undefined}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? errorId : undefined}
+            />
+            {error ? (
+                <Typography.Text
+                    id={errorId}
+                    type="danger"
+                    style={{ fontSize: 'var(--fs-rel-lg)', display: 'block', marginTop: 2 }}
+                >
+                    {error}
+                </Typography.Text>
+            ) : null}
+        </>
+    );
 }
