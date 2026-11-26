@@ -9,6 +9,7 @@ export default [
         ignores: [
             'out/**',
             'tmp/**',
+            '.claude/**',
             'release/**',
             'node_modules/**',
             'resources/**',
