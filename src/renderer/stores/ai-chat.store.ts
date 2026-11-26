@@ -43,13 +43,15 @@ import {
 } from './ai-chat/conversation-list';
 import {
     createConversationHistoryState,
+    applySyncedMessages,
+    dropMessagesAfter,
     mergeFetchedMessages,
     minimizeMessagesForRenderer,
     pruneConversationCache,
     removeConversationKey,
-    removeReasoningByMessageIds,
     updateConversationMessages,
 } from './ai-chat/message-cache';
+import { removeDeletedConversation } from './ai-chat/conversation-removal';
 import { applyRunEnd, type RunEnd } from './ai-chat/run-end';
 import { applyRunStarted, failRun, startRun } from './ai-chat/run-start';
 
@@ -93,6 +95,8 @@ function canRetryUserMessage(messages: AiMessage[], messageId: string): boolean 
 let listenersBound = false;
 let initialization: Promise<void> | null = null;
 let pendingConversation: Promise<AiConversation> | null = null;
+const deletingConversationIds = new Set<string>();
+const CONVERSATION_BEING_DELETED_ERROR = 'La conversation est en cours de suppression.';
 
 interface AiChatState extends ChatRunState {
     initialized: boolean;
@@ -157,6 +161,7 @@ function withCreatedConversation(
         'conversations' | 'conversationList' | 'historyByConversation' | 'messagesByConversation'
     >,
     conversation: AiConversation,
+    activate = true,
 ): Partial<AiChatState> {
     return {
         conversations: upsertConversation(state.conversations, conversation),
@@ -165,8 +170,9 @@ function withCreatedConversation(
             loadedCount: state.conversationList.loadedCount + 1,
             totalCount: state.conversationList.totalCount + 1,
         },
-        activeConversationId: conversation.id,
-        activeConversationRecord: conversation,
+        ...(activate
+            ? { activeConversationId: conversation.id, activeConversationRecord: conversation }
+            : {}),
         historyByConversation: {
             ...state.historyByConversation,
             [conversation.id]: { loadedCount: 0, hasMore: false },
@@ -180,7 +186,9 @@ function createConversationForFirstMessage(): Promise<AiConversation> {
     pendingConversation ??= window.api.ai
         .createConversation({})
         .then((conversation) => {
-            useAiChatStore.setState((state) => withCreatedConversation(state, conversation));
+            useAiChatStore.setState((state) =>
+                withCreatedConversation(state, conversation, state.activeConversationId === null),
+            );
             return conversation;
         })
         .finally(() => {
@@ -437,30 +445,24 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 return;
             }
 
+            const cachedBefore = get().messagesByConversation[activeConversationId];
             const messagePage = await window.api.ai.getMessagesPage({
                 conversationId: activeConversationId,
                 limit: AI_MESSAGE_HISTORY_PAGE_SIZE,
                 loadedCount: 0,
             });
-            const minimizedMessages = minimizeMessagesForRenderer(messagePage.messages);
 
             set((state) => {
                 if (state.activeConversationId !== activeConversationId) {
                     return {};
                 }
 
-                const nextState = {
-                    ...state,
-                    historyByConversation: {
-                        ...state.historyByConversation,
-                        [activeConversationId]: createConversationHistoryState(messagePage),
-                    },
-                    messagesByConversation: {
-                        ...state.messagesByConversation,
-                        [activeConversationId]: minimizedMessages,
-                    },
-                };
-
+                const nextState = applySyncedMessages(
+                    state,
+                    activeConversationId,
+                    messagePage,
+                    cachedBefore,
+                );
                 return pruneConversationCache(nextState, activeConversationId);
             });
         } catch (error) {
@@ -779,75 +781,20 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             return;
         }
 
+        deletingConversationIds.add(conversationId);
         try {
             await window.api.ai.deleteConversation(conversationId);
         } catch (error) {
             set({ error: toErrorMessage(error, 'La suppression de la conversation a échoué.') });
             return;
+        } finally {
+            deletingConversationIds.delete(conversationId);
         }
 
-        const remaining = get().conversations.filter(
-            (conversation) => conversation.id !== conversationId,
-        );
-        set((state) => {
-            const nextMessages = { ...state.messagesByConversation };
-            delete nextMessages[conversationId];
-            const removedMessageIds = (state.messagesByConversation[conversationId] ?? []).map(
-                (message) => message.id,
-            );
-
-            return {
-                conversations: remaining,
-                searchResults:
-                    state.searchResults?.filter(
-                        (conversation) => conversation.id !== conversationId,
-                    ) ?? null,
-                conversationList: {
-                    loadedCount: Math.max(state.conversationList.loadedCount - 1, remaining.length),
-                    totalCount: Math.max(state.conversationList.totalCount - 1, 0),
-                    hasMore:
-                        state.conversationList.totalCount - 1 >
-                        Math.max(state.conversationList.loadedCount - 1, remaining.length),
-                },
-                activeConversationId:
-                    state.activeConversationId === conversationId
-                        ? null
-                        : state.activeConversationId,
-                activeConversationRecord:
-                    state.activeConversationRecord?.id === conversationId
-                        ? null
-                        : state.activeConversationRecord,
-                messagesByConversation: nextMessages,
-                reasoningByMessage: removeReasoningByMessageIds(
-                    state.reasoningByMessage,
-                    removedMessageIds,
-                ),
-                loadingConversations: removeConversationKey(
-                    state.loadingConversations,
-                    conversationId,
-                ),
-                loadingOlderConversations: removeConversationKey(
-                    state.loadingOlderConversations,
-                    conversationId,
-                ),
-                historyByConversation: removeConversationKey(
-                    state.historyByConversation,
-                    conversationId,
-                ),
-                conversationRuns: removeConversationKey(state.conversationRuns, conversationId),
-                queuedMessagesByConversation: removeConversationKey(
-                    state.queuedMessagesByConversation,
-                    conversationId,
-                ),
-                runNoticeByConversation: removeConversationKey(
-                    state.runNoticeByConversation,
-                    conversationId,
-                ),
-            };
-        });
+        set((state) => removeDeletedConversation(state, conversationId));
 
         const nextConversationId = resolvePersistedActiveConversationId(
-            remaining,
+            get().conversations,
             get().activeConversationId,
         );
         if (nextConversationId) {
@@ -918,6 +865,11 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             }
         }
 
+        if (deletingConversationIds.has(conversationId)) {
+            set({ error: CONVERSATION_BEING_DELETED_ERROR });
+            return false;
+        }
+
         const shouldStartImmediately = !get().conversationRuns[conversationId];
 
         const queuedMessage = createQueuedMessage(trimmed);
@@ -962,7 +914,11 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     retryLastUserMessage: async (conversationId, messageId) => {
         const state = get();
         const messages = state.messagesByConversation[conversationId] ?? [];
-        if (state.conversationRuns[conversationId] || !canRetryUserMessage(messages, messageId)) {
+        if (
+            state.conversationRuns[conversationId] ||
+            deletingConversationIds.has(conversationId) ||
+            !canRetryUserMessage(messages, messageId)
+        ) {
             return false;
         }
 
@@ -975,6 +931,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 lastUserMessageId: messageId,
                 generationId,
             });
+            set((current) => dropMessagesAfter(current, conversationId, messageId));
             applyStartedRun(conversationId, generationId, { ...result, userMessages: [] });
             return true;
         } catch (error) {

@@ -295,6 +295,7 @@ describe('double send without a conversation (U5)', () => {
         const created = createDeferred<ReturnType<typeof createConversation>>();
         const { store, createConversationMock, sendMessageMock } = await createHarness({
             createConversationImpl: () => created.promise,
+            sendMessageImpl: async (request, index) => createSendResult(request, index),
         });
         store.setState({ activeConversationId: null, conversations: [] });
 

@@ -260,7 +260,7 @@ describe('ai-chat.store queue behavior', () => {
     it('keeps the local assistant placeholder when conversation history finishes loading after send', async () => {
         const deferredPage = createDeferred<AiMessageHistoryPage>();
         const conversation = createConversation({ id: 'conv-2', title: 'Second' });
-        const { store, sendMessageMock } = await createHarness({
+        const { store, sendMessageMock, getMessagesPageMock } = await createHarness({
             getMessagesPageImpl: async (request) =>
                 request.conversationId === 'conv-2'
                     ? deferredPage.promise
@@ -272,14 +272,13 @@ describe('ai-chat.store queue behavior', () => {
         store.setState((state) => ({
             conversations: [conversation, ...state.conversations],
             activeConversationId: 'conv-1',
-            messagesByConversation: {
-                ...state.messagesByConversation,
-                'conv-2': [],
-            },
         }));
 
         const selectPromise = store.getState().selectConversation('conv-2');
         await flushAsync();
+        expect(getMessagesPageMock).toHaveBeenCalledWith(
+            expect.objectContaining({ conversationId: 'conv-2' }),
+        );
 
         const sendAccepted = await store.getState().sendMessage('question on second conversation');
         expect(sendAccepted).toBe(true);

@@ -75,18 +75,19 @@ export function applyRunStarted(
     );
     const isStillOpen = state.activeConversationId === conversationId;
     const stopRequested = run.status === 'stopping';
-    const conversationRuns = removeConversationKey(state.conversationRuns, conversationId);
+    const moved = moveConversationState(state, conversationId, resolvedConversationId);
 
     return {
         stopConversationId: stopRequested ? resolvedConversationId : null,
         state: {
-            conversations,
+            ...moved,
+            conversations: upsertConversation(moved.conversations, started.conversation),
             messagesByConversation: {
-                ...state.messagesByConversation,
+                ...moved.messagesByConversation,
                 [resolvedConversationId]: nextMessages,
             },
             historyByConversation: {
-                ...state.historyByConversation,
+                ...moved.historyByConversation,
                 [resolvedConversationId]: {
                     loadedCount: nextMessages.length,
                     hasMore:
@@ -103,7 +104,7 @@ export function applyRunStarted(
                   }
                 : {}),
             conversationRuns: {
-                ...conversationRuns,
+                ...moved.conversationRuns,
                 [resolvedConversationId]: {
                     ...run,
                     assistantMessageId: started.assistantMessage.id,
@@ -111,6 +112,58 @@ export function applyRunStarted(
                 },
             },
         },
+    };
+}
+
+type MovableState = Pick<
+    RunStartState,
+    | 'conversations'
+    | 'messagesByConversation'
+    | 'historyByConversation'
+    | 'conversationRuns'
+    | 'queuedMessagesByConversation'
+    | 'runNoticeByConversation'
+>;
+
+/** Main replaced a conversation that no longer exists: what was kept under the old id follows. */
+function moveConversationState(state: MovableState, fromId: string, toId: string): MovableState {
+    const conversationRuns = removeConversationKey(state.conversationRuns, fromId);
+    if (fromId === toId) {
+        const { conversations, messagesByConversation, historyByConversation } = state;
+        const { queuedMessagesByConversation, runNoticeByConversation } = state;
+        return {
+            conversations,
+            messagesByConversation,
+            historyByConversation,
+            conversationRuns,
+            queuedMessagesByConversation,
+            runNoticeByConversation,
+        };
+    }
+
+    const queued = [
+        ...(state.queuedMessagesByConversation[toId] ?? []),
+        ...(state.queuedMessagesByConversation[fromId] ?? []),
+    ];
+    const queuedMessagesByConversation = removeConversationKey(
+        state.queuedMessagesByConversation,
+        fromId,
+    );
+    const notice = state.runNoticeByConversation[toId] ?? state.runNoticeByConversation[fromId];
+    const runNoticeByConversation = removeConversationKey(state.runNoticeByConversation, fromId);
+
+    return {
+        conversations: state.conversations.filter((conversation) => conversation.id !== fromId),
+        messagesByConversation: removeConversationKey(state.messagesByConversation, fromId),
+        historyByConversation: removeConversationKey(state.historyByConversation, fromId),
+        conversationRuns,
+        queuedMessagesByConversation:
+            queued.length > 0
+                ? { ...queuedMessagesByConversation, [toId]: queued }
+                : queuedMessagesByConversation,
+        runNoticeByConversation: notice
+            ? { ...runNoticeByConversation, [toId]: notice }
+            : runNoticeByConversation,
     };
 }
 

@@ -255,3 +255,61 @@ export function pruneConversationCache(
         historyByConversation: nextHistory,
     };
 }
+
+/**
+ * Applies a synced history page. When the cache changed while the page loaded (a send, an
+ * answer), the page is older than the cache, so it is merged instead of replacing it.
+ */
+export function applySyncedMessages<
+    T extends ConversationCacheState &
+        Pick<ChatRunState, 'conversationRuns' | 'queuedMessagesByConversation'>,
+>(
+    state: T,
+    conversationId: string,
+    page: AiMessageHistoryPage,
+    cachedBefore: AiMessage[] | undefined,
+): T {
+    const cached = state.messagesByConversation[conversationId];
+    const fetched = minimizeMessagesForRenderer(page.messages);
+    const changedMeanwhile =
+        cached !== cachedBefore ||
+        conversationId in state.conversationRuns ||
+        conversationId in state.queuedMessagesByConversation;
+    const messages = changedMeanwhile ? mergeFetchedMessages(cached ?? [], fetched) : fetched;
+
+    return {
+        ...state,
+        historyByConversation: {
+            ...state.historyByConversation,
+            [conversationId]: {
+                loadedCount: changedMeanwhile ? messages.length : page.loadedCount,
+                hasMore: page.hasMore,
+            },
+        },
+        messagesByConversation: { ...state.messagesByConversation, [conversationId]: messages },
+    };
+}
+
+/** Main deleted the rows after the retried question; the cache follows. */
+export function dropMessagesAfter(
+    state: Pick<ChatRunState, 'messagesByConversation' | 'reasoningByMessage'>,
+    conversationId: string,
+    messageId: string,
+): Pick<ChatRunState, 'messagesByConversation' | 'reasoningByMessage'> {
+    const messages = state.messagesByConversation[conversationId] ?? [];
+    const index = messages.findIndex((message) => message.id === messageId);
+    if (index === -1) {
+        return state;
+    }
+
+    return {
+        messagesByConversation: {
+            ...state.messagesByConversation,
+            [conversationId]: messages.slice(0, index + 1),
+        },
+        reasoningByMessage: removeReasoningByMessageIds(
+            state.reasoningByMessage,
+            messages.slice(index + 1).map((message) => message.id),
+        ),
+    };
+}
