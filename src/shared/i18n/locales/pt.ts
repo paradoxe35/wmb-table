@@ -70,6 +70,12 @@ const pt: Record<string, string> = {
     'Choisissez le service à utiliser pour le chat IA.':
         'Escolha o serviço a ser usado para o chat de IA.',
     'Choisir un fournisseur': 'Escolher um provedor',
+    "Choisissez un fournisseur pour utiliser l'assistant.":
+        'Escolha um provedor para usar o assistente.',
+    'Ajoutez une clé API pour utiliser ce fournisseur.':
+        'Adicione uma chave de API para usar este provedor.',
+    "Les paramètres de l'assistant n'ont pas pu être enregistrés.":
+        'Não foi possível salvar as configurações do assistente.',
     Personnalisé: 'Personalizado',
     'Comportement des langues': 'Comportamento dos idiomas',
     "L'assistant suit la langue active, sauf si vous demandez explicitement une autre langue.":
@@ -96,6 +102,10 @@ const pt: Record<string, string> = {
     'Compatible avec l’API OpenAI.': 'Compatível com a API da OpenAI.',
     'Supprimer ce fournisseur ?': 'Excluir este provedor?',
     'Un fournisseur avec ce nom existe déjà.': 'Já existe um provedor com este nome.',
+    "L'URL de base est requise.": 'A URL base é obrigatória.',
+    "L'URL doit commencer par http:// ou https://.": 'A URL deve começar com http:// ou https://.',
+    "Cette URL n'est pas valide.": 'Esta URL não é válida.',
+    'Supprimer le fournisseur {{name}}': 'Excluir o provedor {{name}}',
     'ex: Mon Service IA': 'ex.: Meu Serviço de IA',
     'ex: gpt-4o-mini': 'ex.: gpt-4o-mini',
     'Taille du contexte (tokens)': 'Tamanho do contexto (tokens)',
@@ -105,6 +115,12 @@ const pt: Record<string, string> = {
     Connecté: 'Conectado',
     Échec: 'Falha',
     'La connexion a échoué.': 'A conexão falhou.',
+    'La clé API a été refusée. Vérifiez-la puis réessayez.':
+        'A chave de API foi recusada. Verifique-a e tente novamente.',
+    "Le modèle ou l'adresse est introuvable. Vérifiez le modèle et l'URL de base.":
+        'O modelo ou o endereço não foi encontrado. Verifique o modelo e a URL base.',
+    "Impossible de joindre le serveur. Vérifiez l'URL de base et votre connexion.":
+        'Não foi possível contactar o servidor. Verifique a URL base e sua conexão.',
     'La clé API est manquante pour ce fournisseur.':
         'A chave de API está faltando para este provedor.',
     'Fournisseur IA inconnu.': 'Provedor de IA desconhecido.',

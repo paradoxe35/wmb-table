@@ -1,8 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Divider, Select, Space, Switch, Tag, Typography } from 'antd';
-import { BookOutlined, CloudOutlined, PlusOutlined } from '@ant-design/icons';
+import { Alert, Button, Card, Divider, Select, Space, Switch, Tag, Typography } from 'antd';
+import { BookOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { AiCustomProviderConfig } from '@shared/ai.types';
+import {
+    BUILTIN_PROVIDER_IDS,
+    BUILTIN_PROVIDER_REQUIRES_API_KEY,
+    isBuiltinProviderId,
+    resolveProviderApiKey,
+    resolveProviderBaseUrl,
+    type AiCustomProviderConfig,
+    type AiSettings,
+} from '@shared/ai.types';
+import { isLocalBaseUrl } from '@shared/ai-provider-input';
 import { useAiChatStore, useAppStore } from '@renderer/stores';
 import { buildDocsGuideLink } from '@renderer/utils/constants';
 import { Field, Hint } from './ai-shared';
@@ -10,15 +19,29 @@ import { BuiltinProviderConfig, CustomProviderConfig } from './ai-provider-confi
 import AiCustomProviderModal from './ai-custom-provider';
 import InlineHelpPopover from '../components/inline-help-popover';
 import { getAiSettingsHelp } from '../components/option-help-content';
+import { LocalityTag } from './tts-shared';
+import { useSaveAiSettings } from './use-save-ai-settings';
 
 const { Text } = Typography;
+
+function missingSetupWarning(settings: AiSettings): string | null {
+    const providerId = settings.activeProvider;
+    if (!settings.enabled) return null;
+    if (!providerId) return "Choisissez un fournisseur pour utiliser l'assistant.";
+    const needsApiKey =
+        isBuiltinProviderId(providerId) && BUILTIN_PROVIDER_REQUIRES_API_KEY[providerId];
+    if (needsApiKey && !resolveProviderApiKey(settings, providerId)) {
+        return 'Ajoutez une clé API pour utiliser ce fournisseur.';
+    }
+    return null;
+}
 
 export default function AiTab() {
     const { t } = useTranslation();
     const initialize = useAiChatStore((s) => s.initialize);
     const settings = useAiChatStore((s) => s.settings);
     const providerCatalog = useAiChatStore((s) => s.providerCatalog);
-    const saveSettings = useAiChatStore((s) => s.saveSettings);
+    const saveSettings = useSaveAiSettings();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [customModalOpen, setCustomModalOpen] = useState(false);
 
@@ -34,9 +57,13 @@ export default function AiTab() {
             label: (
                 <span>
                     {p.name}{' '}
-                    <Tag color="blue" icon={<CloudOutlined />} style={{ marginInlineStart: 4 }}>
-                        {t('Cloud')}
-                    </Tag>
+                    <LocalityTag
+                        type={
+                            isLocalBaseUrl(resolveProviderBaseUrl(settings, p.id))
+                                ? 'local'
+                                : 'remote'
+                        }
+                    />
                 </span>
             ),
             value: p.id,
@@ -66,15 +93,21 @@ export default function AiTab() {
         return null;
     }
 
+    const setupWarning = missingSetupWarning(settings);
+
     function handleProviderChange(value: string) {
-        void saveSettings({ activeProvider: value });
+        saveSettings({ activeProvider: value });
     }
 
     function handleAddCustomProvider(provider: AiCustomProviderConfig) {
-        void saveSettings({
-            customProviders: [...settings!.customProviders, provider],
+        saveSettings((current) => ({
+            customProviders: [...current.customProviders, provider],
             activeProvider: provider.id,
-        });
+        }));
+    }
+
+    function openCustomModal() {
+        setCustomModalOpen(true);
     }
 
     function openDocs() {
@@ -108,12 +141,13 @@ export default function AiTab() {
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Switch
+                        id="ai-enabled"
                         checked={settings.enabled}
-                        onChange={(enabled) => void saveSettings({ enabled })}
+                        onChange={(enabled) => saveSettings({ enabled })}
                     />
                     <div>
                         <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
-                            {t("Activer l'assistant IA")}
+                            <label htmlFor="ai-enabled">{t("Activer l'assistant IA")}</label>
                         </Text>
                         <Hint>
                             {t("Une fois activé, l'assistant apparaît dans la barre latérale.")}
@@ -126,47 +160,60 @@ export default function AiTab() {
             <Card size="small">
                 <Field
                     label={t('Fournisseur actif')}
+                    htmlFor="ai-active-provider"
                     hint={t('Choisissez le service à utiliser pour le chat IA.')}
                 >
-                    <Select
-                        style={{ width: '100%' }}
-                        value={settings.activeProvider}
-                        options={providerOptions}
-                        onChange={handleProviderChange}
-                        placeholder={t('Choisir un fournisseur')}
-                        dropdownRender={(menu) => (
-                            <>
-                                {menu}
-                                <Divider style={{ margin: '4px 0' }} />
-                                <Button
-                                    type="text"
-                                    icon={<PlusOutlined />}
-                                    style={{ width: '100%', textAlign: 'start' }}
-                                    onClick={() => setCustomModalOpen(true)}
-                                >
-                                    {t('Ajouter un fournisseur personnalisé')}
-                                </Button>
-                            </>
-                        )}
-                    />
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <Select
+                            id="ai-active-provider"
+                            style={{ flex: '1 1 220px', minWidth: 0 }}
+                            value={settings.activeProvider}
+                            options={providerOptions}
+                            onChange={handleProviderChange}
+                            placeholder={t('Choisir un fournisseur')}
+                            popupRender={(menu) => (
+                                <>
+                                    {menu}
+                                    <Divider style={{ margin: '4px 0' }} />
+                                    <Button
+                                        type="text"
+                                        icon={<PlusOutlined />}
+                                        style={{ width: '100%', textAlign: 'start' }}
+                                        onClick={openCustomModal}
+                                    >
+                                        {t('Ajouter un fournisseur personnalisé')}
+                                    </Button>
+                                </>
+                            )}
+                        />
+                        <Button icon={<PlusOutlined />} onClick={openCustomModal}>
+                            {t('Ajouter un fournisseur')}
+                        </Button>
+                    </div>
                 </Field>
+                {setupWarning ? (
+                    <Alert
+                        type="warning"
+                        showIcon
+                        style={{ marginTop: 8 }}
+                        title={t(setupWarning)}
+                    />
+                ) : null}
             </Card>
 
-            {/* Active provider config: builtin cloud */}
             {activeBuiltinProvider ? (
                 <BuiltinProviderConfig
                     provider={activeBuiltinProvider}
                     settings={settings}
-                    onSave={(p) => void saveSettings(p)}
+                    onSave={saveSettings}
                 />
             ) : null}
 
-            {/* Active provider config: custom */}
             {activeCustomProvider ? (
                 <CustomProviderConfig
                     provider={activeCustomProvider}
                     settings={settings}
-                    onSave={(p) => void saveSettings(p)}
+                    onSave={saveSettings}
                 />
             ) : null}
 
@@ -174,28 +221,33 @@ export default function AiTab() {
             <Card size="small">
                 <Field
                     label={t('Comportement des langues')}
+                    htmlFor="ai-language-preference"
                     hint={t(
                         "L'assistant suit la langue active, sauf si vous demandez explicitement une autre langue.",
                     )}
                 >
                     <Select
+                        id="ai-language-preference"
                         style={{ width: '100%' }}
                         value={settings.languagePreference}
                         options={[
                             { label: t('Suivre la langue active'), value: 'active' },
                             { label: t('Changer uniquement sur demande'), value: 'explicit-only' },
                         ]}
-                        onChange={(languagePreference) => void saveSettings({ languagePreference })}
+                        onChange={(languagePreference) => saveSettings({ languagePreference })}
                     />
                 </Field>
             </Card>
 
-            {/* Custom provider modal */}
             <AiCustomProviderModal
                 open={customModalOpen}
                 onClose={() => setCustomModalOpen(false)}
                 onAdd={handleAddCustomProvider}
-                existingIds={settings.customProviders.map((p) => p.id)}
+                takenIds={[...BUILTIN_PROVIDER_IDS, ...settings.customProviders.map((p) => p.id)]}
+                takenNames={[
+                    ...providerCatalog.map((p) => p.name),
+                    ...settings.customProviders.map((p) => p.name),
+                ]}
             />
         </Space>
     );

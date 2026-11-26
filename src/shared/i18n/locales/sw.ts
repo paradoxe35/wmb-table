@@ -71,6 +71,12 @@ const sw: Record<string, string> = {
     'Choisissez le service à utiliser pour le chat IA.':
         'Chagua huduma ya kutumia kwa mazungumzo ya AI.',
     'Choisir un fournisseur': 'Chagua mtoa huduma',
+    "Choisissez un fournisseur pour utiliser l'assistant.":
+        'Chagua mtoa huduma ili kutumia msaidizi.',
+    'Ajoutez une clé API pour utiliser ce fournisseur.':
+        'Ongeza ufunguo wa API ili kutumia mtoa huduma huyu.',
+    "Les paramètres de l'assistant n'ont pas pu être enregistrés.":
+        'Mipangilio ya msaidizi haikuweza kuhifadhiwa.',
     Personnalisé: 'Maalum',
     'Comportement des langues': 'Tabia ya lugha',
     "L'assistant suit la langue active, sauf si vous demandez explicitement une autre langue.":
@@ -97,6 +103,10 @@ const sw: Record<string, string> = {
     'Compatible avec l’API OpenAI.': 'Inalingana na API ya OpenAI.',
     'Supprimer ce fournisseur ?': 'Futa mtoa huduma huyu?',
     'Un fournisseur avec ce nom existe déjà.': 'Mtoa huduma mwenye jina hili tayari yupo.',
+    "L'URL de base est requise.": 'URL ya msingi inahitajika.',
+    "L'URL doit commencer par http:// ou https://.": 'URL lazima ianze na http:// au https://.',
+    "Cette URL n'est pas valide.": 'URL hii si sahihi.',
+    'Supprimer le fournisseur {{name}}': 'Futa mtoa huduma {{name}}',
     'ex: Mon Service IA': 'mf.: Huduma Yangu ya AI',
     'ex: gpt-4o-mini': 'mf.: gpt-4o-mini',
     'Taille du contexte (tokens)': 'Ukubwa wa muktadha (tokeni)',
@@ -106,6 +116,12 @@ const sw: Record<string, string> = {
     Connecté: 'Imeunganishwa',
     Échec: 'Imeshindwa',
     'La connexion a échoué.': 'Muunganisho umeshindwa.',
+    'La clé API a été refusée. Vérifiez-la puis réessayez.':
+        'Ufunguo wa API umekataliwa. Uhakiki kisha ujaribu tena.',
+    "Le modèle ou l'adresse est introuvable. Vérifiez le modèle et l'URL de base.":
+        'Modeli au anwani haikupatikana. Hakiki modeli na URL ya msingi.',
+    "Impossible de joindre le serveur. Vérifiez l'URL de base et votre connexion.":
+        'Imeshindwa kufikia seva. Hakiki URL ya msingi na muunganisho wako.',
     'La clé API est manquante pour ce fournisseur.': 'Ufunguo wa API haupo kwa mtoa huduma huyu.',
     'Fournisseur IA inconnu.': 'Mtoa huduma wa AI hajulikani.',
     'Validation du fournisseur impossible.': 'Haiwezekani kuthibitisha mtoa huduma.',

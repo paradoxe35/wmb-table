@@ -1,8 +1,10 @@
 import { Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { AiProviderDefinition } from '@shared/ai.types';
+import type { BaseUrlProblem } from '@shared/ai-provider-input';
 
-const { Text } = Typography;
+const { Link, Text } = Typography;
 
 export function Hint({ children }: { children: string }) {
     return (
@@ -18,16 +20,18 @@ export function Hint({ children }: { children: string }) {
 export function Field({
     label,
     hint,
+    htmlFor,
     children,
 }: {
     label: string;
     hint?: string;
+    htmlFor?: string;
     children: React.ReactNode;
 }) {
     return (
         <div>
             <Text strong style={{ fontSize: 'var(--fs-rel-3xl)' }}>
-                {label}
+                <label htmlFor={htmlFor}>{label}</label>
             </Text>
             {hint ? <Hint>{hint}</Hint> : null}
             <div style={{ marginTop: 4 }}>{children}</div>
@@ -41,12 +45,21 @@ export function ApiKeyLink({ provider }: { provider: AiProviderDefinition }) {
     if (!url) return null;
 
     return (
-        <Text
-            type="secondary"
-            style={{ fontSize: 'var(--fs-rel-lg)', cursor: 'pointer' }}
-            onClick={() => void window.api.app.openExternal(url)}
+        <Link
+            href={url}
+            style={{ fontSize: 'var(--fs-rel-lg)' }}
+            onClick={(event) => {
+                event.preventDefault();
+                void window.api.app.openExternal(url);
+            }}
         >
-            <a style={{ fontSize: 'inherit' }}>{t('Obtenir une clé API')}</a>
-        </Text>
+            {t('Obtenir une clé API')}
+        </Link>
     );
+}
+
+export function describeBaseUrlProblem(t: TFunction, problem: BaseUrlProblem): string {
+    if (problem === 'empty') return t("L'URL de base est requise.");
+    if (problem === 'scheme') return t("L'URL doit commencer par http:// ou https://.");
+    return t("Cette URL n'est pas valide.");
 }

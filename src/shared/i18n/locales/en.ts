@@ -69,6 +69,11 @@ const en: Record<string, string> = {
     // ── AI settings ──
     'Choisissez le service à utiliser pour le chat IA.': 'Choose the service to use for AI chat.',
     'Choisir un fournisseur': 'Choose a provider',
+    "Choisissez un fournisseur pour utiliser l'assistant.":
+        'Choose a provider to use the assistant.',
+    'Ajoutez une clé API pour utiliser ce fournisseur.': 'Add an API key to use this provider.',
+    "Les paramètres de l'assistant n'ont pas pu être enregistrés.":
+        'The assistant settings could not be saved.',
     Personnalisé: 'Custom',
     'Comportement des langues': 'Language behavior',
     "L'assistant suit la langue active, sauf si vous demandez explicitement une autre langue.":
@@ -95,6 +100,10 @@ const en: Record<string, string> = {
     'Compatible avec l’API OpenAI.': 'Compatible with the OpenAI API.',
     'Supprimer ce fournisseur ?': 'Delete this provider?',
     'Un fournisseur avec ce nom existe déjà.': 'A provider with this name already exists.',
+    "L'URL de base est requise.": 'The base URL is required.',
+    "L'URL doit commencer par http:// ou https://.": 'The URL must start with http:// or https://.',
+    "Cette URL n'est pas valide.": 'This URL is not valid.',
+    'Supprimer le fournisseur {{name}}': 'Delete the provider {{name}}',
     'ex: Mon Service IA': 'e.g. My AI Service',
     'ex: gpt-4o-mini': 'e.g. gpt-4o-mini',
     'Taille du contexte (tokens)': 'Context size (tokens)',
@@ -104,6 +113,12 @@ const en: Record<string, string> = {
     Connecté: 'Connected',
     Échec: 'Failed',
     'La connexion a échoué.': 'Connection failed.',
+    'La clé API a été refusée. Vérifiez-la puis réessayez.':
+        'The API key was refused. Check it and try again.',
+    "Le modèle ou l'adresse est introuvable. Vérifiez le modèle et l'URL de base.":
+        'The model or address was not found. Check the model and the base URL.',
+    "Impossible de joindre le serveur. Vérifiez l'URL de base et votre connexion.":
+        'Cannot reach the server. Check the base URL and your connection.',
     'La clé API est manquante pour ce fournisseur.': 'The API key is missing for this provider.',
     'Fournisseur IA inconnu.': 'Unknown AI provider.',
     'Validation du fournisseur impossible.': 'Unable to validate the provider.',
