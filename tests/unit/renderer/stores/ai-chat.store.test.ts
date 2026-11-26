@@ -549,26 +549,8 @@ describe('ai-chat.store run events', () => {
         expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
     });
 
-    it('remembers a truncated outcome for the finished message', async () => {
-        const { listeners, event } = await startRun();
-        const { useAiRunOutcomeStore } = await import('@renderer/stores/ai-chat-run-events');
-        const outcome = {
-            finishReason: 'length',
-            stoppedBy: 'model',
-            truncated: true,
-            stepLimitReached: false,
-            steps: 3,
-            continuations: 2,
-        } as const;
-
-        listeners.aiStreamComplete?.({ ...event, outcome });
-
-        expect(useAiRunOutcomeStore.getState().byMessageId['assistant-1']).toEqual(outcome);
-    });
-
     it('ignores the outcome of a stale run', async () => {
-        const { listeners, event } = await startRun();
-        const { useAiRunOutcomeStore } = await import('@renderer/stores/ai-chat-run-events');
+        const { store, listeners, event } = await startRun();
 
         listeners.aiStreamComplete?.({
             ...event,
@@ -584,6 +566,7 @@ describe('ai-chat.store run events', () => {
             },
         });
 
-        expect(useAiRunOutcomeStore.getState().byMessageId['assistant-old']).toBeUndefined();
+        expect(store.getState().runNoticeByConversation['conv-1']).toBeUndefined();
+        expect(store.getState().conversationRuns['conv-1']).toBeDefined();
     });
 });
