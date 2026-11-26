@@ -629,3 +629,77 @@ export const cases: E2eCase[] = [
     // Last: the refused message stays queued, so "new conversation" reuses this empty one (U20, U27).
     tooLongMessage,
 ];
+
+const isSubAgentStep = (tag: string) => tag.startsWith('↳');
+
+const subagentStepLimit: E2eCase = {
+    name: 'subagent-step-limit',
+    description: 'A sub-agent that never stops searching still hands back its report',
+    async run(ctx) {
+        const final = await sendAndCapture(ctx, 'Étude sans fin #scenario:subagent-step-limit', {
+            state: 'subagent-running',
+            when: (f) => f.toolTags.some(isSubAgentStep),
+        });
+        await ctx.shot('done');
+        checkCleanEnd(ctx, final, 'MOCK-SUBAGENT-STEP-LIMIT-DONE');
+        const worker = ctx.requests().filter((r) => r.scenario === 'step-limit-worker');
+        ctx.check(
+            'the sub-agent stopped at its 50-step limit',
+            worker.length === 50,
+            worker.length,
+        );
+        ctx.check(
+            'its last step had the tools closed',
+            worker[worker.length - 1]?.toolChoice === 'none',
+            worker.map((r) => r.toolChoice).slice(-2),
+        );
+        const answer = lastAssistantText(final);
+        ctx.check('the report reached the final answer', answer.includes('Report received: yes'), {
+            answer: answer.slice(0, 200),
+        });
+        ctx.check(
+            'the tool result says the research is incomplete (step limit)',
+            answer.includes('Sub-agent status: incomplete (step-limit)'),
+            answer.slice(0, 200),
+        );
+        ctx.check(
+            'the app did not log "output truncated"',
+            !/agent output truncated/i.test(ctx.mainLog()),
+        );
+    },
+};
+
+const subagentStop: E2eCase = {
+    name: 'subagent-stop',
+    description: 'Stop pressed while the sub-agent is researching',
+    async run(ctx) {
+        const workerRequests = () => ctx.requests().filter((r) => r.scenario === 'slow-worker');
+        await ctx.page.send('Étude lente #scenario:subagent-stop');
+        await ctx.waitUntil((f) => f.toolTags.some(isSubAgentStep), 'a sub-agent step', 30_000);
+        await ctx.shot('subagent-running');
+        const stoppedAt = Date.now();
+        await ctx.page.clickStop();
+        const final = await ctx.waitForRunEnd(15_000);
+        const stopMs = Date.now() - stoppedAt;
+        await ctx.shot('stopped');
+        await new Promise((resolve) => setTimeout(resolve, 4_000));
+        const startedAfterStop = workerRequests().filter((r) => Date.parse(r.at) > stoppedAt);
+        ctx.check('the run ended within 3 s of Stop', stopMs < 3_000, stopMs);
+        ctx.check(
+            'the sub-agent started no model call after Stop',
+            startedAfterStop.length === 0,
+            startedAfterStop.map((r) => r.at),
+        );
+        ctx.check(
+            'the sub-agent did not report back after Stop',
+            !/Sub-agent finished/.test(ctx.mainLog().split('Sub-agent starting').pop() ?? ''),
+        );
+        ctx.check(
+            'the main model did not answer after Stop',
+            !lastAssistantText(final).includes('MOCK-SUBAGENT-STOP-SHOULD-NOT-APPEAR'),
+        );
+        ctx.check('no error banner', final.errorAlerts.length === 0, final.errorAlerts);
+    },
+};
+
+cases.splice(cases.length - 1, 0, subagentStepLimit, subagentStop);

@@ -435,3 +435,66 @@ const failureScenarios: Scenario[] = [
 export const scenarios: Scenario[] = [...utilityScenarios, ...answerScenarios, ...failureScenarios];
 
 export const DEFAULT_SCENARIO = 'echo';
+
+interface SubAgentReport {
+    status?: string;
+    reason?: string;
+    response?: string;
+}
+
+function researchReportOf(ctx: ScenarioContext): SubAgentReport | null {
+    return (latestResultsOf(ctx, 'researchTopic')[0] as SubAgentReport | null) ?? null;
+}
+
+const delegateResearch = (worker: string) => () =>
+    complete([toolCall('researchTopic', { topic: `Le Saint-Esprit #scenario:${worker}` })]);
+
+export const SUB_AGENT_REPORT_MARKER = 'WORKER-REPORT-AT-STEP-LIMIT';
+
+const subAgentScenarios: Scenario[] = [
+    {
+        name: 'subagent-step-limit',
+        description: 'Delegates to a sub-agent that never stops searching, then quotes its status',
+        reply: sequence(delegateResearch('step-limit-worker'), (ctx) => {
+            const report = researchReportOf(ctx);
+            const hasReport = Boolean(report?.response?.includes(SUB_AGENT_REPORT_MARKER));
+            return complete([
+                text(
+                    `## Research\n\nSub-agent status: ${report?.status ?? 'none'} (${report?.reason ?? 'none'}). ` +
+                        `Report received: ${hasReport ? 'yes' : 'no'}.\n\nMOCK-SUBAGENT-STEP-LIMIT-DONE`,
+                ),
+            ]);
+        }),
+    },
+    {
+        name: 'step-limit-worker',
+        description: 'Sub-agent steps: a search on every step until the tools are closed',
+        reply: (ctx) =>
+            toolsClosed(ctx)
+                ? complete([text(`Rapport de recherche final. ${SUB_AGENT_REPORT_MARKER}`)])
+                : complete([
+                      toolCall('searchSermons', {
+                          query: String(1950 + (ctx.stepIndex % 15)),
+                          limit: 1,
+                      }),
+                  ]),
+    },
+    {
+        name: 'subagent-stop',
+        description: 'Delegates to a slow sub-agent (for Stop tests)',
+        reply: sequence(delegateResearch('slow-worker'), () =>
+            complete([text('MOCK-SUBAGENT-STOP-SHOULD-NOT-APPEAR')]),
+        ),
+    },
+    {
+        name: 'slow-worker',
+        description: 'Sub-agent steps that each think for 1.5 s before a search',
+        reply: (ctx) =>
+            complete([
+                pause(1_500),
+                toolCall('searchSermons', { query: String(1950 + ctx.stepIndex), limit: 1 }),
+            ]),
+    },
+];
+
+scenarios.push(...subAgentScenarios);
