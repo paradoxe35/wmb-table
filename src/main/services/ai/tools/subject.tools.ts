@@ -3,8 +3,23 @@ import * as subjectsRepo from '@main/database/repositories/subjects.repository';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 import { buildParagraphReference, buildSermonDocumentIdentity } from '@shared/types';
+import type { SermonParagraph } from '@shared/types';
 import type { AiToolDefinition } from './types';
 import { inferTranslationId, validateLanguage } from './shared';
+
+function paragraphNotFound(
+    paragraphNumber: number,
+    sermonId: string,
+    paragraphs: SermonParagraph[],
+): { error: string } {
+    const first = paragraphs[0]?.paragraphIndex;
+    const last = paragraphs.at(-1)?.paragraphIndex;
+    const range =
+        first === undefined
+            ? 'it has no paragraphs'
+            : `its paragraphs are numbered ${first} to ${last}`;
+    return { error: `Paragraph ${paragraphNumber} not found in sermon "${sermonId}"; ${range}.` };
+}
 
 export function buildSubjectTools(
     defaultContentLanguage: string,
@@ -50,9 +65,19 @@ export function buildSubjectTools(
             description:
                 'Create a saved subject when the user wants to save or organize content under a subject, or accepts that suggestion.',
             inputSchema: z.object({ name: z.string().min(2) }),
-            execute: async ({ name }) => {
+            execute: async ({ name: rawName }) => {
+                const name = rawName.trim();
+                const existing = subjectsRepo
+                    .getAllSummary()
+                    .find((subject) => subject.name === name);
+                if (existing) {
+                    return {
+                        error: `A subject named "${name}" already exists (subjectId "${existing.id}"). Use that subject instead of creating a new one.`,
+                    };
+                }
+
                 try {
-                    const subject = subjectsRepo.create(name.trim());
+                    const subject = subjectsRepo.create(name);
                     return { subjectId: subject.id, name: subject.name };
                 } catch (err) {
                     return {
@@ -101,7 +126,11 @@ export function buildSubjectTools(
                     referenceDataService.getSermonListForLanguage(lang).find((sermon) => {
                         return sermon.sermonId === sermonId;
                     });
-                if (!meta) return { error: 'Sermon introuvable.' };
+                if (!meta) {
+                    return {
+                        error: `Sermon "${sermonId}" not found for language "${lang}". Use searchSermons to find its sermonId and translationId.`,
+                    };
+                }
 
                 let paragraphs;
                 try {
@@ -116,17 +145,24 @@ export function buildSubjectTools(
                     };
                 }
                 const paragraph = paragraphs.find((p) => p.paragraphIndex === paragraphNumber);
-                if (!paragraph) return { error: 'Paragraphe introuvable.' };
+                if (!paragraph) return paragraphNotFound(paragraphNumber, sermonId, paragraphs);
 
-                const item = subjectsRepo.createItem(
-                    subjectId,
-                    meta.title,
-                    buildParagraphReference(
-                        buildSermonDocumentIdentity(meta.sermonId, meta.translationId, lang),
-                        paragraphNumber,
-                    ),
-                    paragraph.content,
-                );
+                let item;
+                try {
+                    item = subjectsRepo.createItem(
+                        subjectId,
+                        meta.title,
+                        buildParagraphReference(
+                            buildSermonDocumentIdentity(meta.sermonId, meta.translationId, lang),
+                            paragraphNumber,
+                        ),
+                        paragraph.content,
+                    );
+                } catch (err) {
+                    return {
+                        error: `Failed to add the reference: ${err instanceof Error ? err.message : String(err)}`,
+                    };
+                }
                 return {
                     referenceId: item.id,
                     subjectId,
