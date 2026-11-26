@@ -743,6 +743,11 @@
     font-size: var(--fs-rel-md);
 }
 
+.ai-chat__run-notice .ant-alert-actions {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+}
+
 .ai-chat__run-notice-actions {
     display: flex;
     flex-wrap: wrap;

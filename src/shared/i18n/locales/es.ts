@@ -283,8 +283,8 @@ const es: Record<string, string> = {
     'Quota ou crédit épuisé chez le fournisseur.': 'Cuota o crédito agotado en el proveedor.',
     'La conversation est trop longue pour ce modèle. Commencez une nouvelle conversation.':
         'La conversación es demasiado larga para este modelo. Empieza una nueva conversación.',
-    'Le service IA est indisponible pour le moment.':
-        'El servicio de IA no está disponible por el momento.',
+    'Le serveur du service IA est indisponible pour le moment.':
+        'El servidor del servicio de IA no está disponible por el momento.',
     'Connexion perdue avec le service IA. Vérifiez votre réseau.':
         'Se perdió la conexión con el servicio de IA. Revisa tu red.',
     "Le service IA n'a pas répondu à temps.": 'El servicio de IA no respondió a tiempo.',

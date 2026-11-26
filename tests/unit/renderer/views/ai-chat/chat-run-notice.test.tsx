@@ -117,7 +117,7 @@ describe('ChatRunNotice', () => {
         ['model-not-found', 'Modèle introuvable', ['Réessayer', 'Ouvrir les paramètres IA']],
         ['rate-limit', 'Trop de demandes', ['Réessayer']],
         ['quota', 'Quota ou crédit épuisé', ['Ouvrir les paramètres IA']],
-        ['provider-unavailable', 'Le service IA est indisponible', ['Réessayer']],
+        ['provider-unavailable', 'Le serveur du service IA est indisponible', ['Réessayer']],
         ['network', 'Connexion perdue', ['Réessayer']],
         ['timeout', "n'a pas répondu à temps", ['Réessayer']],
         ['context-too-long', 'trop longue pour ce modèle', []],

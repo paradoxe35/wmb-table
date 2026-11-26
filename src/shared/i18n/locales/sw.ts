@@ -282,7 +282,8 @@ const sw: Record<string, string> = {
     'Quota ou crédit épuisé chez le fournisseur.': 'Kiwango au salio limekwisha kwa mtoa huduma.',
     'La conversation est trop longue pour ce modèle. Commencez une nouvelle conversation.':
         'Mazungumzo ni marefu mno kwa modeli hii. Anzisha mazungumzo mapya.',
-    'Le service IA est indisponible pour le moment.': 'Huduma ya AI haipatikani kwa sasa.',
+    'Le serveur du service IA est indisponible pour le moment.':
+        'Seva ya huduma ya AI haipatikani kwa sasa.',
     'Connexion perdue avec le service IA. Vérifiez votre réseau.':
         'Muunganisho na huduma ya AI umepotea. Angalia mtandao wako.',
     "Le service IA n'a pas répondu à temps.": 'Huduma ya AI haikujibu kwa wakati.',

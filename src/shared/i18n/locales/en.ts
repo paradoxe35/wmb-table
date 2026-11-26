@@ -294,7 +294,8 @@ const en: Record<string, string> = {
     'Quota ou crédit épuisé chez le fournisseur.': 'Quota or credit used up at the provider.',
     'La conversation est trop longue pour ce modèle. Commencez une nouvelle conversation.':
         'The conversation is too long for this model. Start a new conversation.',
-    'Le service IA est indisponible pour le moment.': 'The AI service is unavailable right now.',
+    'Le serveur du service IA est indisponible pour le moment.':
+        'The AI service server is unavailable right now.',
     'Connexion perdue avec le service IA. Vérifiez votre réseau.':
         'Connection to the AI service lost. Check your network.',
     "Le service IA n'a pas répondu à temps.": 'The AI service did not answer in time.',

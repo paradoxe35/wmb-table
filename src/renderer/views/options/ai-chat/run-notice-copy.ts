@@ -30,7 +30,7 @@ const ERROR_TITLES: Record<AiErrorCode, string> = {
     quota: 'Quota ou crédit épuisé chez le fournisseur.',
     'context-too-long':
         'La conversation est trop longue pour ce modèle. Commencez une nouvelle conversation.',
-    'provider-unavailable': 'Le service IA est indisponible pour le moment.',
+    'provider-unavailable': 'Le serveur du service IA est indisponible pour le moment.',
     network: 'Connexion perdue avec le service IA. Vérifiez votre réseau.',
     timeout: "Le service IA n'a pas répondu à temps.",
     'invalid-request': 'Le service IA a refusé la demande.',
