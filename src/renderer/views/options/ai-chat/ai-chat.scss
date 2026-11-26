@@ -768,6 +768,11 @@
     box-decoration-break: clone;
 }
 
+.ai-reference-tag.ant-tag:focus-visible {
+    outline: 2px solid var(--ant-color-primary-border);
+    outline-offset: 1px;
+}
+
 .ai-chat__tool-results {
     display: flex;
     flex-wrap: wrap;
@@ -965,12 +970,23 @@
     gap: 6px;
     cursor: pointer;
     padding: 4px 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: inherit;
+    font: inherit;
     opacity: 0.7;
     transition: opacity 0.15s;
 }
 
-.ai-reasoning__toggle:hover {
+.ai-reasoning__toggle:hover,
+.ai-reasoning__toggle:focus-visible {
     opacity: 1;
+}
+
+.ai-reasoning__toggle:focus-visible {
+    outline: 2px solid var(--ant-color-primary-border);
+    outline-offset: 2px;
 }
 
 .ai-reasoning__content {

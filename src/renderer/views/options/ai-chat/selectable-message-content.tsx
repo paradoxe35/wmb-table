@@ -115,7 +115,7 @@ export default function SelectableMessageContent({
                 className={className}
                 onContextMenu={handleContextMenu}
                 onKeyDown={handleKeyDown}
-                tabIndex={0}
+                tabIndex={-1}
             >
                 {children}
             </div>

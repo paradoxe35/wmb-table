@@ -240,6 +240,7 @@ const es: Record<string, string> = {
         'Este modelo es demasiado limitado para el asistente. Elija otro para poder usarlo.',
     'Voir le raisonnement': 'Ver razonamiento',
     'Masquer le raisonnement': 'Ocultar razonamiento',
+    'Actions de la conversation': 'Acciones de la conversación',
     '{{count}} dernières lignes': 'últimas {{count}} líneas',
     '+{{count}} autre': '+{{count}} otro',
     '+{{count}} autres': '+{{count}} otros',

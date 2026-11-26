@@ -35,12 +35,22 @@ export default function AiReferenceLink(
         navigate(href);
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        e.stopPropagation();
+        navigate(href);
+    };
+
     return (
         <Tag
             className="ai-reference-tag"
             data-href={href}
+            role="link"
+            tabIndex={0}
             color={REF_COLORS[ref.type]}
             onClick={handleClick}
+            onKeyDown={handleKeyDown}
             style={{ cursor: 'pointer', fontSize: 'var(--fs-rel-xl)' }}
             bordered={false}
         >

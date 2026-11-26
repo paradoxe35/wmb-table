@@ -236,6 +236,7 @@ const en: Record<string, string> = {
         'This model is too limited for the assistant. Choose another one to be able to use it.',
     'Voir le raisonnement': 'Show reasoning',
     'Masquer le raisonnement': 'Hide reasoning',
+    'Actions de la conversation': 'Conversation actions',
     '{{count}} dernières lignes': 'last {{count}} lines',
     '+{{count}} autre': '+{{count}} other',
     '+{{count}} autres': '+{{count}} others',

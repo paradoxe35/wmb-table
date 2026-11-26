@@ -116,6 +116,7 @@ const ConversationListItem = memo(function ConversationListItem({
                                 size="small"
                                 disabled={isStreaming}
                                 className="ai-chat__conv-menu-trigger"
+                                aria-label={t('Actions de la conversation')}
                                 icon={<MoreOutlined style={{ fontSize: 'var(--fs-xs)' }} />}
                                 onClick={(event) => event.stopPropagation()}
                                 onKeyDown={(event) => event.stopPropagation()}

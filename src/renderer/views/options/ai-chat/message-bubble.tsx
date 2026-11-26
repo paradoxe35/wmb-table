@@ -36,12 +36,17 @@ function ReasoningBlock({ messageId }: { messageId: string }) {
 
     return (
         <div className="ai-reasoning">
-            <div className="ai-reasoning__toggle" onClick={() => setCollapsed((c) => !c)}>
+            <button
+                type="button"
+                className="ai-reasoning__toggle"
+                aria-expanded={!collapsed}
+                onClick={() => setCollapsed((c) => !c)}
+            >
                 <BulbOutlined />
                 <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
                     {collapsed ? t('Voir le raisonnement') : t('Masquer le raisonnement')}
                 </Text>
-            </div>
+            </button>
             {!collapsed && (
                 <div className="ai-reasoning__content">
                     {wasTruncated && (

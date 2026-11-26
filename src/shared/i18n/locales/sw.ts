@@ -239,6 +239,7 @@ const sw: Record<string, string> = {
         'Mfano huu ni finyu mno kwa msaidizi. Chagua mwingine ili uweze kuutumia.',
     'Voir le raisonnement': 'Onyesha hoja',
     'Masquer le raisonnement': 'Ficha hoja',
+    'Actions de la conversation': 'Vitendo vya mazungumzo',
     '{{count}} dernières lignes': 'mistari {{count}} ya mwisho',
     '+{{count}} autre': '+{{count}} nyingine',
     '+{{count}} autres': '+{{count}} nyingine',
