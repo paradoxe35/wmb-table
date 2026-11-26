@@ -717,3 +717,112 @@ describe('ai-chat.store queue behavior', () => {
         await Promise.all([firstLoad, secondLoad]);
     });
 });
+
+describe('ai-chat.store run events', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.clearAllMocks();
+    });
+
+    async function startRun() {
+        const harness = await createHarness();
+        await harness.store.getState().sendMessage('Qui t’a dit que tu étais nu ?');
+        await flushAsync();
+        const generationId = harness.sendMessageMock.mock.calls[0][0].generationId;
+        const event = { conversationId: 'conv-1', generationId, messageId: 'assistant-1' };
+        const toolResults = () =>
+            harness.store
+                .getState()
+                .messagesByConversation['conv-1'].find((m) => m.id === 'assistant-1')
+                ?.toolResults ?? [];
+        return { ...harness, event, toolResults };
+    }
+
+    it('keeps a tool that returned { error } as failed and does not reload notes', async () => {
+        const { listeners, event, toolResults } = await startRun();
+
+        listeners.aiToolCallComplete?.({
+            ...event,
+            toolName: 'editNote',
+            toolCallId: 'call-1',
+            payload: { error: 'anchor not found' },
+            isError: true,
+        });
+
+        expect(toolResults()).toEqual([
+            {
+                toolCallId: 'call-1',
+                name: 'editNote',
+                output: { error: 'anchor not found' },
+                isError: true,
+            },
+        ]);
+        expect(window.dispatchEvent).not.toHaveBeenCalled();
+    });
+
+    it('treats a failed sub-agent step as failed even without the flag', async () => {
+        const { listeners, event, toolResults } = await startRun();
+
+        listeners.aiToolCallComplete?.({
+            ...event,
+            toolName: 'researchTopic:searchSermons',
+            toolCallId: 'call-2',
+            payload: { error: 'Language "fr" is not installed.' },
+        });
+
+        expect(toolResults()[0]?.isError).toBe(true);
+    });
+
+    it('reloads notes after a successful note edit', async () => {
+        const { listeners, event, toolResults } = await startRun();
+
+        listeners.aiToolCallComplete?.({
+            ...event,
+            toolName: 'editNote',
+            toolCallId: 'call-3',
+            payload: { noteId: 'n1', replacements: 1 },
+            isError: false,
+        });
+
+        expect(toolResults()[0]?.isError).toBe(false);
+        expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it('remembers a truncated outcome for the finished message', async () => {
+        const { listeners, event } = await startRun();
+        const { useAiRunOutcomeStore } = await import('@renderer/stores/ai-chat-run-events');
+        const outcome = {
+            finishReason: 'length',
+            stoppedBy: 'model',
+            truncated: true,
+            stepLimitReached: false,
+            steps: 3,
+            continuations: 2,
+        } as const;
+
+        listeners.aiStreamComplete?.({ ...event, outcome });
+
+        expect(useAiRunOutcomeStore.getState().byMessageId['assistant-1']).toEqual(outcome);
+    });
+
+    it('ignores the outcome of a stale run', async () => {
+        const { listeners, event } = await startRun();
+        const { useAiRunOutcomeStore } = await import('@renderer/stores/ai-chat-run-events');
+
+        listeners.aiStreamComplete?.({
+            ...event,
+            generationId: 'old-generation',
+            messageId: 'assistant-old',
+            outcome: {
+                finishReason: 'length',
+                stoppedBy: 'model',
+                truncated: true,
+                stepLimitReached: false,
+                steps: 1,
+                continuations: 2,
+            },
+        });
+
+        expect(useAiRunOutcomeStore.getState().byMessageId['assistant-old']).toBeUndefined();
+    });
+});

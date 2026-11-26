@@ -16,21 +16,17 @@ import {
     resolveActiveModel,
     resolveProviderName,
 } from '@shared/ai.types';
-import { AI_DATA_EVENT, APP_UI_EVENT } from '@renderer/utils/events';
+import { APP_UI_EVENT } from '@renderer/utils/events';
 import { createStore } from './create-store';
 import { createAiSettingsSaveQueue, type AiSettingsUpdate } from './ai-settings-save-queue';
 import { markFeatureReminderUsed } from '@renderer/lib/feature-reminders';
-
-const TOOL_TO_EVENT: Record<string, string> = {
-    createNote: AI_DATA_EVENT.notesChanged,
-    updateNoteContent: AI_DATA_EVENT.notesChanged,
-    editNote: AI_DATA_EVENT.notesChanged,
-    appendToNote: AI_DATA_EVENT.notesChanged,
-    createSubject: AI_DATA_EVENT.subjectsChanged,
-    addSermonReferenceToSubject: AI_DATA_EVENT.subjectsChanged,
-    addBibleReferenceToSubject: AI_DATA_EVENT.subjectsChanged,
-    removeSubjectReference: AI_DATA_EVENT.subjectsChanged,
-};
+import {
+    dataEventForToolResult,
+    toolResultFromEvent,
+    useAiRunOutcomeStore,
+    withToolCallCompleted,
+    withToolCallStarted,
+} from './ai-chat-run-events';
 
 type MessageMap = Record<string, AiMessage[]>;
 type ReasoningMap = Record<string, string>;
@@ -606,85 +602,57 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 });
             });
 
-            window.api.on.aiToolCallStart(
-                ({ conversationId, generationId, messageId, toolName, toolCallId, payload }) => {
-                    set((state) => {
-                        const run = state.conversationRuns[conversationId];
-                        if (!run || run.generationId !== generationId) {
-                            return state;
-                        }
-
-                        return {
-                            messagesByConversation: updateConversationMessages(
-                                state.messagesByConversation,
-                                conversationId,
-                                (messages) =>
-                                    messages.map((message) =>
-                                        message.id === messageId
-                                            ? {
-                                                  ...message,
-                                                  toolCalls: [
-                                                      ...message.toolCalls,
-                                                      {
-                                                          id: toolCallId,
-                                                          name: toolName,
-                                                          input:
-                                                              (payload as Record<
-                                                                  string,
-                                                                  unknown
-                                                              >) ?? {},
-                                                      },
-                                                  ],
-                                              }
-                                            : message,
-                                    ),
-                            ),
-                        };
-                    });
-                },
-            );
-
-            window.api.on.aiToolCallComplete(
-                ({ conversationId, generationId, messageId, toolName, toolCallId, payload }) => {
-                    set((state) => {
-                        const run = state.conversationRuns[conversationId];
-                        if (!run || run.generationId !== generationId) {
-                            return state;
-                        }
-
-                        return {
-                            messagesByConversation: updateConversationMessages(
-                                state.messagesByConversation,
-                                conversationId,
-                                (messages) =>
-                                    messages.map((message) =>
-                                        message.id === messageId
-                                            ? {
-                                                  ...message,
-                                                  toolResults: [
-                                                      ...message.toolResults,
-                                                      {
-                                                          toolCallId,
-                                                          name: toolName,
-                                                          output: payload,
-                                                      },
-                                                  ],
-                                              }
-                                            : message,
-                                    ),
-                            ),
-                        };
-                    });
-
-                    const event = TOOL_TO_EVENT[toolName];
-                    if (event) {
-                        window.dispatchEvent(new Event(event));
+            window.api.on.aiToolCallStart((event) => {
+                set((state) => {
+                    const run = state.conversationRuns[event.conversationId];
+                    if (!run || run.generationId !== event.generationId) {
+                        return state;
                     }
-                },
-            );
 
-            window.api.on.aiStreamComplete(({ conversationId, generationId }) => {
+                    return {
+                        messagesByConversation: updateConversationMessages(
+                            state.messagesByConversation,
+                            event.conversationId,
+                            (messages) => withToolCallStarted(messages, event),
+                        ),
+                    };
+                });
+            });
+
+            window.api.on.aiToolCallComplete((event) => {
+                const result = toolResultFromEvent(event);
+                set((state) => {
+                    const run = state.conversationRuns[event.conversationId];
+                    if (!run || run.generationId !== event.generationId) {
+                        return state;
+                    }
+
+                    return {
+                        messagesByConversation: updateConversationMessages(
+                            state.messagesByConversation,
+                            event.conversationId,
+                            (messages) => withToolCallCompleted(messages, result, event.messageId),
+                        ),
+                    };
+                });
+
+                const dataEvent = dataEventForToolResult(result);
+                if (dataEvent) {
+                    window.dispatchEvent(new Event(dataEvent));
+                }
+            });
+
+            window.api.on.aiStreamComplete((completion) => {
+                const { conversationId, generationId } = completion;
                 let shouldFlushQueue = false;
+                if (
+                    completion.outcome &&
+                    get().conversationRuns[conversationId]?.generationId === generationId
+                ) {
+                    useAiRunOutcomeStore
+                        .getState()
+                        .record(completion.messageId, completion.outcome);
+                }
 
                 set((state) => {
                     const run = state.conversationRuns[conversationId];
