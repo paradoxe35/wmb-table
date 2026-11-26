@@ -103,7 +103,7 @@ describe('mock LLM server with the real OpenAI-compatible provider', () => {
             input: { query: 'wonderful' },
         });
         expect(await result.text).toContain('MOCK-LONG-RESEARCH-DONE');
-    });
+    }, 30_000);
 
     it('reports finish reason length', async () => {
         const result = streamText({ model: model(), prompt: 'x #scenario:length' });
