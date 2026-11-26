@@ -86,12 +86,28 @@ export class ChatPage {
         );
     }
 
+    /**
+     * Opens an empty conversation with no banner. The app reuses an empty conversation instead of
+     * creating another, so the list only grows when the open one had messages.
+     */
     async startNewConversation(): Promise<void> {
-        const before = (await this.facts()).conversationTitles.length;
+        const before = await this.facts();
+        const mustGrow = before.messages.length > 0;
         await this.click(SELECTORS.newConversation);
         await this.cdp.waitFor(
-            `document.querySelectorAll('.ai-chat__conv-title').length > ${before} && document.querySelectorAll('.ai-chat__bubble').length === 0`,
+            `document.querySelectorAll('.ai-chat__bubble').length === 0 && (${!mustGrow} || document.querySelectorAll('.ai-chat__conv-title').length > ${before.conversationTitles.length})`,
             'a new empty conversation',
+        );
+        await this.dismissErrorBanner();
+    }
+
+    private async dismissErrorBanner(): Promise<void> {
+        const closeButton = `document.querySelector('.ai-chat .ant-alert-error .ant-alert-close-icon')`;
+        if (!(await this.cdp.evaluate<boolean>(`Boolean(${closeButton})`))) return;
+        await this.clickAt(closeButton, 'the error banner close button');
+        await this.cdp.waitFor(
+            `!document.querySelector('.ai-chat .ant-alert-error')`,
+            'the error banner to close',
         );
     }
 

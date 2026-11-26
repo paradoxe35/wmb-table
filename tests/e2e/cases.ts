@@ -836,7 +836,6 @@ export const cases: E2eCase[] = [
     navigationGuard,
     ...chatUiCases,
     ...lifecycleCases,
-    // Last: its conversation stays empty, so "new conversation" would reuse it.
     tooLongMessage,
 ];
 
@@ -912,4 +911,4 @@ const subagentStop: E2eCase = {
     },
 };
 
-cases.splice(cases.length - 1, 0, subagentStepLimit, subagentStop);
+cases.push(subagentStepLimit, subagentStop);

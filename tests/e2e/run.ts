@@ -15,6 +15,7 @@ const repoRoot = resolve(import.meta.dirname, '../..');
 const USAGE = `Usage: pnpm test:e2e [-- options]
   --scenario <name>   run only these cases (repeat or comma-separate)
   --repeat <n>        run the selected cases n times in one app session (default 1)
+  --shuffle           run the cases in a random order (each round shuffled again)
   --out <dir>         output folder (default tmp/e2e-output/<time>)
   --cache-dir <dir>   language pack cache (default tmp/e2e-cache)
   --list              list the cases and exit`;
@@ -22,6 +23,7 @@ const USAGE = `Usage: pnpm test:e2e [-- options]
 interface RunOptions {
     selected: E2eCase[];
     repeat: number;
+    shuffle: boolean;
     outDir: string;
     cacheDir: string;
 }
@@ -32,6 +34,7 @@ function parseOptions(): RunOptions | null {
         options: {
             scenario: { type: 'string', multiple: true },
             repeat: { type: 'string', default: '1' },
+            shuffle: { type: 'boolean', default: false },
             out: { type: 'string' },
             'cache-dir': { type: 'string' },
             list: { type: 'boolean', default: false },
@@ -53,6 +56,7 @@ function parseOptions(): RunOptions | null {
     return {
         selected: names.length > 0 ? cases.filter((c) => names.includes(c.name)) : cases,
         repeat: Math.max(1, Number(values.repeat)),
+        shuffle: values.shuffle,
         outDir: resolve(values.out ?? join(repoRoot, 'tmp/e2e-output', stamp)),
         cacheDir: resolve(values['cache-dir'] ?? join(repoRoot, 'tmp/e2e-cache')),
     };
@@ -83,6 +87,15 @@ async function runCase(
         error,
         finalFacts: await page.facts().catch(() => undefined),
     };
+}
+
+function shuffled<T>(items: T[]): T[] {
+    const copy = [...items];
+    for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
 }
 
 function caseFailed(result: CaseResult): boolean {
@@ -156,7 +169,9 @@ async function run(options: RunOptions): Promise<boolean> {
         await page.open();
         await page.screenshotBothThemes('empty-chat');
         for (let round = 1; round <= options.repeat; round++) {
-            for (const testCase of options.selected) {
+            const order = options.shuffle ? shuffled(options.selected) : options.selected;
+            if (options.shuffle) console.log(`order: ${order.map((c) => c.name).join(', ')}`);
+            for (const testCase of order) {
                 const label = options.repeat > 1 ? `${testCase.name}-run${round}` : testCase.name;
                 console.log(`running ${label}...`);
                 results.push(await runCase(testCase, page, server, app, label));
