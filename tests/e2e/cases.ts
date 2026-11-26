@@ -744,15 +744,18 @@ const longReference: E2eCase = {
         ctx.check('the long reference tag sits inside a quote', quotedTags > 0, quotedTags);
         for (const [width, height] of [
             [1440, 900],
-            [1024, 700],
+            [1024, 768],
             [760, 640],
         ]) {
             await ctx.page.setViewport(width, height);
             await new Promise((resolve) => setTimeout(resolve, 300));
             const overflow = await ctx.page.evaluate<number>(READ_HORIZONTAL_OVERFLOW);
             ctx.check(`no sideways scroll in the thread at ${width}px`, overflow <= 0, overflow);
+            await ctx.page.evaluate(
+                `document.querySelector('.ai-chat__bubble blockquote').scrollIntoView({ block: 'center' })`,
+            );
+            await ctx.shot(`quote-${width}`);
         }
-        await ctx.shot('small-window');
         await ctx.page.resetViewport();
     },
 };
