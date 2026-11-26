@@ -74,7 +74,7 @@ export function registerAppHandlers(): void {
 
     registerHandler(AppChannels.restart, async () => {
         app.relaunch();
-        app.exit(0);
+        app.quit();
     });
 
     registerHandler(AppChannels.getUpdateStatus, async () => {
