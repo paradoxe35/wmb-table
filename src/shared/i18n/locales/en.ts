@@ -227,6 +227,10 @@ const en: Record<string, string> = {
     'Mis à jour le': 'Updated on',
     'Exporté le': 'Exported on',
     'Réponse sans texte': 'Response without text',
+    'Réponse coupée : elle a atteint la longueur maximale que ce modèle peut écrire.':
+        'Answer cut off: it reached the maximum length this model can write.',
+    "Le modèle n'a pas répondu à temps. Réessayez, ou choisissez un modèle plus rapide dans les paramètres.":
+        'The model did not answer in time. Try again, or choose a faster model in the settings.',
     'Aller en bas': 'Go to bottom',
     'Une génération est en cours.': 'A generation is in progress.',
     Réessayer: 'Retry',

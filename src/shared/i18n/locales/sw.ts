@@ -230,6 +230,10 @@ const sw: Record<string, string> = {
     'Mis à jour le': 'Imesasishwa tarehe',
     'Exporté le': 'Imehamishwa tarehe',
     'Réponse sans texte': 'Jibu lisilo na maandishi',
+    'Réponse coupée : elle a atteint la longueur maximale que ce modèle peut écrire.':
+        'Jibu limekatika: limefikia urefu wa juu kabisa ambao modeli hii inaweza kuandika.',
+    "Le modèle n'a pas répondu à temps. Réessayez, ou choisissez un modèle plus rapide dans les paramètres.":
+        'Modeli haikujibu kwa wakati. Jaribu tena, au chagua modeli yenye kasi zaidi kwenye mipangilio.',
     'Aller en bas': 'Nenda chini',
     'Une génération est en cours.': 'Uundaji unaendelea.',
     Réessayer: 'Jaribu tena',

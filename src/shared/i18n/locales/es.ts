@@ -231,6 +231,10 @@ const es: Record<string, string> = {
     'Mis à jour le': 'Actualizado el',
     'Exporté le': 'Exportado el',
     'Réponse sans texte': 'Respuesta sin texto',
+    'Réponse coupée : elle a atteint la longueur maximale que ce modèle peut écrire.':
+        'Respuesta cortada: alcanzó la longitud máxima que este modelo puede escribir.',
+    "Le modèle n'a pas répondu à temps. Réessayez, ou choisissez un modèle plus rapide dans les paramètres.":
+        'El modelo no respondió a tiempo. Inténtelo de nuevo o elija un modelo más rápido en los ajustes.',
     'Aller en bas': 'Ir abajo',
     'Une génération est en cours.': 'Hay una generación en curso.',
     Réessayer: 'Reintentar',

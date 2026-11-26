@@ -677,6 +677,10 @@
     background: color-mix(in srgb, #fff 14%, transparent);
 }
 
+.ai-chat__run-notice {
+    margin-top: 8px;
+}
+
 .ai-chat__tool-results {
     display: flex;
     flex-wrap: wrap;

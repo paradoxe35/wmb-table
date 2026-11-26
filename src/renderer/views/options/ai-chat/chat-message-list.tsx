@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useAiChatStore, selectActiveProviderLabel } from '@renderer/stores/ai-chat.store';
 import ChatToolResult from './chat-tool-result';
+import ChatRunNotice from './chat-run-notice';
 import { groupToolResults } from './tool-results';
 import AssistantMarkdown from './assistant-markdown';
 import SelectableMessageContent from './selectable-message-content';
@@ -204,6 +205,8 @@ const MessageBubble = memo(function MessageBubble({
                 ) : (
                     <AssistantMarkdown content={message.content} streaming={isActive} />
                 )}
+
+                {!isUser && !isActive ? <ChatRunNotice messageId={message.id} /> : null}
 
                 {isActive && !isWaiting ? (
                     <div className="ai-chat__typing-indicator">
