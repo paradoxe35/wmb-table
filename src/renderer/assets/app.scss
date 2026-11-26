@@ -621,12 +621,45 @@ body {
     border-radius: var(--ant-border-radius-lg);
 }
 
-.settings-page__tabs .ant-tabs-tab:first-child {
-    margin-left: 8px;
+/* The tabs wrap onto more rows instead of scrolling, so every tab stays visible at any width */
+.settings-page__tabs > .ant-tabs-nav .ant-tabs-nav-wrap {
+    overflow: visible;
+
+    &::before,
+    &::after {
+        display: none;
+    }
+}
+
+.settings-page__tabs > .ant-tabs-nav .ant-tabs-nav-list {
+    flex-wrap: wrap;
+    column-gap: 20px;
+    padding: 0 8px;
+    transform: none !important;
+}
+
+.settings-page__tabs > .ant-tabs-nav .ant-tabs-tab {
+    margin: 0;
+    padding: 8px 0;
+}
+
+.settings-page__tabs > .ant-tabs-nav .ant-tabs-tab-active {
+    box-shadow: inset 0 -2px 0 var(--ant-color-primary);
+}
+
+.settings-page__tabs > .ant-tabs-nav .ant-tabs-ink-bar,
+.settings-page__tabs > .ant-tabs-nav .ant-tabs-nav-operations {
+    display: none;
 }
 
 .settings-page__tabs > .ant-tabs-nav::before {
     border-bottom: 0;
+}
+
+@media (max-height: 640px) {
+    .settings-page__tabs > .ant-tabs-nav {
+        position: static;
+    }
 }
 
 .inline-help-trigger.ant-btn {
