@@ -5,11 +5,11 @@ import pt from '@shared/i18n/locales/pt';
 import sw from '@shared/i18n/locales/sw';
 import type { McpLaunchCommand } from '@shared/mcp.types';
 import {
-    buildCommandSnippets,
     buildHeadlessStartCommand,
-    buildHttpSnippets,
+    buildMcpClientSetups,
     quoteShellArgument,
-    type McpClientSnippet,
+    type McpClientId,
+    type McpClientSetup,
 } from '@renderer/views/options/settings/mcp-client-snippets';
 
 const URL = 'http://127.0.0.1:23133/mcp';
@@ -45,12 +45,6 @@ const DEV: McpLaunchCommand = {
     dev: true,
 };
 
-function code(snippets: McpClientSnippet[], id: McpClientSnippet['id']): string {
-    const found = snippets.find((s) => s.id === id);
-    if (!found) throw new Error(`No snippet ${id}`);
-    return found.code;
-}
-
 /** Parses the two-line TOML the Codex snippet writes, with JSON rules for its strings. */
 function parseCodexTable(toml: string): { table: string; values: Record<string, unknown> } {
     const [header, ...lines] = toml.split('\n');
@@ -70,46 +64,74 @@ function posixWords(line: string): string[] {
     );
 }
 
-describe('buildHttpSnippets', () => {
-    const snippets = buildHttpSnippets(URL);
+function setup(launch: McpLaunchCommand, id: McpClientId): McpClientSetup {
+    const found = buildMcpClientSetups(launch, URL).find((s) => s.id === id);
+    if (!found) throw new Error(`No setup ${id}`);
+    return found;
+}
 
-    it('gives the Claude Code command for an HTTP server, for every project', () => {
-        expect(code(snippets, 'claude-code')).toBe(
-            'claude mcp add --transport http --scope user wmb-table http://127.0.0.1:23133/mcp',
-        );
+describe('buildMcpClientSetups', () => {
+    it('offers one tab per client, in this order', () => {
+        expect(buildMcpClientSetups(DEB, URL).map((s) => s.id)).toEqual([
+            'claude-code',
+            'codex',
+            'claude-desktop',
+            'other',
+        ]);
     });
 
-    it('gives the Codex config.toml table with the URL', () => {
-        expect(code(snippets, 'codex')).toBe(
-            '[mcp_servers.wmb-table]\nurl = "http://127.0.0.1:23133/mcp"',
-        );
-    });
-
-    it('gives Claude Desktop a stdio bridge to the URL', () => {
-        expect(JSON.parse(code(snippets, 'claude-desktop'))).toEqual({
-            mcpServers: {
-                'wmb-table': { command: 'npx', args: ['-y', 'mcp-remote', URL] },
-            },
+    it('recommends HTTP for Claude Code, for every project', () => {
+        const claudeCode = setup(DEB, 'claude-code');
+        expect(claudeCode.recommended).toMatchObject({
+            method: 'http',
+            code: 'claude mcp add --transport http --scope user wmb-table http://127.0.0.1:23133/mcp',
+        });
+        expect(claudeCode.alternative).toMatchObject({
+            method: 'command',
+            code: "claude mcp add --scope user wmb-table -- '/opt/Wmb Table/wmb-table' mcp",
         });
     });
-});
 
-describe('buildCommandSnippets', () => {
-    it('quotes a .deb path with a space for the shell', () => {
-        expect(code(buildCommandSnippets(DEB), 'claude-code')).toBe(
-            "claude mcp add --transport stdio --scope user wmb-table -- '/opt/Wmb Table/wmb-table' mcp",
-        );
+    it('recommends the Codex url table, with the command table as the other way', () => {
+        const codex = setup(DEB, 'codex');
+        expect(codex.recommended).toMatchObject({
+            method: 'http',
+            code: '[mcp_servers.wmb-table]\nurl = "http://127.0.0.1:23133/mcp"',
+        });
+        expect(codex.alternative.method).toBe('command');
+    });
+
+    it('recommends the command for Claude Desktop, and mcp-remote for the URL', () => {
+        const desktop = setup(DEB, 'claude-desktop');
+        expect(desktop.recommended.method).toBe('command');
+        expect(JSON.parse(desktop.recommended.code)).toEqual({
+            mcpServers: { 'wmb-table': { command: DEB.command, args: ['mcp'] } },
+        });
+        expect(desktop.recommended.hint).not.toContain('Node.js');
+        expect(JSON.parse(desktop.alternative.code)).toEqual({
+            mcpServers: { 'wmb-table': { command: 'npx', args: ['-y', 'mcp-remote', URL] } },
+        });
+        expect(desktop.alternative.hint).toContain('Node.js');
+    });
+
+    it('gives other apps the URL and the bare command line', () => {
+        const other = setup(DEB, 'other');
+        expect(other.recommended).toMatchObject({ method: 'http', code: URL });
+        expect(other.alternative).toMatchObject({
+            method: 'command',
+            code: "'/opt/Wmb Table/wmb-table' mcp",
+        });
     });
 
     it('leaves a path without special characters unquoted', () => {
-        expect(code(buildCommandSnippets(APPIMAGE), 'claude-code')).toBe(
-            'claude mcp add --transport stdio --scope user wmb-table -- /home/marie/Applications/Wmb-Table-2.0.0.AppImage mcp',
+        expect(setup(APPIMAGE, 'claude-code').alternative.code).toBe(
+            'claude mcp add --scope user wmb-table -- /home/marie/Applications/Wmb-Table-2.0.0.AppImage mcp',
         );
     });
 
     it('uses double quotes and keeps backslashes for a Windows path in the shell', () => {
-        expect(code(buildCommandSnippets(WINDOWS), 'claude-code')).toBe(
-            'claude mcp add --transport stdio --scope user wmb-table -- "C:\\Users\\Marie\\AppData\\Local\\Programs\\wmb-table\\Wmb Table.exe" mcp',
+        expect(setup(WINDOWS, 'claude-code').alternative.code).toBe(
+            'claude mcp add --scope user wmb-table -- "C:\\Users\\Marie\\AppData\\Local\\Programs\\wmb-table\\Wmb Table.exe" mcp',
         );
     });
 
@@ -120,7 +142,7 @@ describe('buildCommandSnippets', () => {
         ['macOS', MAC],
         ['dev', DEV],
     ])('gives Claude Desktop the exact command and args (%s)', (_name, launch) => {
-        expect(JSON.parse(code(buildCommandSnippets(launch), 'claude-desktop'))).toEqual({
+        expect(JSON.parse(setup(launch, 'claude-desktop').recommended.code)).toEqual({
             mcpServers: {
                 'wmb-table': { command: launch.command, args: [...launch.args, 'mcp'] },
             },
@@ -128,7 +150,7 @@ describe('buildCommandSnippets', () => {
     });
 
     it('escapes Windows backslashes in JSON', () => {
-        expect(code(buildCommandSnippets(WINDOWS), 'claude-desktop')).toContain(
+        expect(setup(WINDOWS, 'claude-desktop').recommended.code).toContain(
             '"command": "C:\\\\Users\\\\Marie\\\\AppData\\\\Local\\\\Programs\\\\wmb-table\\\\Wmb Table.exe"',
         );
     });
@@ -138,15 +160,15 @@ describe('buildCommandSnippets', () => {
         ['Windows', WINDOWS],
         ['macOS', MAC],
         ['dev', DEV],
-    ])('writes a Codex table that reads back to the same command (%s)', (_name, launch) => {
-        const parsed = parseCodexTable(code(buildCommandSnippets(launch), 'codex'));
+    ])('writes a Codex command table that reads back to the same command (%s)', (_name, launch) => {
+        const parsed = parseCodexTable(setup(launch, 'codex').alternative.code);
         expect(parsed.table).toBe('[mcp_servers.wmb-table]');
         expect(parsed.values).toEqual({ command: launch.command, args: [...launch.args, 'mcp'] });
     });
 
     it('starts a development checkout through Electron with the app folder', () => {
-        expect(code(buildCommandSnippets(DEV), 'claude-code')).toBe(
-            'claude mcp add --transport stdio --scope user wmb-table -- /home/dev/wmb-table/node_modules/electron/dist/electron /home/dev/wmb-table mcp',
+        expect(setup(DEV, 'claude-code').alternative.code).toBe(
+            'claude mcp add --scope user wmb-table -- /home/dev/wmb-table/node_modules/electron/dist/electron /home/dev/wmb-table mcp',
         );
     });
 });
@@ -180,17 +202,22 @@ describe('buildHeadlessStartCommand', () => {
     });
 });
 
-describe('snippet hints', () => {
-    const hints = [...buildHttpSnippets(URL), ...buildCommandSnippets(DEB)].map(
-        (snippet) => snippet.hint,
-    );
+describe('setup texts', () => {
+    const texts = buildMcpClientSetups(DEB, URL).flatMap((s) => [
+        s.label,
+        s.recommended.hint,
+        s.alternative.hint,
+    ]);
 
     it.each([
         ['en', en],
         ['es', es],
         ['pt', pt],
         ['sw', sw],
-    ])('every hint is translated in %s', (_name, locale) => {
-        expect(hints.filter((hint) => !locale[hint])).toEqual([]);
+    ])('every label and hint is translated in %s', (_name, locale) => {
+        const translatable = texts.filter(
+            (text) => !['Claude Code', 'Codex', 'Claude Desktop'].includes(text),
+        );
+        expect(translatable.filter((text) => !locale[text])).toEqual([]);
     });
 });

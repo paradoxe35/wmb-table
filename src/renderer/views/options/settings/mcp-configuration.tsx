@@ -1,126 +1,141 @@
-import { Tabs, Typography } from 'antd';
+import type { ReactNode } from 'react';
+import { Collapse, Tabs, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { buildMcpUrl, type McpServerStatus } from '@shared/mcp.types';
 import { Hint } from './ai-shared';
 import {
-    buildCommandSnippets,
     buildHeadlessStartCommand,
-    buildHttpSnippets,
-    type McpClientSnippet,
+    buildMcpClientSetups,
+    type McpClientId,
+    type McpClientSetup,
+    type McpConnectionMethod,
+    type McpSnippet,
 } from './mcp-client-snippets';
 import { CopyableCode } from './mcp-copyable-code';
 
 const { Text } = Typography;
 
-type ConnectionMode = 'command' | 'http' | 'headless';
+export interface McpConfigurationProps {
+    status: McpServerStatus;
+    /** Room for a per-client action such as writing the client's config file itself. */
+    renderClientAction?: (clientId: McpClientId) => ReactNode;
+}
 
-function ClientSnippets({
-    mode,
-    snippets,
+function useMethodText() {
+    const { t } = useTranslation();
+    return {
+        name: (method: McpConnectionMethod) => (method === 'http' ? 'HTTP' : t('Commande')),
+        note: (method: McpConnectionMethod) =>
+            method === 'http'
+                ? t('Wmb Table doit être ouvert.')
+                : t('Fonctionne même quand Wmb Table est fermé.'),
+    };
+}
+
+function SnippetBlock({
+    snippet,
+    title,
+    copyLabel,
+    testId,
+    secondary = false,
 }: {
-    mode: ConnectionMode;
-    snippets: McpClientSnippet[];
+    snippet: McpSnippet;
+    title: string;
+    copyLabel: string;
+    testId: string;
+    secondary?: boolean;
 }) {
     const { t } = useTranslation();
+    const method = useMethodText();
     return (
-        <Tabs
-            size="small"
-            items={snippets.map((snippet) => ({
-                key: snippet.id,
-                label: snippet.label,
-                children: (
-                    <div data-testid={`mcp-snippet-${mode}-${snippet.id}`}>
-                        <Hint>{t(snippet.hint)}</Hint>
-                        <CopyableCode code={snippet.code} label={snippet.label} />
-                    </div>
-                ),
-            }))}
-        />
-    );
-}
-
-function CommandMode({ status }: { status: McpServerStatus }) {
-    const { t } = useTranslation();
-    return (
-        <div data-testid="mcp-mode-command">
-            <Hint>
-                {t(
-                    'Votre application d’IA lance Wmb Table elle-même, sans fenêtre : Wmb Table n’a pas besoin d’être ouvert.',
-                )}
-            </Hint>
-            {status.launch.dev ? (
-                <Hint>
-                    {t('Commande de développement : cette copie de Wmb Table n’est pas installée.')}
-                </Hint>
-            ) : null}
-            <ClientSnippets mode="command" snippets={buildCommandSnippets(status.launch)} />
+        <div data-testid={testId} style={{ marginTop: secondary ? 16 : 8 }}>
+            {secondary ? <Text type="secondary">{title}</Text> : <Text strong>{title}</Text>}
+            <Hint>{`${t(snippet.hint)} ${method.note(snippet.method)}`}</Hint>
+            <CopyableCode code={snippet.code} label={copyLabel} />
         </div>
     );
 }
 
-function HttpMode({ url }: { url: string }) {
+function ClientTab({ setup, action }: { setup: McpClientSetup; action: ReactNode }) {
     const { t } = useTranslation();
+    const method = useMethodText();
+    const label = t(setup.label);
     return (
-        <div data-testid="mcp-mode-http">
-            <Hint>
-                {t('Wmb Table doit rester ouvert pendant que votre application d’IA l’utilise.')}
-            </Hint>
-            <ClientSnippets mode="http" snippets={buildHttpSnippets(url)} />
-            <Hint>
-                {t(
-                    'Dans une autre application, ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.',
-                )}
-            </Hint>
+        <div data-testid={`mcp-client-${setup.id}`}>
+            {action}
+            <SnippetBlock
+                snippet={setup.recommended}
+                title={t('{{method}} (recommandé)', {
+                    method: method.name(setup.recommended.method),
+                })}
+                copyLabel={label}
+                testId={`mcp-snippet-${setup.id}-recommended`}
+            />
+            <SnippetBlock
+                snippet={setup.alternative}
+                title={t('Autre méthode : {{method}}', {
+                    method: method.name(setup.alternative.method),
+                })}
+                copyLabel={`${label} (${method.name(setup.alternative.method)})`}
+                testId={`mcp-snippet-${setup.id}-alternative`}
+                secondary
+            />
         </div>
     );
 }
 
-function HeadlessMode({ status }: { status: McpServerStatus }) {
+function HeadlessServer({ status }: { status: McpServerStatus }) {
     const { t } = useTranslation();
-    const port = status.settings.port;
-    const startLabel = t('Démarrer le serveur');
+    const title = t('Serveur HTTP sans fenêtre');
     return (
-        <div data-testid="mcp-mode-headless">
-            <Text strong>{startLabel}</Text>
+        <div data-testid="mcp-headless">
+            <Text strong>{title}</Text>
             <Hint>
                 {t(
                     'Lancez cette commande dans un terminal et laissez-le ouvert ; Ctrl+C arrête le serveur. Fermez d’abord Wmb Table s’il est ouvert : il utilise déjà ce port.',
                 )}
             </Hint>
             <CopyableCode
-                code={buildHeadlessStartCommand(status.launch, port)}
-                label={startLabel}
+                code={buildHeadlessStartCommand(status.launch, status.settings.port)}
+                label={title}
             />
-            <div style={{ marginTop: 8 }}>
-                <ClientSnippets mode="headless" snippets={buildHttpSnippets(buildMcpUrl(port))} />
-            </div>
         </div>
     );
 }
 
-/** The three ways to connect an AI app, each with ready-to-copy client settings. */
-export function McpConfiguration({ status }: { status: McpServerStatus }) {
+/** One tab per AI app, each with its recommended setup first and the other way below. */
+export function McpConfiguration({ status, renderClientAction }: McpConfigurationProps) {
     const { t } = useTranslation();
-    const items = [
-        {
-            key: 'command',
-            label: t('Commande (recommandé)'),
-            children: <CommandMode status={status} />,
-        },
-        ...(status.url
-            ? [{ key: 'http', label: 'HTTP', children: <HttpMode url={status.url} /> }]
-            : []),
-        {
-            key: 'headless',
-            label: t('HTTP sans interface'),
-            children: <HeadlessMode status={status} />,
-        },
-    ];
+    const url = status.url ?? buildMcpUrl(status.settings.port);
+    const setups = buildMcpClientSetups(status.launch, url);
 
     return (
         <div data-testid="mcp-configuration">
             <Text strong>{t('Configuration')}</Text>
-            <Tabs className="mcp-configuration__modes" items={items} />
+            {status.launch.dev ? (
+                <Hint>
+                    {t('Commande de développement : cette copie de Wmb Table n’est pas installée.')}
+                </Hint>
+            ) : null}
+            <Tabs
+                className="mcp-configuration__clients"
+                items={setups.map((setup) => ({
+                    key: setup.id,
+                    label: t(setup.label),
+                    children: <ClientTab setup={setup} action={renderClientAction?.(setup.id)} />,
+                }))}
+            />
+            <Collapse
+                size="small"
+                ghost
+                items={[
+                    {
+                        key: 'advanced',
+                        label: t('Avancé'),
+                        children: <HeadlessServer status={status} />,
+                    },
+                ]}
+            />
         </div>
     );
 }

@@ -100,8 +100,6 @@ const sw: Record<string, string> = {
         'Ongeza mistari hii kwenye faili ~/.codex/config.toml.',
     'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop. Node.js doit être installé.':
         'Ongeza hii kwenye faili claude_desktop_config.json (Settings, Developer, Edit Config), kisha anzisha upya Claude Desktop. Node.js lazima iwe imesakinishwa.',
-    'Dans une autre application, ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
-        'Katika programu nyingine, ongeza seva ya MCP ya “Streamable HTTP” yenye anwani hii.',
     'Copier {{label}}': 'Nakili {{label}}',
     Copié: 'Imenakiliwa',
     'Le serveur MCP n’a pas pu démarrer : les ports {{firstPort}} à {{lastPort}} sont déjà utilisés. Fermez l’application qui les occupe, puis réactivez le serveur.':
@@ -110,18 +108,23 @@ const sw: Record<string, string> = {
         'Seva ya MCP haikuweza kuanza. Jaribu tena au anzisha upya Wmb Table.',
     'Le réglage du serveur MCP n’a pas pu être enregistré.':
         'Mpangilio wa seva ya MCP haukuweza kuhifadhiwa.',
+    Commande: 'Amri',
+    '{{method}} (recommandé)': '{{method}} (inapendekezwa)',
+    'Autre méthode : {{method}}': 'Njia nyingine: {{method}}',
+    'Wmb Table doit être ouvert.': 'Wmb Table lazima iwe wazi.',
+    'Fonctionne même quand Wmb Table est fermé.': 'Inafanya kazi hata Wmb Table ikiwa imefungwa.',
+    'Autre application': 'Programu nyingine',
+    'Ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
+        'Ongeza seva ya MCP ya «Streamable HTTP» yenye anwani hii.',
+    'Ou laissez votre application lancer Wmb Table avec cette commande (stdio).':
+        'Au acha programu yako ianzishe Wmb Table kwa amri hii (stdio).',
+    'Serveur HTTP sans fenêtre': 'Seva ya HTTP bila dirisha',
+    Avancé: 'Ya kina',
     'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop.':
         'Ongeza hii kwenye faili claude_desktop_config.json (Mipangilio, Msanidi, Hariri usanidi), kisha uanzishe upya Claude Desktop.',
     Configuration: 'Usanidi',
-    'Commande (recommandé)': 'Amri (inapendekezwa)',
-    'HTTP sans interface': 'HTTP bila kiolesura',
-    'Votre application d’IA lance Wmb Table elle-même, sans fenêtre : Wmb Table n’a pas besoin d’être ouvert.':
-        'Programu yako ya AI inaanzisha Wmb Table yenyewe, bila dirisha: Wmb Table haihitaji kuwa wazi.',
     'Commande de développement : cette copie de Wmb Table n’est pas installée.':
         'Amri ya maendeleo: nakala hii ya Wmb Table haijasakinishwa.',
-    'Wmb Table doit rester ouvert pendant que votre application d’IA l’utilise.':
-        'Wmb Table lazima ibaki wazi wakati programu yako ya AI inaitumia.',
-    'Démarrer le serveur': 'Anzisha seva',
     'Lancez cette commande dans un terminal et laissez-le ouvert ; Ctrl+C arrête le serveur. Fermez d’abord Wmb Table s’il est ouvert : il utilise déjà ce port.':
         'Endesha amri hii kwenye terminal na uiache wazi; Ctrl+C inasimamisha seva. Funga Wmb Table kwanza ikiwa iko wazi: tayari inatumia mlango huu.',
     'Le serveur MCP est désactivé. Activez « Serveur MCP » dans Wmb Table → Paramètres → Assistant.':

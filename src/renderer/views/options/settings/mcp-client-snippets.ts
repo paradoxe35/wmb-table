@@ -1,13 +1,23 @@
 import { MCP_SERVER_NAME, type McpLaunchCommand, type McpLaunchPlatform } from '@shared/mcp.types';
 
-export type McpClientId = 'claude-code' | 'codex' | 'claude-desktop';
+export type McpClientId = 'claude-code' | 'codex' | 'claude-desktop' | 'other';
 
-export interface McpClientSnippet {
-    id: McpClientId;
-    label: string;
+/** `http` needs Wmb Table open; with `command` the AI app starts Wmb Table itself (stdio). */
+export type McpConnectionMethod = 'http' | 'command';
+
+export interface McpSnippet {
+    method: McpConnectionMethod;
     /** French i18n key: where the snippet goes. */
     hint: string;
     code: string;
+}
+
+export interface McpClientSetup {
+    id: McpClientId;
+    /** A product name, or a French i18n key for the last tab. */
+    label: string;
+    recommended: McpSnippet;
+    alternative: McpSnippet;
 }
 
 const CLAUDE_CODE_HINT = 'Lancez cette commande dans un terminal.';
@@ -16,6 +26,9 @@ const CLAUDE_DESKTOP_HINT =
     'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop.';
 const CLAUDE_DESKTOP_REMOTE_HINT =
     'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop. Node.js doit être installé.';
+const OTHER_HTTP_HINT = 'Ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.';
+const OTHER_COMMAND_HINT =
+    'Ou laissez votre application lancer Wmb Table avec cette commande (stdio).';
 
 const POSIX_SAFE = /^[\w@%+=:,./-]+$/;
 const WINDOWS_SAFE = /^[\w@%+=:,./\\-]+$/;
@@ -49,55 +62,65 @@ function shellWords(launch: McpLaunchCommand, extra: readonly string[] = []): st
     );
 }
 
-/** The AI app starts Wmb Table itself and talks to it over stdio. */
-export function buildCommandSnippets(launch: McpLaunchCommand): McpClientSnippet[] {
+/**
+ * Each client's recommended way first, following its own documentation. Claude Desktop only
+ * starts local servers itself, so the command is best there; reaching a URL needs mcp-remote.
+ */
+export function buildMcpClientSetups(launch: McpLaunchCommand, url: string): McpClientSetup[] {
     const args = mcpCommandArgs(launch);
+    const commandLine = shellWords(launch).join(' ');
     return [
         {
             id: 'claude-code',
             label: 'Claude Code',
-            hint: CLAUDE_CODE_HINT,
-            code: `claude mcp add --transport stdio --scope user ${MCP_SERVER_NAME} -- ${shellWords(launch).join(' ')}`,
+            recommended: {
+                method: 'http',
+                hint: CLAUDE_CODE_HINT,
+                code: `claude mcp add --transport http --scope user ${MCP_SERVER_NAME} ${url}`,
+            },
+            alternative: {
+                method: 'command',
+                hint: CLAUDE_CODE_HINT,
+                code: `claude mcp add --scope user ${MCP_SERVER_NAME} -- ${commandLine}`,
+            },
         },
         {
             id: 'codex',
             label: 'Codex',
-            hint: CODEX_HINT,
-            code: [
-                `[mcp_servers.${MCP_SERVER_NAME}]`,
-                `command = ${tomlString(launch.command)}`,
-                `args = ${tomlArray(args)}`,
-            ].join('\n'),
+            recommended: {
+                method: 'http',
+                hint: CODEX_HINT,
+                code: `[mcp_servers.${MCP_SERVER_NAME}]\nurl = ${tomlString(url)}`,
+            },
+            alternative: {
+                method: 'command',
+                hint: CODEX_HINT,
+                code: [
+                    `[mcp_servers.${MCP_SERVER_NAME}]`,
+                    `command = ${tomlString(launch.command)}`,
+                    `args = ${tomlArray(args)}`,
+                ].join('\n'),
+            },
         },
         {
             id: 'claude-desktop',
             label: 'Claude Desktop',
-            hint: CLAUDE_DESKTOP_HINT,
-            code: claudeDesktopJson({ command: launch.command, args }),
-        },
-    ];
-}
-
-/** Each format follows the client's own documentation; Claude Desktop only starts stdio servers. */
-export function buildHttpSnippets(url: string): McpClientSnippet[] {
-    return [
-        {
-            id: 'claude-code',
-            label: 'Claude Code',
-            hint: CLAUDE_CODE_HINT,
-            code: `claude mcp add --transport http --scope user ${MCP_SERVER_NAME} ${url}`,
+            recommended: {
+                method: 'command',
+                hint: CLAUDE_DESKTOP_HINT,
+                code: claudeDesktopJson({ command: launch.command, args }),
+            },
+            alternative: {
+                method: 'http',
+                hint: CLAUDE_DESKTOP_REMOTE_HINT,
+                code: claudeDesktopJson({ command: 'npx', args: ['-y', 'mcp-remote', url] }),
+            },
         },
         {
-            id: 'codex',
-            label: 'Codex',
-            hint: CODEX_HINT,
-            code: `[mcp_servers.${MCP_SERVER_NAME}]\nurl = ${tomlString(url)}`,
-        },
-        {
-            id: 'claude-desktop',
-            label: 'Claude Desktop',
-            hint: CLAUDE_DESKTOP_REMOTE_HINT,
-            code: claudeDesktopJson({ command: 'npx', args: ['-y', 'mcp-remote', url] }),
+            id: 'other',
+            label: 'Autre application',
+            recommended: { method: 'http', hint: OTHER_HTTP_HINT, code: url },
+            alternative: { method: 'command', hint: OTHER_COMMAND_HINT, code: commandLine },
         },
     ];
 }

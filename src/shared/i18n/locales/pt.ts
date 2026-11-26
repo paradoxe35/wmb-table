@@ -99,8 +99,6 @@ const pt: Record<string, string> = {
         'Adicione estas linhas ao arquivo ~/.codex/config.toml.',
     'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop. Node.js doit être installé.':
         'Adicione isto ao arquivo claude_desktop_config.json (Configurações, Desenvolvedor, Editar configuração) e reinicie o Claude Desktop. O Node.js precisa estar instalado.',
-    'Dans une autre application, ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
-        'Em outro aplicativo, adicione um servidor MCP “Streamable HTTP” com este endereço.',
     'Copier {{label}}': 'Copiar {{label}}',
     Copié: 'Copiado',
     'Le serveur MCP n’a pas pu démarrer : les ports {{firstPort}} à {{lastPort}} sont déjà utilisés. Fermez l’application qui les occupe, puis réactivez le serveur.':
@@ -109,18 +107,23 @@ const pt: Record<string, string> = {
         'O servidor MCP não pôde iniciar. Tente novamente ou reinicie o Wmb Table.',
     'Le réglage du serveur MCP n’a pas pu être enregistré.':
         'Não foi possível salvar a configuração do servidor MCP.',
+    Commande: 'Comando',
+    '{{method}} (recommandé)': '{{method}} (recomendado)',
+    'Autre méthode : {{method}}': 'Outra forma: {{method}}',
+    'Wmb Table doit être ouvert.': 'O Wmb Table deve estar aberto.',
+    'Fonctionne même quand Wmb Table est fermé.': 'Funciona mesmo com o Wmb Table fechado.',
+    'Autre application': 'Outro aplicativo',
+    'Ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
+        'Adicione um servidor MCP «Streamable HTTP» com este endereço.',
+    'Ou laissez votre application lancer Wmb Table avec cette commande (stdio).':
+        'Ou deixe seu aplicativo iniciar o Wmb Table com este comando (stdio).',
+    'Serveur HTTP sans fenêtre': 'Servidor HTTP sem janela',
+    Avancé: 'Avançado',
     'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop.':
         'Adicione isto ao arquivo claude_desktop_config.json (Configurações, Desenvolvedor, Editar configuração) e reinicie o Claude Desktop.',
     Configuration: 'Configuração',
-    'Commande (recommandé)': 'Comando (recomendado)',
-    'HTTP sans interface': 'HTTP sem interface',
-    'Votre application d’IA lance Wmb Table elle-même, sans fenêtre : Wmb Table n’a pas besoin d’être ouvert.':
-        'Seu aplicativo de IA inicia o Wmb Table sozinho, sem janela: o Wmb Table não precisa estar aberto.',
     'Commande de développement : cette copie de Wmb Table n’est pas installée.':
         'Comando de desenvolvimento: esta cópia do Wmb Table não está instalada.',
-    'Wmb Table doit rester ouvert pendant que votre application d’IA l’utilise.':
-        'O Wmb Table deve ficar aberto enquanto seu aplicativo de IA o usa.',
-    'Démarrer le serveur': 'Iniciar o servidor',
     'Lancez cette commande dans un terminal et laissez-le ouvert ; Ctrl+C arrête le serveur. Fermez d’abord Wmb Table s’il est ouvert : il utilise déjà ce port.':
         'Execute este comando em um terminal e deixe-o aberto; Ctrl+C para o servidor. Feche antes o Wmb Table se estiver aberto: ele já usa esta porta.',
     'Le serveur MCP est désactivé. Activez « Serveur MCP » dans Wmb Table → Paramètres → Assistant.':

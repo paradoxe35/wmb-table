@@ -6,6 +6,7 @@ import type { McpServerStatus } from '@shared/mcp.types';
 vi.stubGlobal('React', React);
 
 const { McpServerSection } = await import('@renderer/views/options/settings/mcp-server-settings');
+const { McpConfiguration } = await import('@renderer/views/options/settings/mcp-configuration');
 
 const URL = 'http://127.0.0.1:23132/mcp';
 const DEB_LAUNCH = {
@@ -56,17 +57,35 @@ describe('McpServerSection', () => {
         expect(html).toContain('id="mcp-server-allow-writes"');
         expect(html).toContain(URL);
         expect(html).toContain('data-testid="mcp-configuration"');
-        expect(html).toContain('data-testid="mcp-snippet-command-claude-code"');
+        expect(html).toContain('data-testid="mcp-snippet-claude-code-recommended"');
+        expect(html).toContain('data-testid="mcp-snippet-claude-code-alternative"');
         expect(html).toContain('/opt/Wmb Table/wmb-table');
         expect(html).not.toContain('Le port habituel');
     });
 
-    it('offers the three connection modes, the command first', () => {
+    it('offers one tab per client, the recommended way first, the headless server under Avancé', () => {
         const html = render({ settings: on, url: URL });
-        const command = html.indexOf('Commande (recommandé)');
-        expect(command).toBeGreaterThan(-1);
-        expect(html.indexOf('>HTTP<')).toBeGreaterThan(command);
-        expect(html.indexOf('HTTP sans interface')).toBeGreaterThan(html.indexOf('>HTTP<'));
+        const tabs = ['Claude Code', 'Codex', 'Claude Desktop', 'Autre application'].map((label) =>
+            html.indexOf(`>${label}<`),
+        );
+        expect(tabs.every((index) => index > -1)).toBe(true);
+        expect([...tabs].sort((a, b) => a - b)).toEqual(tabs);
+        expect(html.indexOf('mcp-snippet-claude-code-recommended')).toBeLessThan(
+            html.indexOf('mcp-snippet-claude-code-alternative'),
+        );
+        expect(html).toContain('Wmb Table doit être ouvert.');
+        expect(html).toContain('Fonctionne même quand Wmb Table est fermé.');
+        expect(html).toContain('>Avancé<');
+    });
+
+    it('keeps a place for a per-client action', () => {
+        const html = renderToStaticMarkup(
+            <McpConfiguration
+                status={{ settings: on, url: URL, error: null, launch: DEB_LAUNCH }}
+                renderClientAction={(id) => <button data-testid={`auto-${id}`} />}
+            />,
+        );
+        expect(html).toContain('data-testid="auto-claude-code"');
     });
 
     it('labels a development checkout', () => {
@@ -92,8 +111,7 @@ describe('McpServerSection', () => {
             error: { code: 'no-free-port', firstPort: 23132, lastPort: 23141 },
         });
         expect(html).toContain('data-testid="mcp-server-error"');
-        expect(html).not.toContain('mcp-snippet-http-');
-        expect(html).not.toContain(URL);
-        expect(html).toContain('data-testid="mcp-snippet-command-claude-code"');
+        expect(html).not.toContain('data-testid="mcp-server-url"');
+        expect(html).toContain('data-testid="mcp-snippet-claude-code-recommended"');
     });
 });
