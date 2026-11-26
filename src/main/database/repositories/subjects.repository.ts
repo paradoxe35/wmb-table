@@ -226,6 +226,15 @@ export function reorderItems(subjectId: string, itemIds: string[]): void {
     });
 }
 
+export function getItem(id: string): SubjectDocumentItem | null {
+    const row = getDb()
+        .select(subjectItemSelection)
+        .from(subjectItems)
+        .where(eq(subjectItems.id, id))
+        .get();
+    return row ? toSubjectItem(row) : null;
+}
+
 export function deleteItem(id: string): void {
     getDb().delete(subjectItems).where(eq(subjectItems.id, id)).run();
     logChange('subject_items', id, 'DELETE', { id });

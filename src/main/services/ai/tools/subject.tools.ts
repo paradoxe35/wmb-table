@@ -137,18 +137,42 @@ export function buildSubjectTools(
         },
         removeSubjectReference: {
             description:
-                'Remove a reference from an existing saved subject by its reference ID. ' +
-                'Use getSubjectById to find reference IDs. To modify a reference, remove it and add a new one.',
+                'Remove a reference from a saved subject. ' +
+                'Pass the subject ID and the reference ID, both from getSubjectById. ' +
+                'To modify a reference, remove it and add a new one.',
             inputSchema: z.object({
+                subjectId: z.string().describe('The subject ID the reference belongs to'),
                 referenceId: z
                     .string()
-                    .describe('The reference item ID (from from getSubjectById documents)'),
+                    .describe('The reference ID (referenceId from getSubjectById documents)'),
             }),
-            execute: async ({ referenceId }) => {
+            execute: async ({ subjectId: rawSubjectId, referenceId }) => {
+                const subjectId = rawSubjectId.trim();
                 const id = referenceId.trim();
                 try {
+                    if (!subjectsRepo.exists(subjectId)) {
+                        return { error: `Subject "${subjectId}" not found.` };
+                    }
+
+                    const item = subjectsRepo.getItem(id);
+                    if (!item) {
+                        return {
+                            error: `Reference "${id}" not found. Use getSubjectById to list the subject's reference ids.`,
+                        };
+                    }
+                    if (item.subjectId !== subjectId) {
+                        return {
+                            error: `Reference "${id}" does not belong to subject "${subjectId}". Nothing was removed; use getSubjectById to list that subject's reference ids.`,
+                        };
+                    }
+
                     subjectsRepo.deleteItem(id);
-                    return { success: true, deletedId: id };
+                    return {
+                        success: true,
+                        deletedId: id,
+                        subjectId,
+                        documentTitle: item.documentTitle,
+                    };
                 } catch (err) {
                     return {
                         error: `Failed to remove reference: ${err instanceof Error ? err.message : String(err)}`,

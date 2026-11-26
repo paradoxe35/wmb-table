@@ -6,6 +6,7 @@ const getAllSummaryMock = vi.fn();
 const createMock = vi.fn();
 const createItemMock = vi.fn();
 const deleteItemMock = vi.fn();
+const getItemMock = vi.fn();
 const getInstalledLanguagesMock = vi.fn(() => ['fr']);
 
 vi.mock('@main/database/repositories/subjects.repository', () => ({
@@ -15,6 +16,7 @@ vi.mock('@main/database/repositories/subjects.repository', () => ({
     create: createMock,
     createItem: createItemMock,
     deleteItem: deleteItemMock,
+    getItem: getItemMock,
 }));
 
 const getSermonParagraphsMock = vi.fn();
@@ -106,6 +108,69 @@ describe('subject.tools', () => {
         expect(await tools.createSubject.execute({ name: 'La foi' })).toEqual({
             subjectId: 'subject-1',
             name: 'La foi',
+        });
+    });
+
+    describe('removeSubjectReference', () => {
+        const ITEM = { id: 'ref-1', subjectId: 'subject-1', documentTitle: 'La foi parfaite' };
+
+        beforeEach(() => {
+            existsMock.mockImplementation((id: string) => id === 'subject-1' || id === 'subject-2');
+            getItemMock.mockImplementation((id: string) => (id === 'ref-1' ? ITEM : null));
+        });
+
+        it('removes a reference of the named subject and says what it removed', async () => {
+            const result = await tools.removeSubjectReference.execute({
+                subjectId: ' subject-1 ',
+                referenceId: ' ref-1 ',
+            });
+
+            expect(result).toEqual({
+                success: true,
+                deletedId: 'ref-1',
+                subjectId: 'subject-1',
+                documentTitle: 'La foi parfaite',
+            });
+            expect(deleteItemMock).toHaveBeenCalledWith('ref-1');
+        });
+
+        it('reports an unknown reference id instead of claiming success', async () => {
+            const result = (await tools.removeSubjectReference.execute({
+                subjectId: 'subject-1',
+                referenceId: 'made-up',
+            })) as { error?: string };
+
+            expect(result.error).toContain('Reference "made-up" not found');
+            expect(result.error).toContain('getSubjectById');
+            expect(deleteItemMock).not.toHaveBeenCalled();
+        });
+
+        it('refuses a reference that belongs to another subject', async () => {
+            const result = (await tools.removeSubjectReference.execute({
+                subjectId: 'subject-2',
+                referenceId: 'ref-1',
+            })) as { error?: string };
+
+            expect(result.error).toContain('does not belong to subject "subject-2"');
+            expect(deleteItemMock).not.toHaveBeenCalled();
+        });
+
+        it('reports an unknown subject', async () => {
+            const result = await tools.removeSubjectReference.execute({
+                subjectId: 'nope',
+                referenceId: 'ref-1',
+            });
+
+            expect(result).toEqual({ error: 'Subject "nope" not found.' });
+            expect(deleteItemMock).not.toHaveBeenCalled();
+        });
+
+        it('requires the subject id in its input schema', () => {
+            const parsed = tools.removeSubjectReference.inputSchema.safeParse({
+                referenceId: 'ref-1',
+            });
+
+            expect(parsed.success).toBe(false);
         });
     });
 });
