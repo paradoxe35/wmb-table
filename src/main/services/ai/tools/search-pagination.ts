@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import type { SearchMode } from '@shared/types';
 
-const SEARCH_LIMIT_SCHEMA = z.number().int().min(1).max(20);
+export const searchLimitSchema = z.number().int().min(1).max(20);
 
 const sermonSearchCursorSchema = z.object({
     kind: z.literal('searchSermons'),
     query: z.string().min(1),
     languageCode: z.string().min(1),
-    limit: SEARCH_LIMIT_SCHEMA,
+    limit: searchLimitSchema,
     offset: z.number().int().min(0),
 });
 
@@ -16,14 +16,14 @@ const contentSearchCursorSchema = z.object({
     query: z.string().min(2),
     languageCode: z.string().min(1),
     mode: z.enum(['exact', 'all', 'any']),
-    limit: SEARCH_LIMIT_SCHEMA,
+    limit: searchLimitSchema,
     offset: z.number().int().min(0),
 });
 
 type SermonSearchCursor = z.infer<typeof sermonSearchCursorSchema>;
 type ContentSearchCursor = z.infer<typeof contentSearchCursorSchema>;
 
-export const toolSearchLimitSchema = SEARCH_LIMIT_SCHEMA.optional();
+export const toolSearchLimitSchema = searchLimitSchema.optional();
 
 const sermonSearchInputSchema = z
     .object({

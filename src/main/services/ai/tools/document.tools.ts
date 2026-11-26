@@ -3,14 +3,19 @@ import * as customDocsRepo from '@main/database/repositories/custom-documents.re
 import type { SearchMode } from '@shared/types';
 import { buildDocWmbLink } from '@shared/wmb-link';
 import type { AiToolDefinition, CustomDocumentSearchToolResponse } from './types';
-
-const SEARCH_LIMIT_SCHEMA = z.number().int().min(1).max(20);
+import {
+    encodeSearchCursor,
+    ensureSameField,
+    parseSearchCursor,
+    searchLimitSchema,
+    toolSearchLimitSchema,
+} from './search-pagination';
 
 const customDocumentSearchCursorSchema = z.object({
     kind: z.literal('searchCustomDocuments'),
     query: z.string().min(2),
     mode: z.enum(['exact', 'all', 'any']),
-    limit: SEARCH_LIMIT_SCHEMA,
+    limit: searchLimitSchema,
     offset: z.number().int().min(0),
 });
 
@@ -18,7 +23,7 @@ const customDocumentSearchInputSchema = z
     .object({
         query: z.string().min(2).optional(),
         mode: z.enum(['exact', 'all', 'any']).optional(),
-        limit: SEARCH_LIMIT_SCHEMA.optional(),
+        limit: toolSearchLimitSchema,
         cursor: z.string().min(1).optional(),
     })
     .refine((value) => Boolean(value.query || value.cursor), {
@@ -26,69 +31,37 @@ const customDocumentSearchInputSchema = z
         path: ['query'],
     });
 
-function toDocumentLines(content: string): string[] {
-    try {
-        const parsed = JSON.parse(content);
-        if (Array.isArray(parsed)) {
-            return parsed.map((line) => String(line));
-        }
-    } catch {
-        // Stored content can also be plain text.
-    }
-
-    return content.split('\n');
-}
-
-function encodeCursor(payload: z.infer<typeof customDocumentSearchCursorSchema>): string {
-    return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
-}
+type CustomDocumentSearchCursor = z.infer<typeof customDocumentSearchCursorSchema>;
 
 function resolveSearchPage(input: {
     query?: string;
     mode?: SearchMode;
     limit?: number;
     cursor?: string;
-}): { query: string; mode: SearchMode; limit: number; offset: number } | { error: string } {
-    const limit = input.limit ?? 10;
-    const mode = input.mode ?? 'exact';
+}): Omit<CustomDocumentSearchCursor, 'kind'> | { error: string } {
+    const explicitQuery = input.query?.trim() || undefined;
 
     if (!input.cursor) {
-        const query = input.query?.trim();
-        if (!query || query.length < 2) {
+        if (!explicitQuery || explicitQuery.length < 2) {
             return { error: 'A query is required when no cursor is provided.' };
         }
-        return { query, mode, limit, offset: 0 };
-    }
-
-    try {
-        const parsed = customDocumentSearchCursorSchema.safeParse(
-            JSON.parse(Buffer.from(input.cursor, 'base64url').toString('utf8')),
-        );
-        if (!parsed.success) {
-            return { error: 'Invalid pagination cursor.' };
-        }
-
-        const cursor = parsed.data;
-        const explicitQuery = input.query?.trim();
-        if (explicitQuery && explicitQuery !== cursor.query) {
-            return { error: 'The provided query does not match the pagination cursor.' };
-        }
-        if (input.mode && input.mode !== cursor.mode) {
-            return { error: 'The provided mode does not match the pagination cursor.' };
-        }
-        if (input.limit && input.limit !== cursor.limit) {
-            return { error: 'The provided limit does not match the pagination cursor.' };
-        }
-
         return {
-            query: cursor.query,
-            mode: cursor.mode,
-            limit: cursor.limit,
-            offset: cursor.offset,
+            query: explicitQuery,
+            mode: input.mode ?? 'exact',
+            limit: input.limit ?? 10,
+            offset: 0,
         };
-    } catch {
-        return { error: 'Invalid pagination cursor.' };
     }
+
+    const parsed = parseSearchCursor(input.cursor, customDocumentSearchCursorSchema);
+    if ('error' in parsed) return parsed;
+
+    const { query, mode, limit, offset } = parsed.value;
+    const mismatch =
+        ensureSameField('query', explicitQuery, query) ??
+        ensureSameField('mode', input.mode, mode) ??
+        ensureSameField('limit', input.limit, limit);
+    return mismatch ?? { query, mode, limit, offset };
 }
 
 export function buildDocumentTools(): Record<string, AiToolDefinition> {
@@ -147,13 +120,13 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
                     })),
                     hasMore,
                     nextCursor: hasMore
-                        ? encodeCursor({
+                        ? encodeSearchCursor({
                               kind: 'searchCustomDocuments',
                               query: result.query,
                               mode: result.mode,
                               limit: page.limit,
                               offset: page.offset + result.returned,
-                          })
+                          } satisfies CustomDocumentSearchCursor)
                         : undefined,
                 };
 
@@ -187,7 +160,7 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
                 if (!doc) return { error: `Document "${documentId}" not found.` };
                 if (!doc.content) return { error: 'Document has no text content.' };
 
-                const lines = toDocumentLines(doc.content);
+                const lines = customDocsRepo.toDocumentLines(doc.content);
                 const totalLines = lines.length;
                 const slice = lines.slice(startLine, startLine + maxLines).join('\n');
 

@@ -4,7 +4,12 @@ const getCustomDocumentsMock = vi.fn();
 const getCustomDocumentContentMock = vi.fn();
 const searchCustomDocumentsMock = vi.fn();
 
-vi.mock('@main/database/repositories/custom-documents.repository', () => ({
+vi.mock('@main/database/repositories/custom-documents.repository', async (importOriginal) => ({
+    toDocumentLines: (
+        await importOriginal<
+            typeof import('@main/database/repositories/custom-documents.repository')
+        >()
+    ).toDocumentLines,
     getCustomDocuments: getCustomDocumentsMock,
     getCustomDocumentContent: getCustomDocumentContentMock,
     searchCustomDocuments: searchCustomDocumentsMock,
@@ -176,5 +181,67 @@ describe('document.tools', () => {
         const { buildDocumentTools } = await import('@main/services/ai/tools/document.tools');
 
         await expect(buildDocumentTools().getCustomDocuments.execute({})).resolves.toEqual([]);
+    });
+
+    describe('search cursor', () => {
+        beforeEach(() => {
+            getCustomDocumentsMock.mockReturnValue([{ id: 'doc-1', title: 'One' }]);
+            searchCustomDocumentsMock.mockReturnValue({
+                query: 'la foi',
+                mode: 'exact',
+                totalDocuments: 30,
+                returned: 2,
+                hasMore: true,
+                results: [],
+            });
+        });
+
+        async function firstCursor() {
+            const { buildDocumentTools } = await import('@main/services/ai/tools/document.tools');
+            const tools = buildDocumentTools();
+            const first = (await tools.searchCustomDocuments.execute({
+                query: 'la foi',
+                limit: 2,
+            })) as { nextCursor: string };
+            return { tools, cursor: first.nextCursor };
+        }
+
+        it('continues from the offset the cursor carries', async () => {
+            const { tools, cursor } = await firstCursor();
+
+            await tools.searchCustomDocuments.execute({ cursor });
+
+            expect(searchCustomDocumentsMock).toHaveBeenLastCalledWith({
+                query: 'la foi',
+                mode: 'exact',
+                limit: 2,
+                offset: 2,
+            });
+        });
+
+        it.each([
+            ['query', { query: 'autre chose' }],
+            ['mode', { mode: 'any' }],
+            ['limit', { limit: 5 }],
+        ])('refuses a %s that does not match the cursor', async (label, override) => {
+            const { tools, cursor } = await firstCursor();
+
+            await expect(
+                tools.searchCustomDocuments.execute({ cursor, ...override }),
+            ).resolves.toEqual({
+                error: `The provided ${label} does not match the pagination cursor.`,
+            });
+        });
+
+        it('refuses a cursor from another tool', async () => {
+            const { buildDocumentTools } = await import('@main/services/ai/tools/document.tools');
+            const foreign = Buffer.from(
+                JSON.stringify({ kind: 'searchContent', query: 'la foi', offset: 2 }),
+            ).toString('base64url');
+
+            await expect(
+                buildDocumentTools().searchCustomDocuments.execute({ cursor: foreign }),
+            ).resolves.toEqual({ error: 'Invalid pagination cursor.' });
+        });
     });
 });
