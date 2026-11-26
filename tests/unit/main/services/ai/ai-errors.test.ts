@@ -66,6 +66,13 @@ describe('classifyAiError', () => {
         expect(result.detail).not.toContain('Failed after');
     });
 
+    it('drops the retry summary the runner copies into its own error', () => {
+        const retry = retryError(apiError(500, 'The server had an error.'));
+        const wrapped = new Error(retry.message, { cause: retry });
+
+        expect(classifyAiError(wrapped).detail).toBe('HTTP 500: The server had an error.');
+    });
+
     it('keeps the rate limit of a retried 429', () => {
         expect(classifyAiError(retryError(apiError(429, 'slow down'))).code).toBe('rate-limit');
     });
@@ -151,6 +158,22 @@ describe('classifyAiError', () => {
         const result = classifyAiError(apiError(404, 'The model `x` does not exist.'));
 
         expect(result.detail).toBe('HTTP 404: The model `x` does not exist.');
+    });
+
+    it('keeps both the outer and the inner text of a dropped stream', () => {
+        const dropped = new Error('terminated', {
+            cause: new TypeError('terminated', {
+                cause: networkError('other side closed', 'UND_ERR_SOCKET'),
+            }),
+        });
+
+        expect(classifyAiError(dropped).detail).toBe('terminated: other side closed');
+    });
+
+    it('does not repeat a wrapper that copies its cause', () => {
+        const wrapped = new Error('Unauthorized', { cause: apiError(401, 'Unauthorized') });
+
+        expect(classifyAiError(wrapped).detail).toBe('HTTP 401: Unauthorized');
     });
 
     it('caps a very long detail', () => {

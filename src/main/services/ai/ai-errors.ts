@@ -109,21 +109,30 @@ function describeError(error: unknown): string {
     return status != null ? `HTTP ${status}: ${message}` : message;
 }
 
-export function classifyAiError(error: unknown): ClassifiedAiError {
-    const chain = errorChain(error);
-    for (const candidate of [...chain].reverse()) {
-        const classified = classifyOne(candidate);
-        if (classified) {
-            return { ...classified, detail: toDetail(describeError(candidate)) };
-        }
-    }
-    return {
-        code: 'unknown',
-        retryable: true,
-        detail: toDetail(describeError(chain.at(-1) ?? error)),
-    };
+function repeatsItsCause(error: unknown): boolean {
+    const cause = (error as { cause?: unknown } | null)?.cause;
+    return cause != null && messageOf(error) === messageOf(cause);
 }
 
-function toDetail(text: string): string {
-    return scrubSecrets(text).slice(0, MAX_DETAIL_CHARS);
+/** "terminated: other side closed"; a wrapper that repeats its cause's text adds nothing. */
+function describeChain(chain: unknown[]): string {
+    const parts: string[] = [];
+    for (const error of chain) {
+        if (RetryError.isInstance(error) || repeatsItsCause(error)) continue;
+        const text = describeError(error);
+        if (!text || parts.some((part) => part.includes(text))) continue;
+        const kept = parts.filter((part) => !text.includes(part));
+        parts.splice(0, parts.length, ...kept, text);
+    }
+    return parts.join(': ');
+}
+
+export function classifyAiError(error: unknown): ClassifiedAiError {
+    const chain = errorChain(error);
+    const detail = scrubSecrets(describeChain(chain)).slice(0, MAX_DETAIL_CHARS);
+    for (const candidate of [...chain].reverse()) {
+        const classified = classifyOne(candidate);
+        if (classified) return { ...classified, detail };
+    }
+    return { code: 'unknown', retryable: true, detail };
 }
