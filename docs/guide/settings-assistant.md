@@ -1,6 +1,6 @@
 # Paramètres Assistant
 
-<p class="lead">L'onglet `Assistant` sert à activer la discussion IA et à choisir comment elle doit fonctionner dans Wmb Table.</p>
+<p class="lead">L'onglet `Assistant` sert à choisir le service d'IA de la discussion et la façon dont elle fonctionne dans Wmb Table.</p>
 
 ## Où ouvrir cet onglet
 
@@ -10,33 +10,24 @@
 <ScreenshotPlaceholder
   file="fr-settings-assistant-tab.png"
   label="Onglet Assistant dans les paramètres"
-  hint="Montrer l'interrupteur d'activation, le choix du fournisseur, les réglages de langue et, si possible, le bloc du modèle local."
+  hint="Montrer le choix du fournisseur, les réglages de langue et, si possible, le bloc du modèle local."
 />
 
 ## Ce que vous faites ici
 
 Dans cet onglet, vous pouvez :
 
-- activer ou désactiver l'assistant
 - choisir le service utilisé pour répondre
 - régler un modèle local si vous voulez travailler sans internet
 - entrer les informations nécessaires pour un service en ligne
 - tester la connexion d'un service
 - choisir comment l'assistant suit la langue de votre bibliothèque
 
-## Étape 1 : activer l'assistant
+## Étape 1 : partir de la page Assistant
 
-En haut de la page, vous trouvez un interrupteur simple.
+L'assistant est toujours dans le menu de gauche. Tant qu'aucun service n'est configuré, sa page affiche une carte d'accueil avec le bouton `Configurer l'assistant`, qui ouvre directement cet onglet.
 
-Quand il est activé :
-
-- l'assistant devient disponible dans le menu de gauche
-- vous pouvez ouvrir la page de discussion IA
-
-Quand il est désactivé :
-
-- la page Assistant reste bloquée
-- l'application vous renvoie vers les paramètres pour l'activer
+Dès que le service est prêt, la page Assistant affiche la discussion, sans redémarrer l'application.
 
 ## Étape 2 : choisir le service utilisé
 
@@ -187,11 +178,10 @@ Ainsi, l'assistant cherchera plus naturellement dans :
 
 Pour commencer sans complication :
 
-1. activez l'assistant
-2. choisissez le service que vous voulez utiliser
-3. entrez les informations nécessaires si besoin
-4. gardez `Suivre la langue active`
-5. ouvrez ensuite la page `Discussion IA`
+1. choisissez le service que vous voulez utiliser
+2. entrez les informations nécessaires si besoin
+3. gardez `Suivre la langue active`
+4. ouvrez ensuite la page `Discussion IA`
 
 ## Quand revenir dans cet onglet
 

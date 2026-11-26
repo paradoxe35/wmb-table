@@ -1,6 +1,6 @@
 # Ajustes de Assistant
 
-<p class="lead">La pestaña `Assistant` sirve para activar el chat con IA y elegir cómo debe funcionar dentro de Wmb Table.</p>
+<p class="lead">La pestaña `Assistant` sirve para elegir el servicio de IA del chat y cómo debe funcionar dentro de Wmb Table.</p>
 
 ## Dónde abrirla
 
@@ -10,26 +10,22 @@
 <ScreenshotPlaceholder
   file="es-settings-assistant-tab.png"
   label="Pestaña Assistant en ajustes"
-  hint="Mostrar el interruptor de activación, la elección del proveedor, el comportamiento del idioma y, si es posible, la zona del modelo local."
+  hint="Mostrar la elección del proveedor, el comportamiento del idioma y, si es posible, la zona del modelo local."
 />
 
 ## Lo que puede hacer aquí
 
-- activar o desactivar el asistente
 - elegir el servicio usado para responder
 - configurar un modelo local si quiere trabajar sin internet
 - introducir los datos necesarios para un servicio en línea
 - probar la conexión
 - elegir cómo el asistente sigue el idioma de su biblioteca
 
-## Paso 1: activar el asistente
+## Paso 1: empezar desde la página Assistant
 
-En la parte superior de la página, hay un interruptor simple.
+El asistente siempre está en el menú de la izquierda. Mientras no haya un servicio configurado, su página muestra una tarjeta de bienvenida con el botón `Configurar el asistente`, que abre directamente esta pestaña.
 
-Cuando está activado:
-
-- el asistente aparece en el menú de la izquierda
-- puede abrir la página de chat con IA
+En cuanto el servicio está listo, la página Assistant muestra el chat, sin reiniciar la aplicación.
 
 ## Paso 2: elegir el servicio
 
@@ -151,11 +147,10 @@ Para la mayoría de usuarios, `Seguir el idioma activo` es la mejor opción.
 
 Para empezar sin complicaciones:
 
-1. active el asistente
-2. elija el servicio que quiere usar
-3. introduzca los datos necesarios
-4. mantenga `Seguir el idioma activo`
-5. abra la página `Chat con IA`
+1. elija el servicio que quiere usar
+2. introduzca los datos necesarios
+3. mantenga `Seguir el idioma activo`
+4. abra la página `Chat con IA`
 
 ## Cuándo volver a esta pestaña
 

@@ -1,6 +1,6 @@
 # Assistant Settings
 
-<p class="lead">The `Assistant` tab is where you turn on AI chat and choose how it should work inside Wmb Table.</p>
+<p class="lead">The `Assistant` tab is where you choose the AI service for the chat and how it should work inside Wmb Table.</p>
 
 ## Where to open it
 
@@ -10,28 +10,24 @@
 <ScreenshotPlaceholder
   file="en-settings-assistant-tab.png"
   label="Assistant tab in settings"
-  hint="Show the enable switch, provider choice, language behavior, and if possible the local model area."
+  hint="Show the provider choice, language behavior, and if possible the local model area."
 />
 
 ## What this tab lets you do
 
 In this tab, you can:
 
-- enable or disable the assistant
 - choose the service used for replies
 - set up a local model if you want to work without internet
 - enter the information needed for an online service
 - test the connection of a service
 - choose how the assistant follows your library language
 
-## Step 1: enable the assistant
+## Step 1: start from the Assistant page
 
-At the top of the page, there is a simple switch.
+The assistant is always in the left menu. Until a service is set up, its page shows a welcome card with a `Set up the assistant` button that opens this tab directly.
 
-When it is on:
-
-- the assistant becomes available in the left menu
-- you can open the AI chat page
+Once the service is ready, the Assistant page shows the chat, without restarting the app.
 
 ## Step 2: choose the service
 
@@ -176,11 +172,10 @@ For most users, `Follow the content language` is the best choice.
 
 To get started without complication:
 
-1. enable the assistant
-2. choose the service you want to use
-3. enter the needed information
-4. keep `Follow the content language`
-5. open the `AI Chat` page
+1. choose the service you want to use
+2. enter the needed information
+3. keep `Follow the content language`
+4. open the `AI Chat` page
 
 ## When to come back to this tab
 

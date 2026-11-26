@@ -25,7 +25,7 @@ Le menu de gauche contient les pages de travail :
 
 - `Historique`
 - `Recherche`
-- `Assistant` quand la fonction IA est activée
+- `Assistant`
 - `Sujets`
 - `Notes`
 - `Soulignages`

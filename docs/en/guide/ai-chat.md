@@ -3,7 +3,7 @@
 <p class="lead">Wmb Table includes a real AI chat feature to help you find sermons, Bible passages, subjects, notes, and personal documents more quickly, but also to explore a topic, compare messages, and prepare a study more easily.</p>
 
 > [!IMPORTANT]
-> AI chat exists in the app, but it stays off until you turn it on yourself in the `Assistant` tab.
+> To use AI chat, first choose an AI service in the `Assistant` settings tab. Until then, the Assistant page shows a welcome card with a `Set up the assistant` button.
 
 ## What AI chat is for
 
@@ -32,12 +32,12 @@ The simple idea is this: instead of doing several separate searches yourself, yo
 
 ## Where to open it
 
-After it is enabled, `Assistant` appears in the left menu with the other tools.
+`Assistant` is always in the left menu with the other tools.
 
 <ScreenshotPlaceholder
   file="en-ai-chat-sidebar-entry.png"
   label="Assistant entry in the left menu"
-  hint="Show the Assistant entry visible in the sidebar after it has been enabled."
+  hint="Show the Assistant entry in the sidebar."
 />
 
 ## What you see on the page

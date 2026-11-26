@@ -3,7 +3,7 @@
 <p class="lead">Wmb Table incluye una función real de chat con IA para ayudarle a encontrar predicaciones, pasajes bíblicos, temas, notas y documentos personales más rápidamente, pero también para explorar un tema, comparar mensajes y preparar un estudio con más facilidad.</p>
 
 > [!IMPORTANT]
-> El chat con IA existe en la aplicación, pero permanece apagado hasta que usted lo active en la pestaña `Assistant`.
+> Para usar el chat con IA, elija primero un servicio de IA en la pestaña `Assistant` de los ajustes. Mientras tanto, la página Assistant muestra una tarjeta de bienvenida con el botón `Configurar el asistente`.
 
 ## Para qué sirve
 
@@ -30,12 +30,12 @@ La idea sencilla es esta: en lugar de hacer varias búsquedas separadas usted mi
 
 ## Dónde abrirlo
 
-Después de activarlo, `Assistant` aparece en el menú izquierdo con las demás herramientas.
+`Assistant` siempre está en el menú izquierdo con las demás herramientas.
 
 <ScreenshotPlaceholder
   file="es-ai-chat-sidebar-entry.png"
   label="Entrada Assistant en el menú izquierdo"
-  hint="Mostrar la entrada Assistant visible en la barra lateral después de la activación."
+  hint="Mostrar la entrada Assistant en la barra lateral."
 />
 
 ## Lo que verá en la página

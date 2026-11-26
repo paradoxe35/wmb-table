@@ -87,7 +87,7 @@ Ces téléchargements impliquent des connexions aux hébergeurs concernés, par 
 
 ### 2.4 Assistant IA
 
-L'assistant IA reste désactivé tant que vous ne l'activez pas dans les paramètres.
+L'assistant IA n'envoie rien tant que vous n'avez pas configuré un service d'IA dans les paramètres.
 
 Si vous choisissez un fournisseur distant comme OpenAI, OpenRouter, Gemini, Claude ou un fournisseur compatible personnalisé, Wmb Table peut envoyer au fournisseur sélectionné :
 
@@ -236,7 +236,7 @@ Vous êtes responsable de protéger :
 Vous pouvez limiter le traitement externe de plusieurs façons :
 
 - ne pas activer la synchronisation Google Drive
-- ne pas activer l'assistant IA
+- ne pas configurer l'assistant IA
 - choisir le mode IA local au lieu d'un fournisseur distant
 - choisir une voix TTS locale au lieu d'un fournisseur distant
 - ne pas utiliser le formulaire de contact du site

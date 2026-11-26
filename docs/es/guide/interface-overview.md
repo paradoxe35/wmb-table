@@ -25,7 +25,7 @@ El menú izquierdo contiene las páginas de trabajo:
 
 - `Historial`
 - `Búsqueda`
-- `Assistant` cuando la función IA está activada
+- `Assistant`
 - `Temas`
 - `Notas`
 - `Subrayados`
