@@ -105,7 +105,7 @@ export default function AiChatView() {
         setDraft('');
         void sendMessage(trimmed).then((accepted) => {
             if (!accepted) {
-                setDraft((current) => current || draft);
+                setDraft((current) => (current.trim() ? `${draft}\n${current}` : draft));
             }
         });
     }, [draft, sendMessage]);
