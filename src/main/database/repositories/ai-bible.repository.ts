@@ -72,11 +72,17 @@ export function getAvailableVersions(languageCode: string) {
     return versions;
 }
 
+export interface VerseSpan {
+    from: number;
+    to: number;
+}
+
+const VERSE_COLUMNS = 'id, book_name as bookName, book, testament, chapter, verse, content';
+
 export function getPassage(input: {
     book: string;
-    chapter: string;
-    fromVerse?: string;
-    toVerse?: string;
+    chapter: number;
+    verses?: VerseSpan;
     abbreviation?: string;
     languageCode?: string;
 }): BibleBook[] | { error: string } {
@@ -87,39 +93,19 @@ export function getPassage(input: {
         };
     }
 
-    const chapter = input.chapter.replace(/\D/g, '');
-    if (!chapter) {
-        return { error: `Invalid chapter: "${input.chapter}". Provide a number (e.g. "3").` };
-    }
-
-    const fromVerse = input.fromVerse?.replace(/\D/g, '');
-    const toVerse = input.toVerse?.replace(/\D/g, '');
-    if (input.fromVerse && !fromVerse) {
-        return {
-            error: `Invalid verse number: "${input.fromVerse}". Provide a number (e.g. "16").`,
-        };
-    }
-
     const db = new Database(source.dbPath, { readonly: true });
     try {
         const bookCode = resolveBookCode(db, input.book);
         if (!bookCode) {
-            const available = db
-                .prepare(
-                    'SELECT DISTINCT book_name FROM bible_verses ORDER BY CAST(book AS integer)',
-                )
-                .all() as { book_name: string }[];
-            const names = available.map((r) => r.book_name);
-            return {
-                error: `Book "${input.book}" not found. Available books: ${names.slice(0, 10).join(', ')}${names.length > 10 ? `, ... (${names.length} total)` : ''}.`,
-            };
+            return { error: describeUnknownBook(db, input.book) };
         }
 
-        if (!fromVerse) {
+        const chapter = String(input.chapter);
+        const { verses } = input;
+        if (!verses) {
             const rows = db
                 .prepare(
-                    `SELECT id, book_name as bookName, book, testament, chapter, verse, content
-                     FROM bible_verses
+                    `SELECT ${VERSE_COLUMNS} FROM bible_verses
                      WHERE book = ? AND chapter = ?
                      ORDER BY CAST(verse as integer)`,
                 )
@@ -134,15 +120,14 @@ export function getPassage(input: {
 
         const rows = db
             .prepare(
-                `SELECT id, book_name as bookName, book, testament, chapter, verse, content
-                 FROM bible_verses
+                `SELECT ${VERSE_COLUMNS} FROM bible_verses
                  WHERE book = ? AND chapter = ? AND CAST(verse as integer) BETWEEN ? AND ?
                  ORDER BY CAST(verse as integer)`,
             )
-            .all(bookCode, chapter, Number(fromVerse), Number(toVerse ?? fromVerse)) as BibleBook[];
+            .all(bookCode, chapter, verses.from, verses.to) as BibleBook[];
         if (rows.length === 0) {
             return {
-                error: `No verses found for chapter ${chapter}, verses ${fromVerse}-${toVerse ?? fromVerse}.`,
+                error: `No verses found for chapter ${chapter}, verses ${verses.from}-${verses.to}.`,
             };
         }
         return rows;
@@ -162,6 +147,13 @@ function listBooks(db: Database.Database): BookRow[] {
             'SELECT DISTINCT book, book_name FROM bible_verses ORDER BY CAST(book AS integer), book',
         )
         .all() as BookRow[];
+}
+
+function describeUnknownBook(db: Database.Database, book: string): string {
+    const names = listBooks(db).map((r) => r.book_name);
+    const shown = names.slice(0, 10).join(', ');
+    const more = names.length > 10 ? `, ... (${names.length} total)` : '';
+    return `Book "${book}" not found. Available books: ${shown}${more}.`;
 }
 
 /** A single letter is a prefix of several books ("J": Josué, Job, Jean…), so it names none. */
@@ -349,8 +341,7 @@ function searchWithNormalize(db: Database.Database, page: SearchPage): BibleSear
 
     const rows = db
         .prepare(
-            `SELECT id, book_name as bookName, book, testament, chapter, verse, content
-             FROM bible_verses
+            `SELECT ${VERSE_COLUMNS} FROM bible_verses
              WHERE ${likeConditions}${testamentFilter}
              ORDER BY rowid
              LIMIT ? OFFSET ?`,

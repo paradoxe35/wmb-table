@@ -11,6 +11,7 @@ import type {
     BibleVerseResult,
     BibleVersionOption,
 } from './types';
+import { parsePassageRange } from './bible-passage-range';
 import { validateLanguage } from './shared';
 import { encodeSearchCursor, ensureSameField, parseSearchCursor } from './search-pagination';
 
@@ -69,18 +70,30 @@ function resolveBibleSearchPage(input: {
     return mismatch ?? continued;
 }
 
-function resolveBibleVersion(
-    languageCode: string,
-    abbreviation?: string,
-): aiBibleRepo.ResolvedBibleVersion | { error: string } {
-    const version = aiBibleRepo.resolveBibleVersion(abbreviation, languageCode);
-    if (version) {
-        return version;
-    }
+interface VersionRequest {
+    abbreviation?: string;
+    languageCode?: string;
+}
 
-    return {
-        error: `No Bible found${abbreviation ? ` for abbreviation "${abbreviation}"` : ''}. Use getBibleVersions to find available versions.`,
-    };
+interface VersionDefaults {
+    languageCode: string;
+    abbreviation?: string;
+}
+
+function resolveRequestedVersion(
+    request: VersionRequest,
+    defaults: VersionDefaults,
+): aiBibleRepo.ResolvedBibleVersion | { error: string } {
+    const languageCode = request.languageCode ?? defaults.languageCode;
+    const langError = validateLanguage(languageCode);
+    if (langError) return langError;
+
+    const abbreviation = request.abbreviation ?? defaults.abbreviation;
+    return (
+        aiBibleRepo.resolveBibleVersion(abbreviation, languageCode) ?? {
+            error: `No Bible found${abbreviation ? ` for abbreviation "${abbreviation}"` : ''}. Use getBibleVersions to find available versions.`,
+        }
+    );
 }
 
 function toBibleVerseResult(verse: BibleBook, bibleVersionAbbreviation: string): BibleVerseResult {
@@ -135,38 +148,79 @@ const BIBLE_VERSION_SCHEMA = z
     .optional()
     .describe('Bible version abbreviation from a Bible result (e.g. "lsg")');
 
-function lookupBiblePassage(input: {
-    book: string;
-    chapter: string;
-    fromVerse?: string;
-    toVerse?: string;
-    languageCode: string;
-    abbreviation?: string;
-}): BiblePassageToolResponse | { error: string } {
-    const resolvedVersion = resolveBibleVersion(input.languageCode, input.abbreviation);
+interface PassageLookup {
+    verses: BibleBook[];
+    bibleVersionAbbreviation: string;
+}
+
+function lookupBiblePassage(
+    input: {
+        book: string;
+        chapter: string;
+        fromVerse?: string;
+        toVerse?: string;
+    },
+    version: VersionRequest,
+    defaults: VersionDefaults,
+): PassageLookup | { error: string } {
+    const range = parsePassageRange(input);
+    if ('error' in range) {
+        return range;
+    }
+
+    const resolvedVersion = resolveRequestedVersion(version, defaults);
     if ('error' in resolvedVersion) {
         return resolvedVersion;
     }
 
-    const passage = aiBibleRepo.getPassage({
+    const verses = aiBibleRepo.getPassage({
         book: input.book,
-        chapter: input.chapter,
-        fromVerse: input.fromVerse,
-        toVerse: input.toVerse,
+        chapter: range.chapter,
+        verses: range.verses,
         abbreviation: resolvedVersion.abbreviation,
         languageCode: resolvedVersion.languageCode,
     });
-    if ('error' in passage) {
-        return passage;
+    if ('error' in verses) {
+        return verses;
     }
 
-    return toBiblePassageResponse(passage, resolvedVersion.abbreviation);
+    return { verses, bibleVersionAbbreviation: resolvedVersion.abbreviation };
+}
+
+/** Psalm 119 alone is 176 verses; one call must not flood the model's context. */
+const MAX_PASSAGE_VERSES = 40;
+
+type BiblePassagePage = BiblePassageToolResponse & {
+    hasMore?: true;
+    nextFromVerse?: string;
+    nextToVerse?: string;
+};
+
+function toBiblePassagePage({ verses, bibleVersionAbbreviation }: PassageLookup): BiblePassagePage {
+    const response = toBiblePassageResponse(
+        verses.slice(0, MAX_PASSAGE_VERSES),
+        bibleVersionAbbreviation,
+    );
+    const next = verses[MAX_PASSAGE_VERSES];
+    if (!next) return response;
+
+    return {
+        ...response,
+        hasMore: true,
+        nextFromVerse: next.verse,
+        nextToVerse: verses[verses.length - 1].verse,
+    };
 }
 
 export function buildBibleTools(
     defaultContentLanguage: string,
     defaultAbbreviation?: string,
 ): Record<string, AiToolDefinition> {
+    const defaults: VersionDefaults = {
+        languageCode: defaultContentLanguage,
+        abbreviation: defaultAbbreviation,
+    };
+
     return {
         getBibleVersions: {
             description:
@@ -193,25 +247,29 @@ export function buildBibleTools(
                 '(e.g. "43N"); a book name as written in the Bible ("Jean", "Apocalypse") also works. ' +
                 'Provide chapter and verse numbers as digits. ' +
                 'Use getBibleVersions first to find available versions if needed. ' +
+                `Returns at most ${MAX_PASSAGE_VERSES} verses; when hasMore is true, call again with fromVerse = nextFromVerse and toVerse = nextToVerse. ` +
                 'Returns verse objects with exact link fields and wmbUrl for markdown reference links.',
             inputSchema: z.object({
                 bookCode: BOOK_CODE_SCHEMA,
                 chapter: z.string().describe('Chapter number (e.g. "3")'),
-                fromVerse: z.string().optional().describe('Starting verse number (e.g. "16")'),
-                toVerse: z.string().optional().describe('Ending verse number (e.g. "18")'),
+                fromVerse: z
+                    .string()
+                    .optional()
+                    .describe('Starting verse number (e.g. "16"). Omit for the whole chapter.'),
+                toVerse: z
+                    .string()
+                    .optional()
+                    .describe('Ending verse number (e.g. "18"). Requires fromVerse.'),
                 bibleVersionAbbreviation: BIBLE_VERSION_SCHEMA,
                 languageCode: z.string().optional(),
             }),
             execute: async ({ languageCode, bibleVersionAbbreviation, bookCode, ...rest }) => {
-                const lang = languageCode ?? defaultContentLanguage;
-                const langError = validateLanguage(lang);
-                if (langError) return langError;
-                return lookupBiblePassage({
-                    ...rest,
-                    book: bookCode,
-                    abbreviation: bibleVersionAbbreviation ?? defaultAbbreviation,
-                    languageCode: lang,
-                });
+                const passage = lookupBiblePassage(
+                    { ...rest, book: bookCode },
+                    { abbreviation: bibleVersionAbbreviation, languageCode },
+                    defaults,
+                );
+                return 'error' in passage ? passage : toBiblePassagePage(passage);
             },
         },
         searchBible: {
@@ -250,20 +308,17 @@ export function buildBibleTools(
                 limit,
                 cursor,
             }) => {
-                const lang = languageCode ?? defaultContentLanguage;
-                const langError = validateLanguage(lang);
-                if (langError) {
-                    return langError;
-                }
-
                 const continued = cursor ? parseBibleSearchCursor(cursor) : undefined;
                 if (continued && 'error' in continued) {
                     return continued;
                 }
 
-                const resolvedVersion = resolveBibleVersion(
-                    lang,
-                    continued?.abbreviation ?? bibleVersionAbbreviation ?? defaultAbbreviation,
+                const resolvedVersion = resolveRequestedVersion(
+                    {
+                        abbreviation: continued?.abbreviation ?? bibleVersionAbbreviation,
+                        languageCode,
+                    },
+                    defaults,
                 );
                 if ('error' in resolvedVersion) {
                     return resolvedVersion;
@@ -341,25 +396,19 @@ export function buildBibleTools(
                 }
 
                 const lang = languageCode ?? defaultContentLanguage;
-                const langError = validateLanguage(lang);
-                if (langError) {
-                    return langError;
+                const passage = lookupBiblePassage(
+                    { ...rest, book: bookCode },
+                    { abbreviation: bibleVersionAbbreviation, languageCode },
+                    defaults,
+                );
+                if ('error' in passage) {
+                    return passage;
                 }
 
-                const resolvedAbbreviation = bibleVersionAbbreviation ?? defaultAbbreviation;
-                if (!resolvedAbbreviation) {
-                    return { error: 'Aucune version biblique active disponible.' };
-                }
-
-                const result = lookupBiblePassage({
-                    ...rest,
-                    book: bookCode,
-                    abbreviation: resolvedAbbreviation,
-                    languageCode: lang,
-                });
-                if ('error' in result) {
-                    return result;
-                }
+                const result = toBiblePassageResponse(
+                    passage.verses,
+                    passage.bibleVersionAbbreviation,
+                );
 
                 const verse = result.verses[0];
                 if (!verse) {

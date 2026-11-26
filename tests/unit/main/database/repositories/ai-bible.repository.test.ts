@@ -10,7 +10,8 @@ vi.mock(
     async () => (await import('../../../../helpers/bible-fixture')).fakeBibleService,
 );
 
-const { searchVerses } = await import('@main/database/repositories/ai-bible.repository');
+const { searchVerses, getPassage, getAvailableVersions, resolveBibleVersion } =
+    await import('@main/database/repositories/ai-bible.repository');
 
 type SearchOutcome = ReturnType<typeof searchVerses>;
 
@@ -145,5 +146,47 @@ describe('searchVerses pagination', () => {
 
     it('caps the page size at 40', () => {
         expect(hits(searchVerses({ query: 'Heureux', limit: 500 })).data).toHaveLength(40);
+    });
+});
+
+describe('getPassage', () => {
+    function verses(result: ReturnType<typeof getPassage>): string[] {
+        if ('error' in result) throw new Error(result.error);
+        return result.map((verse) => `${verse.chapter}:${verse.verse}`);
+    }
+
+    it('returns a verse range', () => {
+        expect(
+            verses(getPassage({ book: 'Jean', chapter: 3, verses: { from: 16, to: 18 } })),
+        ).toEqual(['3:16', '3:17', '3:18']);
+    });
+
+    it('returns the whole chapter in verse order', () => {
+        const result = verses(getPassage({ book: '19O', chapter: 119 }));
+        expect(result).toHaveLength(60);
+        expect(result.slice(0, 3)).toEqual(['119:1', '119:2', '119:3']);
+    });
+
+    it('explains a chapter that does not exist', () => {
+        expect(getPassage({ book: 'Jean', chapter: 99 })).toEqual({
+            error: 'No verses found for chapter 99. The book may have fewer chapters.',
+        });
+    });
+
+    it('explains verses that do not exist', () => {
+        expect(getPassage({ book: 'Jean', chapter: 3, verses: { from: 40, to: 41 } })).toEqual({
+            error: 'No verses found for chapter 3, verses 40-41.',
+        });
+    });
+
+    it('reads the English Bible by language while French is active', () => {
+        expect(
+            getPassage({
+                book: 'John',
+                chapter: 3,
+                verses: { from: 16, to: 16 },
+                languageCode: 'en',
+            }),
+        ).toMatchObject([{ content: expect.stringContaining('For God so loved') }]);
     });
 });
