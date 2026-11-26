@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DebouncedInput from '@renderer/components/debounced-input';
 
@@ -95,6 +96,59 @@ describe('DebouncedInput', () => {
         window.dispatchEvent(new Event('beforeunload'));
 
         expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('keeps what the user types when the parent saves a cleaned-up value mid-typing', () => {
+        function TrimmingParent() {
+            const [value, setValue] = useState('');
+            return <DebouncedInput value={value} onChange={(next) => setValue(next.trim())} />;
+        }
+        render(<TrimmingParent />);
+        field().focus();
+
+        type('llama ');
+        act(() => vi.advanceTimersByTime(DELAY_MS + 100));
+        expect(field().value).toBe('llama ');
+
+        type('llama 3');
+        act(() => vi.advanceTimersByTime(DELAY_MS + 100));
+        expect(field().value).toBe('llama 3');
+    });
+
+    it('does not go back to an older saved value while a newer one is being saved', () => {
+        const onChange = vi.fn();
+        const { rerender } = render(<DebouncedInput value="" onChange={onChange} />);
+        field().focus();
+
+        type('abc');
+        act(() => vi.advanceTimersByTime(DELAY_MS + 100));
+        type('abcd');
+        act(() => vi.advanceTimersByTime(DELAY_MS + 100));
+        rerender(<DebouncedInput value="abc" onChange={onChange} />);
+
+        expect(field().value).toBe('abcd');
+        expect(onChange.mock.calls).toEqual([['abc'], ['abcd']]);
+    });
+
+    it('shows a value saved elsewhere once the field loses focus without typing', () => {
+        const onChange = vi.fn();
+        const { rerender } = render(<DebouncedInput value="old" onChange={onChange} />);
+        field().focus();
+
+        rerender(<DebouncedInput value="new" onChange={onChange} />);
+        expect(field().value).toBe('old');
+        fireEvent.blur(field());
+
+        expect(field().value).toBe('new');
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it('takes a new saved value at once when the field is not focused', () => {
+        const { rerender } = render(<DebouncedInput value="old" onChange={vi.fn()} />);
+
+        rerender(<DebouncedInput value="new" onChange={vi.fn()} />);
+
+        expect(field().value).toBe('new');
     });
 
     it('saves at once on blur', () => {

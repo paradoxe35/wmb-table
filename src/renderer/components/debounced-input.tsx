@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Input, Typography } from 'antd';
 import { useDebouncedCommit } from '@renderer/hooks/use-debounced-commit';
 
@@ -30,13 +30,22 @@ export default function DebouncedInput({
     const error = validate?.(localValue);
     const errorId = id ? `${id}-error` : undefined;
 
+    const focusedRef = useRef(false);
+    const typedSinceFocusRef = useRef(false);
+
     useEffect(() => {
-        if (commit.isPending()) return;
+        if (focusedRef.current || commit.isPending()) return;
         setLocalValue((current) => (current === externalValue ? current : externalValue));
     }, [externalValue, commit]);
 
+    function handleFocus() {
+        focusedRef.current = true;
+        typedSinceFocusRef.current = false;
+    }
+
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         const next = e.target.value;
+        typedSinceFocusRef.current = true;
         setLocalValue(next);
         if (validate?.(next)) {
             commit.cancel();
@@ -46,7 +55,12 @@ export default function DebouncedInput({
     }
 
     function handleBlur() {
+        focusedRef.current = false;
         commit.flush();
+        if (!typedSinceFocusRef.current) {
+            setLocalValue(externalValue);
+            return;
+        }
         if (normalize && !validate?.(localValue)) setLocalValue(normalize(localValue));
     }
 
@@ -57,6 +71,7 @@ export default function DebouncedInput({
                 id={id}
                 value={localValue}
                 onChange={handleChange}
+                onFocus={handleFocus}
                 onBlur={handleBlur}
                 placeholder={placeholder}
                 status={error ? 'error' : undefined}

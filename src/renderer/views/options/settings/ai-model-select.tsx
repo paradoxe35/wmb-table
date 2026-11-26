@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AutoComplete } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { RECOMMENDED_MIN_CONTEXT_WINDOW, type AiRemoteModel } from '@shared/ai.types';
@@ -78,8 +78,10 @@ export function ModelSelect({
     const [fetched, setFetched] = useState(false);
     const commit = useDebouncedCommit(onChange, 500);
 
+    const focusedRef = useRef(false);
+
     useEffect(() => {
-        if (commit.isPending()) return;
+        if (focusedRef.current || commit.isPending()) return;
         const nextValue = value ?? '';
         setLocalValue((current) => (current === nextValue ? current : nextValue));
     }, [value, commit]);
@@ -96,6 +98,7 @@ export function ModelSelect({
     }
 
     function handleBlur() {
+        focusedRef.current = false;
         if (localValue.trim() || !defaultModel) {
             commit.flush();
             return;
@@ -143,6 +146,9 @@ export function ModelSelect({
                 placeholder={t('Sélectionner ou saisir un modèle')}
                 onChange={handleChange}
                 onSelect={handleSelect}
+                onFocus={() => {
+                    focusedRef.current = true;
+                }}
                 onBlur={handleBlur}
                 options={allOptions}
                 filterOption={(input, option) => {
