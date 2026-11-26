@@ -169,4 +169,12 @@ describe('document.tools', () => {
             }),
         ).resolves.toEqual({ error: 'No custom documents found.' });
     });
+
+    it('lists an empty library as an empty list rather than an error', async () => {
+        getCustomDocumentsMock.mockReturnValue([]);
+
+        const { buildDocumentTools } = await import('@main/services/ai/tools/document.tools');
+
+        await expect(buildDocumentTools().getCustomDocuments.execute({})).resolves.toEqual([]);
+    });
 });

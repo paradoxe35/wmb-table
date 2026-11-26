@@ -95,12 +95,11 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
     return {
         getCustomDocuments: {
             description:
-                'List user-imported custom documents (PDF, text files, etc.). Each document includes wmbUrl for markdown reference links.',
+                'List user-imported custom documents (PDF, text files, etc.). Each document includes wmbUrl for markdown reference links. ' +
+                'An empty list means the user has not imported any document.',
             inputSchema: z.object({}),
             execute: async () => {
-                const docs = customDocsRepo.getCustomDocuments();
-                if (docs.length === 0) return { error: 'No custom documents found.' };
-                return docs.map((d) => ({
+                return customDocsRepo.getCustomDocuments().map((d) => ({
                     documentId: d.id,
                     title: d.title,
                     wmbUrl: buildDocWmbLink({
