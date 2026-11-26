@@ -211,6 +211,8 @@ La partie `Avancé`, en bas, donne la commande `wmb-table mcp --http --port 2313
 Bon à savoir :
 
 - Le serveur est désactivé par défaut. Tant que la case `Serveur MCP` n'est pas cochée, la commande `wmb-table mcp` refuse de démarrer et l'explique.
+- Décocher `Serveur MCP` arrête aussi la commande : lancée par votre application, elle se ferme d'elle-même ; le serveur HTTP sans fenêtre refuse les demandes jusqu'à ce que vous recochiez la case.
+- Sous Linux, les exemples ajoutent `--no-sandbox` avant `mcp` (par exemple `wmb-table --no-sandbox mcp`). Sans cela, la commande ne démarre pas en tant que root, dans un conteneur ou sur certains systèmes. Ce mode n'ouvre aucune page web, donc cela ne réduit pas la sécurité.
 - Le serveur HTTP démarre avec Wmb Table quand la case est cochée, et s'arrête quand vous la décochez ou quand vous quittez Wmb Table.
 - Par défaut, votre application d'IA peut seulement lire. Cochez `Autoriser les modifications (notes et sujets)` pour qu'elle puisse aussi créer et modifier vos notes et vos sujets. Ce choix vaut pour toutes les méthodes.
 - Wmb Table peut rester ouvert pendant que la commande tourne : les deux utilisent la même bibliothèque sans se gêner.

@@ -205,6 +205,8 @@ The `Advanced` part at the bottom gives the command `wmb-table mcp --http --port
 Good to know:
 
 - The server is off by default. Until `MCP server` is checked, the `wmb-table mcp` command refuses to start and says why.
+- Unchecking `MCP server` also stops the command: when your app started it, it closes by itself; the HTTP server without a window refuses requests until you check the box again.
+- On Linux, the examples add `--no-sandbox` before `mcp` (for example `wmb-table --no-sandbox mcp`). Without it, the command does not start as root, in a container or on some systems. This mode opens no web page, so this does not lower security.
 - The HTTP server starts with Wmb Table while the box is checked, and stops when you uncheck it or quit Wmb Table.
 - By default your AI app can only read. Check `Allow changes (notes and subjects)` so it can also create and change your notes and subjects. This applies to every method.
 - Wmb Table can stay open while the command runs: both use the same library without getting in each other's way.

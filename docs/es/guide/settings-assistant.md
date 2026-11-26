@@ -180,6 +180,8 @@ La parte `Avanzado`, abajo, da el comando `wmb-table mcp --http --port 23132`: i
 Conviene saber:
 
 - El servidor está desactivado por defecto. Mientras `Servidor MCP` no esté marcado, el comando `wmb-table mcp` se niega a iniciarse y explica por qué.
+- Desmarcar `Servidor MCP` también detiene el comando: si lo inició su aplicación, se cierra solo; el servidor HTTP sin ventana rechaza las solicitudes hasta que vuelva a marcar la casilla.
+- En Linux, los ejemplos añaden `--no-sandbox` antes de `mcp` (por ejemplo `wmb-table --no-sandbox mcp`). Sin esto, el comando no se inicia como root, en un contenedor o en algunos sistemas. Este modo no abre ninguna página web, así que no reduce la seguridad.
 - El servidor HTTP se inicia con Wmb Table mientras la casilla está marcada y se detiene al desmarcarla o al salir de Wmb Table.
 - Por defecto, su aplicación de IA solo puede leer. Marque `Permitir cambios (notas y temas)` para que también pueda crear y modificar sus notas y temas. Esto vale para todos los métodos.
 - Wmb Table puede permanecer abierto mientras el comando funciona: ambos usan la misma biblioteca sin molestarse.
