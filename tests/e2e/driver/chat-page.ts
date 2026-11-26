@@ -132,6 +132,83 @@ export class ChatPage {
         );
     }
 
+    /** Types and presses Enter without waiting for the input to clear (for refused messages). */
+    async typeAndPressEnter(message: string): Promise<void> {
+        await this.click(SELECTORS.input);
+        await this.cdp.send('Input.insertText', { text: message });
+        await this.pressEnter();
+    }
+
+    /** Selects the whole draft and deletes it, as a user would. */
+    async clearInput(): Promise<void> {
+        await this.click(SELECTORS.input);
+        await this.cdp.evaluate(`document.querySelector('${SELECTORS.input}').select()`);
+        const key = { key: 'Delete', code: 'Delete', windowsVirtualKeyCode: 46 };
+        await this.cdp.send('Input.dispatchKeyEvent', { ...key, type: 'keyDown' });
+        await this.cdp.send('Input.dispatchKeyEvent', { ...key, type: 'keyUp' });
+        await this.cdp.waitFor(
+            `document.querySelector('${SELECTORS.input}').value === ''`,
+            'an empty input',
+        );
+    }
+
+    /** Clicks a button of the outcome banner by its visible label. */
+    async clickNoticeButton(label: string): Promise<void> {
+        await this.clickAt(
+            `[...document.querySelectorAll('.ai-chat__run-notice button')].find((b) => b.innerText.trim() === ${JSON.stringify(label)}) ?? null`,
+            `the "${label}" banner button`,
+        );
+    }
+
+    /** Opens the conversation whose title contains `text`. */
+    async openConversation(text: string): Promise<void> {
+        await this.clickAt(
+            `[...document.querySelectorAll('.ai-chat__conv-title')].find((el) => el.innerText.includes(${JSON.stringify(text)})) ?? null`,
+            `the conversation "${text}"`,
+        );
+    }
+
+    noticeTexts(): Promise<string[]> {
+        return this.cdp.evaluate<string[]>(
+            `[...document.querySelectorAll('.ai-chat__run-notice')].map((el) => el.innerText.trim())`,
+        );
+    }
+
+    /** Switches the UI language the way the settings do, then reloads and reopens the chat. */
+    async setUiLanguage(language: string): Promise<void> {
+        await this.cdp.evaluate(`(async () => {
+            await window.api.app.setUiLanguage(${JSON.stringify(language)});
+            const stored = JSON.parse(localStorage.getItem('wmb-theme') ?? '{"state":{}}');
+            stored.state.uiLanguagePreference = ${JSON.stringify(language)};
+            localStorage.setItem('wmb-theme', JSON.stringify(stored));
+        })()`);
+        await this.cdp.reload();
+        await this.cdp.waitFor(
+            `document.documentElement.lang === ${JSON.stringify(language)} || Boolean(document.querySelector('${SELECTORS.menuItem}'))`,
+            'the reloaded app',
+        );
+        await this.open();
+        // After a reload the app may take main's theme while the emulated media is unchanged
+        await this.cdp.send('Emulation.setEmulatedMedia', {
+            features: [{ name: 'prefers-color-scheme', value: 'dark' }],
+        });
+        await this.waitForPaint();
+        await this.setTheme('light');
+    }
+
+    async setViewport(width: number, height: number): Promise<void> {
+        await this.cdp.send('Emulation.setDeviceMetricsOverride', {
+            width,
+            height,
+            deviceScaleFactor: 1,
+            mobile: false,
+        });
+    }
+
+    async resetViewport(): Promise<void> {
+        await this.cdp.send('Emulation.clearDeviceMetricsOverride', {});
+    }
+
     facts(): Promise<ChatFacts> {
         return this.cdp.evaluate<ChatFacts>(READ_FACTS);
     }

@@ -348,13 +348,7 @@ const drop: E2eCase = {
             final.messages.some((m) => m.role === 'assistant' && m.text.includes('MOCK-DROP-TEXT')),
             lastAssistantText(final).slice(-200),
         );
-        checkErrorShown(
-            ctx,
-            final,
-            /response|connection|terminated/i,
-            /connexion|réseau/i,
-            'G6 no Retry once part of the answer was streamed',
-        );
+        checkErrorShown(ctx, final, /response|connection|terminated/i, /connexion|réseau/i);
     },
 };
 
@@ -552,7 +546,7 @@ const tooLongMessage: E2eCase = {
     name: 'too-long-message',
     description: 'A message over 100 000 characters is refused in French, with no model call',
     async run(ctx) {
-        await ctx.page.send(`${'a'.repeat(100_001)} #scenario:echo`);
+        await ctx.page.typeAndPressEnter(`${'a'.repeat(100_001)} #scenario:echo`);
         const final = await ctx.waitUntil(
             (f) => f.errorAlerts.length > 0,
             'an error banner',
@@ -565,6 +559,15 @@ const tooLongMessage: E2eCase = {
             final.errorAlerts,
         );
         ctx.check('the model was not called', ctx.requests().length === 0, ctx.requests().length);
+        const leftOver = await ctx.page.evaluate<{ draft: number; queued: number }>(
+            `({ draft: document.querySelector('textarea.ai-chat__input-textarea').value.length, queued: document.querySelectorAll('.ai-chat__queue-item').length })`,
+        );
+        ctx.check(
+            'the message stays in the input to be shortened, and nothing is queued (U20)',
+            leftOver.draft > 100_000 && leftOver.queued === 0,
+            leftOver,
+        );
+        await ctx.page.clearInput();
     },
 };
 
@@ -601,6 +604,208 @@ const navigationGuard: E2eCase = {
     },
 };
 
+const noticeText = (ctx: CaseContext) => ctx.page.noticeTexts().then((texts) => texts.join(' | '));
+const lastUserText = (facts: ChatFacts) =>
+    facts.messages.filter((m) => m.role === 'user').pop()?.text ?? '';
+
+const switchMidRun: E2eCase = {
+    name: 'switch-mid-run',
+    description: 'Switching conversation while an answer is coming does not pull the user back',
+    async run(ctx) {
+        await ctx.page.send('Bascule pendant la réponse #scenario:slow-first-token #delay=4000');
+        await ctx.waitUntil((f) => f.spinner, 'waiting indicator');
+        await ctx.page.startNewConversation();
+        const request = await ctx.waitForRequest(
+            (r) => r.scenario === 'slow-first-token' && r.outcome === 'completed',
+            15_000,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        const onOther = await ctx.page.facts();
+        await ctx.shot('other-conversation');
+        ctx.check('the first answer finished in the background', Boolean(request));
+        ctx.check(
+            'the user stays on the conversation they opened',
+            onOther.messages.length === 0 && !onOther.activeTitle?.includes('Bascule'),
+            { title: onOther.activeTitle, messages: onOther.messages.length },
+        );
+        ctx.check('the other conversation shows no Stop button', !onOther.stopButton);
+        await ctx.page.openConversation('Bascule pendant');
+        const back = await ctx.waitUntil(
+            (f) => lastAssistantText(f).includes('MOCK-SLOW-DONE'),
+            'the finished answer',
+            10_000,
+        );
+        ctx.check('the first conversation holds its full answer', hasAssistantText(back));
+        ctx.check('no error banner', back.errorAlerts.length === 0, back.errorAlerts);
+    },
+};
+
+const continueAfterCut: E2eCase = {
+    name: 'continue-after-cut',
+    description:
+        'The "Continuer" button of a cut answer asks for the rest in the same conversation',
+    async run(ctx) {
+        await sendAndCapture(ctx, 'Une réponse sans fin #scenario:length-always', null);
+        ctx.check('the cut banner is shown', /Réponse coupée/.test(await noticeText(ctx)));
+        await ctx.shot('truncated-banner');
+        const before = ctx.requests().length;
+        await ctx.page.clickNoticeButton('Continuer');
+        await ctx.waitUntil(
+            (f) => ctx.requests().length > before && !f.stopButton,
+            'the continue run',
+        );
+        const final = await ctx.waitForRunEnd();
+        await ctx.shot('continued');
+        ctx.check(
+            'a continue request was sent as a user message in this conversation',
+            lastUserText(final).includes("Continue ta réponse là où elle s'est arrêtée."),
+            lastUserText(final),
+        );
+        ctx.check('the model was called again', ctx.requests().length > before);
+        ctx.check(
+            'the earlier answer is still there',
+            final.messages.filter((m) => m.role === 'assistant').length >= 2,
+        );
+    },
+};
+
+const retryAfterDrop: E2eCase = {
+    name: 'retry-after-drop',
+    description: 'Réessayer after a dropped connection asks for the answer again',
+    async run(ctx) {
+        await sendAndCapture(ctx, 'Coupure puis relance #scenario:drop', null);
+        const before = ctx.requests().length;
+        await ctx.page.clickNoticeButton('Réessayer');
+        const final = await ctx.waitUntil(
+            (f) => ctx.requests().length > before && !f.stopButton,
+            'the retried run',
+        );
+        await ctx.shot('retried');
+        ctx.check('the model was called again', ctx.requests().length > before, {
+            before,
+            after: ctx.requests().length,
+        });
+        ctx.check(
+            'the partial answer stays, and the follow-up asks to resume it',
+            final.messages.some((m) => m.text.includes('MOCK-DROP-TEXT')) &&
+                lastUserText(final).includes('Continue ta réponse'),
+            lastUserText(final),
+        );
+    },
+};
+
+const stopAtOnce: E2eCase = {
+    name: 'stop-at-once',
+    description: 'Stop pressed right after sending, before main confirmed the run',
+    async run(ctx) {
+        await ctx.page.send('Arrêt immédiat #scenario:slow-first-token #delay=20000');
+        await ctx.page.clickStop();
+        const final = await ctx.waitForRunEnd(15_000);
+        await ctx.shot('stopped');
+        ctx.check('no error banner', final.errorAlerts.length === 0, final.errorAlerts);
+        ctx.check(
+            'the answer is marked as stopped by the user',
+            /Arrêté par vous/.test(await noticeText(ctx)),
+            await noticeText(ctx),
+        );
+        ctx.check(
+            'the answer never arrived',
+            !final.messages.some((m) => m.text.includes('MOCK-SLOW-DONE')),
+        );
+        const closed = await ctx.waitForRequest((r) => r.outcome === 'client-closed', 25_000);
+        ctx.check(
+            'the HTTP request was closed (or never made)',
+            Boolean(closed) || ctx.requests().length === 0,
+            ctx.requests().map((r) => r.outcome),
+        );
+    },
+};
+
+const READ_HORIZONTAL_OVERFLOW = `(() => {
+    const list = document.querySelector('.ai-chat__messages');
+    return list ? list.scrollWidth - list.clientWidth : -1;
+})()`;
+
+const longReference: E2eCase = {
+    name: 'long-reference',
+    description:
+        'A long sermon reference tag wraps inside the bubble instead of scrolling sideways',
+    async run(ctx) {
+        const final = await sendAndCapture(
+            ctx,
+            'Cite un long titre #scenario:long-reference',
+            null,
+        );
+        await ctx.shot('done');
+        checkCleanEnd(ctx, final, 'MOCK-LONG-REFERENCE-DONE');
+        for (const [width, height] of [
+            [1440, 900],
+            [760, 640],
+        ]) {
+            await ctx.page.setViewport(width, height);
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            const overflow = await ctx.page.evaluate<number>(READ_HORIZONTAL_OVERFLOW);
+            ctx.check(`no sideways scroll in the thread at ${width}px`, overflow <= 0, overflow);
+        }
+        await ctx.shot('small-window');
+        await ctx.page.resetViewport();
+    },
+};
+
+const BANNER_LANGUAGES = [
+    { code: 'en', cut: /Answer cut off/, stopped: /Stopped by you/ },
+    { code: 'es', cut: /Respuesta cortada/, stopped: /Detenido por ti/ },
+    { code: 'pt', cut: /Resposta cortada/, stopped: /Interrompido por você/ },
+    { code: 'sw', cut: /Jibu limekatika/, stopped: /Imesimamishwa na wewe/ },
+] as const;
+
+const bannerLanguages: E2eCase = {
+    name: 'banner-languages',
+    description: 'Outcome banners in en, es, pt and sw, then a small window in fr',
+    async run(ctx) {
+        try {
+            for (const language of BANNER_LANGUAGES) {
+                await ctx.page.setUiLanguage(language.code);
+                await sendAndCapture(ctx, `Cut ${language.code} #scenario:length-always`, null);
+                ctx.check(
+                    `the cut banner is in ${language.code}`,
+                    language.cut.test(await noticeText(ctx)),
+                    await noticeText(ctx),
+                );
+                await ctx.shot(`truncated-${language.code}`);
+                await ctx.page.send(
+                    `Stop ${language.code} #scenario:slow-first-token #delay=20000`,
+                );
+                await ctx.waitUntil((f) => f.spinner, 'waiting indicator');
+                await ctx.page.clickStop();
+                await ctx.waitForRunEnd(15_000);
+                ctx.check(
+                    `the stopped banner is in ${language.code}`,
+                    language.stopped.test(await noticeText(ctx)),
+                    await noticeText(ctx),
+                );
+                await sendAndCapture(ctx, `Key ${language.code} #scenario:401`, null);
+                await ctx.shot(`error-${language.code}`);
+            }
+        } finally {
+            await ctx.page.setUiLanguage('fr');
+        }
+        await ctx.page.setViewport(760, 640);
+        await sendAndCapture(ctx, 'Petite fenêtre #scenario:401', null);
+        await ctx.shot('error-small-window');
+        await ctx.page.resetViewport();
+    },
+};
+
+const chatUiCases: E2eCase[] = [
+    switchMidRun,
+    continueAfterCut,
+    retryAfterDrop,
+    stopAtOnce,
+    longReference,
+    bannerLanguages,
+];
+
 export const cases: E2eCase[] = [
     normal,
     longResearch,
@@ -627,8 +832,9 @@ export const cases: E2eCase[] = [
     title,
     unsafeLinks,
     navigationGuard,
+    ...chatUiCases,
     ...lifecycleCases,
-    // Last: the refused message stays queued, so "new conversation" reuses this empty one (U20, U27).
+    // Last: its conversation stays empty, so "new conversation" would reuse it.
     tooLongMessage,
 ];
 

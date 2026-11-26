@@ -432,7 +432,33 @@ const failureScenarios: Scenario[] = [
     },
 ];
 
-export const scenarios: Scenario[] = [...utilityScenarios, ...answerScenarios, ...failureScenarios];
+const LONG_REFERENCE_TITLE =
+    "L'Approche À Laquelle Dieu A Pourvue Pour Communier Avec Lui Et Le Sang De L'Agneau";
+
+const chatUiScenarios: Scenario[] = [
+    {
+        name: 'long-reference',
+        description: 'An answer quoting a sermon whose reference tag is longer than the bubble',
+        reply: () =>
+            complete([
+                text(
+                    [
+                        '« Oh! j’aime cela!... Vous pouvez tout avoir dans ce monde... » — ' +
+                            `[${LONG_REFERENCE_TITLE} (63-0318, §1)](wmb://sermon/63-0318/tur/1/1)`,
+                        '',
+                        'MOCK-LONG-REFERENCE-DONE',
+                    ].join('\n'),
+                ),
+            ]),
+    },
+];
+
+export const scenarios: Scenario[] = [
+    ...utilityScenarios,
+    ...answerScenarios,
+    ...failureScenarios,
+    ...chatUiScenarios,
+];
 
 export const DEFAULT_SCENARIO = 'echo';
 
