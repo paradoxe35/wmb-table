@@ -2,6 +2,7 @@ import { MOCK_CONTEXT_WINDOW, MOCK_MAX_COMPLETION_TOKENS } from './mock-llm/scen
 import { LONG_RESEARCH_TOOL_STEPS, OVERFLOW_TOOL_STEPS } from './mock-llm/scenarios';
 import { lastAssistantText, type CaseContext, type E2eCase } from './case-runner';
 import type { ChatFacts } from './driver/chat-page';
+import { lifecycleCases } from './lifecycle-cases';
 
 const hasAssistantText = (facts: ChatFacts) => lastAssistantText(facts).length > 0;
 const TRUNCATION_NOTICE_FR = /Réponse coupée/;
@@ -626,6 +627,7 @@ export const cases: E2eCase[] = [
     title,
     unsafeLinks,
     navigationGuard,
+    ...lifecycleCases,
     // Last: the refused message stays queued, so "new conversation" reuses this empty one (U20, U27).
     tooLongMessage,
 ];

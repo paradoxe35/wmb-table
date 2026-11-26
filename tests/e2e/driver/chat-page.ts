@@ -166,6 +166,14 @@ export class ChatPage {
         );
     }
 
+    /** Emulated media set before a reload stops firing change events after it, so drop it first. */
+    async reload(): Promise<void> {
+        await this.cdp.send('Emulation.setEmulatedMedia', { features: [] });
+        await this.cdp.reload();
+        await this.open();
+        await this.setTheme('light');
+    }
+
     /** Saves `<name>-light.png` and `<name>-dark.png`, and returns to the light theme. */
     async screenshotBothThemes(name: string): Promise<string[]> {
         const paths: string[] = [];
