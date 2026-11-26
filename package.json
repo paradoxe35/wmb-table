@@ -161,6 +161,18 @@
         },
         "files": [
             "out/**/*",
+            "package.json",
+            "!tmp/**",
+            "!.claude/**",
+            "!**/*.sqlite*",
+            "!.env*",
+            "!release/**",
+            "!docs/**",
+            "!tests/**",
+            "!specs/**",
+            "!scripts/**",
+            "!src/**",
+            "!coverage/**",
             "!node_modules/better-sqlite3/deps/**/*",
             "!node_modules/better-sqlite3/src/**/*",
             "!node_modules/better-sqlite3/binding.gyp",
@@ -194,6 +206,7 @@
             "entitlementsInherit": "resources/entitlements.mac.plist",
             "gatekeeperAssess": false,
             "files": [
+                "out/**/*",
                 "!node_modules/koffi/**/*"
             ]
         },
@@ -234,6 +247,7 @@
             ],
             "category": "Education",
             "files": [
+                "out/**/*",
                 "!node_modules/koffi/**/*"
             ]
         },
