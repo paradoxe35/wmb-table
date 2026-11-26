@@ -7,7 +7,9 @@ import { MCP_PORT_ATTEMPTS } from '@shared/mcp.types';
 
 const factoryCalls: { allowWrites: boolean }[] = [];
 
-vi.mock('electron', () => ({ app: { getVersion: () => '9.9.9' } }));
+vi.mock('electron', () => ({
+    app: { getVersion: () => '9.9.9', getAppPath: () => '/work/wmb-table', isPackaged: false },
+}));
 vi.mock('@main/services/mcp/library-mcp-server', () => ({
     createLibraryMcpServer: (options: { allowWrites: boolean }) => {
         factoryCalls.push(options);
@@ -68,6 +70,12 @@ describe('MCP server lifecycle', () => {
             settings: { enabled: false, allowWrites: false, port: 23132 },
             url: null,
             error: null,
+            launch: {
+                command: process.execPath,
+                args: ['/work/wmb-table'],
+                platform: process.platform,
+                dev: true,
+            },
         });
     });
 

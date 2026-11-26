@@ -10,6 +10,7 @@ import { createLibraryMcpServer } from './library-mcp-server';
 import { NoFreePortError } from './listen-on-free-port';
 import { startMcpHttpServer, type McpHttpServer } from './mcp-http-server';
 import { loadMcpSettings, saveMcpSettings } from './mcp-settings';
+import { detectMcpLaunchCommand } from './mcp-launch-command';
 
 interface RunningServer {
     http: McpHttpServer;
@@ -27,8 +28,23 @@ function serialized<T>(task: () => Promise<T>): Promise<T> {
     return result;
 }
 
+function currentLaunchCommand() {
+    return detectMcpLaunchCommand({
+        platform: process.platform,
+        execPath: process.execPath,
+        isPackaged: app.isPackaged,
+        appPath: app.getAppPath(),
+        appImage: process.env.APPIMAGE,
+    });
+}
+
 export function getMcpServerStatus(): McpServerStatus {
-    return { settings: loadMcpSettings(), url: running?.http.url ?? null, error: lastError };
+    return {
+        settings: loadMcpSettings(),
+        url: running?.http.url ?? null,
+        error: lastError,
+        launch: currentLaunchCommand(),
+    };
 }
 
 export function startMcpServerIfEnabled(): Promise<McpServerStatus> {

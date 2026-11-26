@@ -20,10 +20,22 @@ export const DEFAULT_MCP_SERVER_SETTINGS: McpServerSettings = {
 export type McpServerError =
     { code: 'no-free-port'; firstPort: number; lastPort: number } | { code: 'start-failed' };
 
+export type McpLaunchPlatform = 'linux' | 'darwin' | 'win32' | 'other';
+
+/** How an AI app starts this installed copy of Wmb Table: `command`, `args`, then `mcp`. */
+export interface McpLaunchCommand {
+    command: string;
+    args: string[];
+    platform: McpLaunchPlatform;
+    /** A development checkout, started through Electron with the app folder. */
+    dev: boolean;
+}
+
 export interface McpServerStatus {
     settings: McpServerSettings;
     url: string | null;
     error: McpServerError | null;
+    launch: McpLaunchCommand;
 }
 
 export type McpServerSettingsPatch = Partial<Pick<McpServerSettings, 'enabled' | 'allowWrites'>>;
