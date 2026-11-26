@@ -63,6 +63,7 @@ describe('sermon.tools', () => {
                             snippets: [{ paragraphIndex: 7, snippet: 'Dieu a dit encore...' }],
                         },
                     ],
+                    rawHitCount: 2,
                     total: 3,
                     totalIsExact: true,
                 };
@@ -78,6 +79,7 @@ describe('sermon.tools', () => {
                         snippets: [{ paragraphIndex: 5, snippet: 'Fin...' }],
                     },
                 ],
+                rawHitCount: 1,
                 total: 3,
                 totalIsExact: true,
             };
@@ -348,9 +350,13 @@ describe('sermon.tools', () => {
         ]);
     });
 
-    it('does not hand back a cursor when a content page resolves to no usable hits', async () => {
-        // Tantivy reports more results, but every hit on this page was filtered out.
-        searchSermonsMock.mockResolvedValue({ matches: [], total: 120, totalIsExact: false });
+    it('does not hand back a cursor when Tantivy returns no hits for the page', async () => {
+        searchSermonsMock.mockResolvedValue({
+            matches: [],
+            rawHitCount: 0,
+            total: 120,
+            totalIsExact: false,
+        });
 
         const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
         const tools = buildSermonTools('fr');

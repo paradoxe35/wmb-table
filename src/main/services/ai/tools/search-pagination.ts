@@ -205,21 +205,21 @@ export function resolveContentSearchPage(input: {
 
 export function buildNextSermonSearchCursor(
     page: ResolvedSermonSearchPage,
-    returned: number,
+    consumed: number,
 ): string {
     const cursor: SermonSearchCursor = {
         kind: 'searchSermons',
         query: page.query,
         languageCode: page.languageCode,
         limit: page.limit,
-        offset: page.offset + returned,
+        offset: page.offset + consumed,
     };
     return encodeSearchCursor(cursor);
 }
 
 export function buildNextContentSearchCursor(
     page: ResolvedContentSearchPage,
-    returned: number,
+    consumed: number,
 ): string {
     const cursor: ContentSearchCursor = {
         kind: 'searchContent',
@@ -227,7 +227,7 @@ export function buildNextContentSearchCursor(
         languageCode: page.languageCode,
         mode: page.mode,
         limit: page.limit,
-        offset: page.offset + returned,
+        offset: page.offset + consumed,
     };
     return encodeSearchCursor(cursor);
 }

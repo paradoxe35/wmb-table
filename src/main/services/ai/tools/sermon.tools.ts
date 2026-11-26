@@ -260,13 +260,14 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                 }
 
                 try {
-                    const { matches, total, totalIsExact } = await searchService.searchSermons({
-                        langCode: page.languageCode,
-                        query: page.query,
-                        mode: page.mode,
-                        limit: page.limit,
-                        offset: page.offset,
-                    });
+                    const { matches, rawHitCount, total, totalIsExact } =
+                        await searchService.searchSermons({
+                            langCode: page.languageCode,
+                            query: page.query,
+                            mode: page.mode,
+                            limit: page.limit,
+                            offset: page.offset,
+                        });
 
                     const items: SearchContentHit[] = matches.map((m) => ({
                         sermonId: m.sermonId,
@@ -293,18 +294,15 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                         totalMatches: m.snippets.length,
                     }));
 
-                    const returned = items.length;
-                    // Hits are dropped after the query, so a page can be empty while `total`
-                    // still counts them; a cursor here would repeat the same offset forever.
-                    const hasMore = returned > 0 && page.offset + returned < total;
+                    const hasMore = rawHitCount > 0 && page.offset + rawHitCount < total;
                     const response: SearchContentToolResponse = {
                         results: items,
                         totalSermons: total,
                         totalIsExact,
-                        returned,
+                        returned: items.length,
                         hasMore,
                         nextCursor: hasMore
-                            ? buildNextContentSearchCursor(page, returned)
+                            ? buildNextContentSearchCursor(page, rawHitCount)
                             : undefined,
                     };
 

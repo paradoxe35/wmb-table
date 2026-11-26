@@ -35,6 +35,8 @@ export interface SearchSermonsOptions {
 
 export interface SearchSermonsResult {
     matches: MatchedSermon[];
+    /** Hits Tantivy returned for this page, before unusable ones were dropped. */
+    rawHitCount: number;
     total: number;
     totalIsExact: boolean;
 }
@@ -72,7 +74,8 @@ function mergeOverlappingRanges(
  *   - **all**: boolean AND (all words required)
  *   - **exact**: phrase query with slop (proximity matching)
  *
- * Tantivy handles all filtering natively — pagination is always correct.
+ * Hits with no sermon id or no matching paragraph are dropped, so callers paging through
+ * results must advance by `rawHitCount`, not by the number of matches kept.
  */
 export async function searchSermons(opts: SearchSermonsOptions): Promise<SearchSermonsResult> {
     const { langCode, query, mode, limit, offset } = opts;
@@ -127,5 +130,10 @@ export async function searchSermons(opts: SearchSermonsOptions): Promise<SearchS
 
     const matches = matchCandidates.filter((match): match is MatchedSermon => match != null);
 
-    return { matches, total: result.total, totalIsExact: result.totalIsExact };
+    return {
+        matches,
+        rawHitCount: result.hits.length,
+        total: result.total,
+        totalIsExact: result.totalIsExact,
+    };
 }
