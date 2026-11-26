@@ -18,6 +18,7 @@ import {
 } from '@shared/ai.types';
 import { AI_DATA_EVENT, APP_UI_EVENT } from '@renderer/utils/events';
 import { createStore } from './create-store';
+import { createAiSettingsSaveQueue, type AiSettingsUpdate } from './ai-settings-save-queue';
 import { markFeatureReminderUsed } from '@renderer/lib/feature-reminders';
 
 const TOOL_TO_EVENT: Record<string, string> = {
@@ -492,7 +493,8 @@ interface AiChatState {
     initialize(): Promise<void>;
     loadSettings(): Promise<void>;
     loadProviderCatalog(): Promise<void>;
-    saveSettings(partial: Partial<AiSettings>): Promise<void>;
+    saveSettings(update: AiSettingsUpdate): Promise<void>;
+    whenSettingsSaved(): Promise<void>;
     loadConversations(): Promise<void>;
     refreshAfterSync(): Promise<void>;
     loadOlderConversations(): Promise<void>;
@@ -521,6 +523,15 @@ interface AiChatState {
         baseUrl?: string;
     }): Promise<AiProviderTestResult>;
 }
+
+const settingsSaveQueue = createAiSettingsSaveQueue({
+    current: () => useAiChatStore.getState().settings,
+    save: (partial) => window.api.ai.updateSettings(partial),
+    applied: (settings) => {
+        useAiChatStore.setState({ settings });
+        window.dispatchEvent(new Event(APP_UI_EVENT.aiSettingsUpdated));
+    },
+});
 
 export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     initialized: false,
@@ -903,11 +914,9 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         set({ providerCatalog });
     },
 
-    saveSettings: async (partial) => {
-        const settings = await window.api.ai.updateSettings(partial);
-        set({ settings });
-        window.dispatchEvent(new Event(APP_UI_EVENT.aiSettingsUpdated));
-    },
+    saveSettings: (update) => settingsSaveQueue.enqueue(update),
+
+    whenSettingsSaved: () => settingsSaveQueue.settled(),
 
     loadConversations: async () => {
         set({ loadingConversationList: true, error: null });
