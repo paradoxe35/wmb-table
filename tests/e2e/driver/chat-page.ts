@@ -28,10 +28,18 @@ export interface ChatFacts {
 const SELECTORS = {
     chatView: '.ai-chat',
     menuItem: '[data-menu-id$="ai-chat"]',
-    newConversation: 'button[aria-label="Nouvelle conversation"]',
+    newConversation: 'button.ai-chat__new-conversation',
     input: 'textarea.ai-chat__input-textarea',
-    stop: '.ai-chat__input-actions button[title="Arrêter"]',
-    send: '.ai-chat__input-actions button[title="Envoyer"], .ai-chat__input-actions button[title="Ajouter à la file d\'attente"]',
+    stop: 'button.ai-chat__stop-button',
+    send: 'button.ai-chat__send-button',
+};
+
+const SEND_LABELS: Record<string, string> = {
+    fr: 'Envoyer',
+    en: 'Send',
+    es: 'Enviar',
+    pt: 'Enviar',
+    sw: 'Tuma',
 };
 
 const READ_FACTS = `(() => {
@@ -183,11 +191,11 @@ export class ChatPage {
             localStorage.setItem('wmb-theme', JSON.stringify(stored));
         })()`);
         await this.cdp.reload();
-        await this.cdp.waitFor(
-            `document.documentElement.lang === ${JSON.stringify(language)} || Boolean(document.querySelector('${SELECTORS.menuItem}'))`,
-            'the reloaded app',
-        );
         await this.open();
+        await this.cdp.waitFor(
+            `document.querySelector('${SELECTORS.send}')?.title === ${JSON.stringify(SEND_LABELS[language])}`,
+            `the chat in "${language}"`,
+        );
         // After a reload the app may take main's theme while the emulated media is unchanged
         await this.cdp.send('Emulation.setEmulatedMedia', {
             features: [{ name: 'prefers-color-scheme', value: 'dark' }],

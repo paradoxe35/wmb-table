@@ -434,17 +434,30 @@ const failureScenarios: Scenario[] = [
 
 const LONG_REFERENCE_TITLE =
     "L'Approche À Laquelle Dieu A Pourvue Pour Communier Avec Lui Et Le Sang De L'Agneau";
+const LONG_REFERENCE_TAG = `[${LONG_REFERENCE_TITLE} (63-0318, §1)](wmb://sermon/63-0318/tur/1/1)`;
 
 const chatUiScenarios: Scenario[] = [
     {
         name: 'long-reference',
-        description: 'An answer quoting a sermon whose reference tag is longer than the bubble',
+        description:
+            'Long reference tags in a quote, a list and a paragraph, plus a long link, word and code line',
         reply: () =>
             complete([
                 text(
                     [
-                        '« Oh! j’aime cela!... Vous pouvez tout avoir dans ce monde... » — ' +
-                            `[${LONG_REFERENCE_TITLE} (63-0318, §1)](wmb://sermon/63-0318/tur/1/1)`,
+                        `> « Oh! j’aime cela!... Vous pouvez tout avoir dans ce monde... mais vous ne parviendrez jamais à une communion divine avec Dieu, à moins que vous ne veniez d'abord sous le Sang. » — ${LONG_REFERENCE_TAG}`,
+                        '',
+                        `- Dans une liste : ${LONG_REFERENCE_TAG}`,
+                        '',
+                        `Dans un paragraphe : ${LONG_REFERENCE_TAG}`,
+                        '',
+                        `Un lien long : https://wmb-table.web.app/${'tres-long-chemin/'.repeat(12)}fin`,
+                        '',
+                        `Un mot long : ${'Anticonstitutionnellement'.repeat(6)}`,
+                        '',
+                        '```',
+                        `const ligne = '${'x'.repeat(240)}';`,
+                        '```',
                         '',
                         'MOCK-LONG-REFERENCE-DONE',
                     ].join('\n'),

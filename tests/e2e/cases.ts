@@ -738,8 +738,13 @@ const longReference: E2eCase = {
         );
         await ctx.shot('done');
         checkCleanEnd(ctx, final, 'MOCK-LONG-REFERENCE-DONE');
+        const quotedTags = await ctx.page.evaluate<number>(
+            `document.querySelectorAll('.ai-chat__bubble blockquote [data-href]').length`,
+        );
+        ctx.check('the long reference tag sits inside a quote', quotedTags > 0, quotedTags);
         for (const [width, height] of [
             [1440, 900],
+            [1024, 700],
             [760, 640],
         ]) {
             await ctx.page.setViewport(width, height);
@@ -838,7 +843,7 @@ export const cases: E2eCase[] = [
     tooLongMessage,
 ];
 
-const isSubAgentStep = (tag: string) => tag.startsWith('↳');
+const isSubAgentStep = (tag: string) => tag.startsWith('›');
 
 const subagentStepLimit: E2eCase = {
     name: 'subagent-step-limit',

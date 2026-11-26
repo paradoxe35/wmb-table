@@ -156,6 +156,7 @@ const ChatInput = memo(function ChatInput({
                             size="small"
                             shape="circle"
                             icon={<StopOutlined style={{ fontSize: 'var(--fs-sm)' }} />}
+                            className="ai-chat__stop-button"
                             onClick={onStop}
                             disabled={runStatus === 'stopping'}
                             title={t('Arrêter')}
@@ -171,6 +172,7 @@ const ChatInput = memo(function ChatInput({
                                 style={{ fontSize: 'var(--fs-md)', fontWeight: 700 }}
                             />
                         }
+                        className="ai-chat__send-button"
                         onClick={onSend}
                         disabled={!draft.trim()}
                         title={sending ? t("Ajouter à la file d'attente") : t('Envoyer')}

@@ -202,6 +202,7 @@ export default memo(function ChatConversationList({
                         size="small"
                         type="text"
                         icon={<PlusOutlined />}
+                        className="ai-chat__new-conversation"
                         onClick={onCreateConversation}
                         aria-label={t('Nouvelle conversation')}
                     />
