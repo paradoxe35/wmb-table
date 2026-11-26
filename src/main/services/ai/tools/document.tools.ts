@@ -31,6 +31,26 @@ const customDocumentSearchInputSchema = z
         path: ['query'],
     });
 
+const MAX_CONTENT_CHARS = 12_000;
+
+/** A "line" is a whole paragraph of an imported PDF or EPUB, so a line count alone can be huge. */
+function takeLinesWithinBudget(candidates: string[]): { lines: string[]; lineTruncated: boolean } {
+    const [first, ...rest] = candidates;
+    if (first === undefined) return { lines: [], lineTruncated: false };
+    if (first.length > MAX_CONTENT_CHARS) {
+        return { lines: [first.slice(0, MAX_CONTENT_CHARS)], lineTruncated: true };
+    }
+
+    const lines = [first];
+    let used = first.length;
+    for (const line of rest) {
+        used += line.length + 1;
+        if (used > MAX_CONTENT_CHARS) break;
+        lines.push(line);
+    }
+    return { lines, lineTruncated: false };
+}
+
 type CustomDocumentSearchCursor = z.infer<typeof customDocumentSearchCursorSchema>;
 
 function resolveSearchPage(input: {
@@ -137,6 +157,8 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
             description:
                 'Retrieve the text content of a custom document by its id. ' +
                 'Supports pagination via startLine and maxLines to avoid loading the entire document at once. ' +
+                `A page stops early once it reaches ${MAX_CONTENT_CHARS} characters; if hasMore is true, pass nextStartLine as startLine to read on. ` +
+                'lineTruncated means one very long paragraph was cut at that limit. ' +
                 'Includes wmbUrl for markdown reference links.',
             inputSchema: z.object({
                 documentId: z.string(),
@@ -161,8 +183,9 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
                 if (!doc.content) return { error: 'Document has no text content.' };
 
                 const lines = customDocsRepo.toDocumentLines(doc.content);
-                const totalLines = lines.length;
-                const slice = lines.slice(startLine, startLine + maxLines).join('\n');
+                const page = takeLinesWithinBudget(lines.slice(startLine, startLine + maxLines));
+                const nextStartLine = startLine + page.lines.length;
+                const hasMore = page.lines.length > 0 && nextStartLine < lines.length;
 
                 return {
                     documentId: doc.id,
@@ -173,10 +196,13 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
                         documentId: doc.id,
                         title: doc.title,
                     }),
-                    content: slice,
-                    totalLines,
+                    content: page.lines.join('\n'),
+                    totalLines: lines.length,
                     startLine,
-                    returnedLines: Math.max(0, Math.min(maxLines, totalLines - startLine)),
+                    returnedLines: page.lines.length,
+                    hasMore,
+                    nextStartLine: hasMore ? nextStartLine : undefined,
+                    lineTruncated: page.lineTruncated || undefined,
                 };
             },
         },
