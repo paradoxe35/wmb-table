@@ -249,7 +249,8 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                 'Each match includes wmbUrl for markdown reference links. ' +
                 'Mode controls precision: "exact" (default) finds words in order as a phrase, ' +
                 '"all" requires all words present in any order, "any" matches at least one word. ' +
-                'If nextCursor is returned, pass it back to continue from the next page instead of repeating page one.',
+                'If nextCursor is returned, pass it back to continue from the next page instead of repeating page one. ' +
+                'A page can come back with no results but hasMore true: that only means keep paging with nextCursor.',
             inputSchema: contentSearchToolInputSchema,
             execute: async ({ query, languageCode, mode: searchMode, limit, cursor }) => {
                 const page = resolveContentSearchPage({
