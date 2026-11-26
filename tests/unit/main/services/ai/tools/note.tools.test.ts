@@ -6,6 +6,19 @@ const createMock = vi.fn();
 const renameMock = vi.fn();
 const updateContentMock = vi.fn();
 
+const markdownFailure = vi.hoisted(() => ({ error: null as Error | null }));
+
+vi.mock('@main/lib/note-markdown', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@main/lib/note-markdown')>();
+    return {
+        ...actual,
+        markdownToNoteHtml: async (markdown: string) => {
+            if (markdownFailure.error) throw markdownFailure.error;
+            return actual.markdownToNoteHtml(markdown);
+        },
+    };
+});
+
 vi.mock('@main/database/repositories/notes.repository', () => ({
     getAllSummary: getAllSummaryMock,
     getById: getByIdMock,
@@ -28,6 +41,7 @@ function mockNote(content: string, name = 'Etude', id = 'note-1') {
 describe('note.tools', () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        markdownFailure.error = null;
     });
 
     describe('getNoteById', () => {
@@ -216,6 +230,102 @@ describe('note.tools', () => {
                 'note-1',
                 '<h1>Etude</h1>\n<p>Nouveau contenu</p>',
             );
+        });
+
+        it.each([
+            ['a table', '<table><tr><td>Alpha</td></tr></table>', 'a table'],
+            ['a colour', '<p><span style="color: red">Rouge</span></p>', 'colours'],
+            ['underline', '<p><u>Souligné</u></p>', 'underlined text'],
+            ['strike-through', '<p><s>Barré</s></p>', 'struck-through text'],
+            ['a highlight', '<p><mark>Surligné</mark></p>', 'highlighted text'],
+            ['alignment', '<p style="text-align: center">Centré</p>', 'alignment'],
+            ['a page break', '<div data-type="page-break"></div>', 'page breaks'],
+        ])('refuses to rewrite a note holding %s', async (_case, formatted, label) => {
+            mockNote(`<h1>Etude</h1><p>Texte simple.</p>${formatted}`);
+
+            const result = (await tools.updateNoteContent.execute({
+                noteId: 'note-1',
+                content: 'Nouveau contenu',
+            })) as { error: string };
+
+            expect(result.error).toContain(label);
+            expect(result.error).toContain('editNote');
+            expect(result.error).toContain('appendToNote');
+            expect(updateContentMock).not.toHaveBeenCalled();
+        });
+
+        it('rewrites a note whose links and plain marks markdown keeps', async () => {
+            mockNote(
+                '<h1>Etude</h1><p><strong>Gras</strong> et <em>italique</em> avec ' +
+                    '<a href="http://w.t/#wmb/sermon/1/fr/2/3">le sermon</a>.</p><ul><li>Un</li></ul>',
+            );
+
+            const result = await tools.updateNoteContent.execute({
+                noteId: 'note-1',
+                content: 'Plus court, voir [le sermon](wmb://sermon/1/fr/2/3).',
+            });
+
+            expect(result).toEqual({ noteId: 'note-1', name: 'Etude' });
+            expect(updateContentMock.mock.calls[0][1]).toContain(
+                'href="http://w.t/#wmb/sermon/1/fr/2/3"',
+            );
+        });
+
+        it('fills an empty note', async () => {
+            mockNote('');
+
+            const result = await tools.updateNoteContent.execute({
+                noteId: 'note-1',
+                content: 'Premier jet',
+            });
+
+            expect(result).toEqual({ noteId: 'note-1', name: 'Etude' });
+        });
+
+        it('stores malformed markdown as best it can instead of failing', async () => {
+            mockNote(NOTE_HTML);
+
+            const result = await tools.updateNoteContent.execute({
+                noteId: 'note-1',
+                content: '**pas fermé\n\n[lien cassé](\n\n# \n\n- ',
+            });
+
+            expect(result).toEqual({ noteId: 'note-1', name: 'Etude' });
+            expect(updateContentMock).toHaveBeenCalledOnce();
+        });
+
+        it('saves very long content whole', async () => {
+            mockNote(NOTE_HTML);
+            const paragraph = "L'amour de Dieu et le Saint-Esprit. ".repeat(40);
+            const content = Array.from({ length: 400 }, () => paragraph).join('\n\n');
+
+            const result = await tools.updateNoteContent.execute({ noteId: 'note-1', content });
+
+            expect(result).toEqual({ noteId: 'note-1', name: 'Etude' });
+            const saved = updateContentMock.mock.calls[0][1] as string;
+            expect(saved.match(/<p>/g)).toHaveLength(400);
+        });
+
+        it('reports an unknown note', async () => {
+            getByIdMock.mockReturnValue(null);
+
+            expect(
+                await tools.updateNoteContent.execute({ noteId: ' missing ', content: 'Texte' }),
+            ).toEqual({ error: 'Note "missing" not found.' });
+            expect(updateContentMock).not.toHaveBeenCalled();
+        });
+
+        it('returns an error when the markdown cannot be converted', async () => {
+            mockNote(NOTE_HTML);
+            markdownFailure.error = new Error('parser crashed');
+
+            const result = (await tools.updateNoteContent.execute({
+                noteId: 'note-1',
+                content: 'Texte',
+            })) as { error: string };
+
+            expect(result.error).toContain('parser crashed');
+            expect(updateContentMock).not.toHaveBeenCalled();
         });
     });
 
