@@ -64,12 +64,21 @@ export function summarizeToolResult(result: AiToolResult, charLimit: number): st
         case 'getSermonContent':
             if (output && typeof output === 'object') {
                 const title = String(output.meta?.title ?? output.meta?.sermonId ?? 'sermon');
+                const numbers: number[] = (
+                    Array.isArray(output.paragraphs) ? output.paragraphs : []
+                )
+                    .map((paragraph: { paragraphNumber?: unknown }) => paragraph?.paragraphNumber)
+                    .filter((number: unknown): number is number => typeof number === 'number');
                 const loaded = Array.isArray(output.paragraphs) ? output.paragraphs.length : 0;
                 const total =
                     typeof output.totalParagraphs === 'number' ? output.totalParagraphs : loaded;
-                const start = typeof output.startParagraph === 'number' ? output.startParagraph : 0;
-                const range = loaded > 0 ? ` §${start}–${start + loaded - 1}` : '';
-                return `${title}: ${loaded}/${total} paragraph(s)${range}`;
+                const range =
+                    numbers.length > 0 ? ` §${numbers[0]}–${numbers[numbers.length - 1]}` : '';
+                const more =
+                    output.hasMore && typeof output.nextStartParagraph === 'number'
+                        ? `, more from paragraph ${output.nextStartParagraph}`
+                        : '';
+                return `${title}: ${loaded}/${total} paragraph(s)${range}${more}`;
             }
             break;
 

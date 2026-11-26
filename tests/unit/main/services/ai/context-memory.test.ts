@@ -251,6 +251,28 @@ describe('context-memory', () => {
             expect(summary).toContain('Created subject: subject-2');
         });
 
+        it('names the real paragraph numbers a sermon read returned, gaps included', async () => {
+            const summary = await summaryFor({
+                toolCallId: 'read-1',
+                name: 'getSermonContent',
+                output: {
+                    meta: { sermonId: '65-0429B', title: 'The Rapture' },
+                    paragraphs: [12, 13, 15].map((paragraphNumber) => ({
+                        paragraphNumber,
+                        content: 'Texte',
+                    })),
+                    totalParagraphs: 120,
+                    startParagraph: 12,
+                    hasMore: true,
+                    nextStartParagraph: 16,
+                },
+            });
+
+            expect(summary).toContain(
+                'The Rapture: 3/120 paragraph(s) §12–15, more from paragraph 16',
+            );
+        });
+
         it('tells where a cut Bible passage continues', async () => {
             const summary = await summaryFor(CUT_PASSAGE_RESULT);
 
