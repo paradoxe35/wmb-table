@@ -124,7 +124,7 @@ importers:
                 version: 6.3.4(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
             '@electron-toolkit/utils':
                 specifier: ^4.0.0
-                version: 4.0.0(electron@44.4.5(supports-color@7.2.0))
+                version: 4.0.0(electron@45.5.0(supports-color@7.2.0))
             '@electron/rebuild':
                 specifier: ^4.2.1
                 version: 4.2.1(supports-color@7.2.0)
@@ -210,8 +210,8 @@ importers:
                 specifier: ^0.31.11
                 version: 0.31.11
             electron:
-                specifier: ~44.4.5
-                version: 44.4.5(supports-color@7.2.0)
+                specifier: ~45.5.0
+                version: 45.5.0(supports-color@7.2.0)
             electron-builder:
                 specifier: ^26.18.0
                 version: 26.18.0(electron-builder-squirrel-windows@26.18.0)(supports-color@7.2.0)
@@ -4871,10 +4871,10 @@ packages:
             }
         engines: { node: '>=8.0.0' }
 
-    electron@44.4.5:
+    electron@45.5.0:
         resolution:
             {
-                integrity: sha512-SjgoaeYsSWZfJzubgQU7juvuXMTvn6/e1gAHdGFA/yuMbpF+I+skYqIJ6DdXBXHeWbkbpNpmwZCTpiivtlWZSw==,
+                integrity: sha512-rBQ0Czu1Qrtrs6Fygq7Qtfcgkhpt79SylMkaFb1AhtXItdxh0Wq3ERQoPfBYECYf+FxptAiXKCZ7p+H/39CWIA==,
             }
         engines: { node: '>= 22.12.0' }
         hasBin: true
@@ -9094,9 +9094,9 @@ snapshots:
 
     '@electron-internal/extract-zip@1.0.9': {}
 
-    '@electron-toolkit/utils@4.0.0(electron@44.4.5(supports-color@7.2.0))':
+    '@electron-toolkit/utils@4.0.0(electron@45.5.0(supports-color@7.2.0))':
         dependencies:
-            electron: 44.4.5(supports-color@7.2.0)
+            electron: 45.5.0(supports-color@7.2.0)
 
     '@electron/asar@3.4.1':
         dependencies:
@@ -11651,7 +11651,7 @@ snapshots:
         transitivePeerDependencies:
             - supports-color
 
-    electron@44.4.5(supports-color@7.2.0):
+    electron@45.5.0(supports-color@7.2.0):
         dependencies:
             '@electron-internal/extract-zip': 1.0.9
             '@electron/get': 5.1.0(supports-color@7.2.0)
