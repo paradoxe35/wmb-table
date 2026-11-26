@@ -162,6 +162,23 @@ Vuelva aquí si:
 - quiere usar otro modelo
 - quiere cambiar cómo el asistente gestiona los idiomas
 
+## Usar su propia aplicación de IA (servidor MCP)
+
+Si ya usa una aplicación de IA en su ordenador, como Claude Desktop, Claude Code o Codex, puede leer su biblioteca de Wmb Table: prédicas, Biblia, sus documentos, notas y temas. Se usa su propia suscripción; Wmb Table no necesita una clave API para esto.
+
+1. Al final de esta pestaña, marque `Servidor MCP`.
+2. Wmb Table muestra la dirección del servidor, por ejemplo `http://127.0.0.1:23132/mcp`, y ejemplos para copiar para Claude Code, Codex y Claude Desktop.
+3. Copie el ejemplo de su aplicación y siga la breve explicación que aparece encima.
+
+Conviene saber:
+
+- El servidor está desactivado por defecto. Se inicia con Wmb Table mientras la casilla está marcada y se detiene al desmarcarla o al salir de Wmb Table.
+- Por defecto, su aplicación de IA solo puede leer. Marque `Permitir cambios (notas y temas)` para que también pueda crear y modificar sus notas y temas.
+- Solo se puede acceder al servidor desde su propio ordenador. Los sitios web abiertos en su navegador no pueden usarlo.
+- Si el puerto habitual ya está ocupado, Wmb Table usa el siguiente y lo muestra. Guarde esa nueva dirección en su aplicación.
+- Este ajuste es propio de cada ordenador: no se sincroniza con Google Drive.
+- Para Claude Desktop, Node.js debe estar instalado en el ordenador.
+
 ## Ver también
 
 - [Chat con IA](/es/guide/ai-chat)
