@@ -20,7 +20,8 @@ const touchConversationMock = vi.fn();
 const shouldGenerateTitleMock = vi.fn();
 const generateConversationTitleMock = vi.fn();
 
-vi.mock('ai', () => ({
+vi.mock('ai', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('ai')>()),
     generateText: generateTextMock,
 }));
 
@@ -34,6 +35,8 @@ vi.mock('@main/database/repositories/ai.repository', () => ({
     updateConversation: updateConversationMock,
     touchConversation: touchConversationMock,
     syncMessage: vi.fn(),
+    getMessage: vi.fn().mockReturnValue(null),
+    deleteMessage: vi.fn(),
     getMessages: vi.fn().mockReturnValue([]),
     deleteConversation: vi.fn(),
     getConversations: vi.fn().mockReturnValue([]),
@@ -327,10 +330,9 @@ describe('AiService', () => {
         );
     });
 
-    it('reports a model timeout as an error instead of a silent stop', async () => {
-        const timeout = new Error("Le modèle n'a pas répondu à temps.");
-        timeout.name = 'AiTimeoutError';
-        runnerRunMock.mockRejectedValue(timeout);
+    it('reports a model timeout as an error code instead of a silent stop', async () => {
+        const { AiTimeoutError } = await import('@main/services/ai/model-timeouts');
+        runnerRunMock.mockRejectedValue(new AiTimeoutError('first-chunk'));
         const service = new AiService();
 
         await service.sendMessage({} as never, {
@@ -343,7 +345,7 @@ describe('AiService', () => {
         expect(sendToRendererMock).toHaveBeenCalledWith(
             expect.anything(),
             'push:aiStreamError',
-            expect.objectContaining({ error: "Le modèle n'a pas répondu à temps." }),
+            expect.objectContaining({ code: 'timeout', retryable: true }),
         );
     });
 
