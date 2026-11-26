@@ -8,7 +8,7 @@
 /* ── Root layout ─────────────────────────────────────────────── */
 .ai-chat {
     --max-width: 90%;
-    container-type: inline-size;
+    container: ai-chat / inline-size;
     display: flex;
     flex: 1;
     min-height: 0;
@@ -321,6 +321,7 @@
 
 /* ── Message list ────────────────────────────────────────────── */
 .ai-chat__messages-wrapper {
+    container: ai-chat-thread / inline-size;
     flex: 1;
     min-height: 0;
     position: relative;
@@ -460,7 +461,7 @@
     color: var(--ant-color-primary);
 }
 
-@container (max-width: 900px) {
+@container ai-chat (max-width: 900px) {
     .ai-chat__quick-start-list {
         grid-template-columns: 1fr;
     }
@@ -987,8 +988,37 @@
     font-family: inherit;
 }
 
+/* ── Very narrow chat column: the text gets the room the avatars took ── */
+@container ai-chat-thread (max-width: 360px) {
+    .ai-chat__messages-content {
+        padding: 12px 8px;
+    }
+
+    .ai-chat__bubble {
+        gap: 0;
+    }
+
+    .ai-chat__avatar {
+        display: none;
+    }
+
+    .ai-chat__bubble-content {
+        padding: 8px 10px;
+    }
+
+    .ai-markdown blockquote {
+        margin-inline: 0;
+        padding-inline-start: 8px;
+    }
+
+    .ai-chat__notice-row {
+        margin-left: 0;
+        max-width: 100%;
+    }
+}
+
 /* ── Responsive: full width on small chat containers ────────── */
-@container (max-width: 950px) {
+@container ai-chat (max-width: 950px) {
     .ai-chat__messages-content {
         max-width: 100%;
     }
