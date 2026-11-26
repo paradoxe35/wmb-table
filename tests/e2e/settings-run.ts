@@ -546,10 +546,8 @@ async function main(): Promise<boolean> {
                 (await guiCdp.evaluate<{ name: string }[]>('window.api.notes.getAll()')).map(
                     (note) => note.name,
                 ),
-            async (allowWrites) => {
-                await guiCdp.evaluate(
-                    `window.api.mcp.updateSettings(${JSON.stringify({ allowWrites })})`,
-                );
+            async (patch) => {
+                await guiCdp.evaluate(`window.api.mcp.updateSettings(${JSON.stringify(patch)})`);
             },
         );
         const relaunched = await relaunchWithSameProfile(app, cdp, mcpUrl, appOptions, async () => {

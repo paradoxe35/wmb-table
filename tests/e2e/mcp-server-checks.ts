@@ -391,7 +391,7 @@ export class McpServerChecks {
             'Claude Code: HTTP is recommended, the command is the other way',
             recommended === `claude mcp add --transport http --scope user wmb-table ${url}` &&
                 command.startsWith('claude mcp add --scope user wmb-table -- ') &&
-                command.endsWith(`${launch.command} ${launch.args[0]} mcp`),
+                command.endsWith(`${launch.command} ${launch.args[0]} --no-sandbox mcp`),
             { recommended, command },
         );
         await this.openClient('Claude Desktop', 'claude-desktop');
@@ -402,7 +402,7 @@ export class McpServerChecks {
             'Claude Desktop: the command over stdio is recommended',
             desktop.mcpServers['wmb-table']?.command === launch.command &&
                 desktop.mcpServers['wmb-table']?.args.join(' ') ===
-                    [...launch.args, 'mcp'].join(' '),
+                    [...launch.args, '--no-sandbox', 'mcp'].join(' '),
             desktop,
         );
         this.ctx.check(

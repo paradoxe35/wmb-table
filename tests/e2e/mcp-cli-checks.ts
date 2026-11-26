@@ -50,6 +50,27 @@ function processTree(root: number): number[] {
     return tree.map(Number);
 }
 
+async function postInitialize(url: string): Promise<{ status: number; body: string }> {
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json, text/event-stream',
+        },
+        body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'initialize',
+            params: {
+                protocolVersion: '2025-06-18',
+                capabilities: {},
+                clientInfo: { name: 'wmb-table-cli-e2e', version: '1.0.0' },
+            },
+        }),
+    });
+    return { status: response.status, body: await response.text() };
+}
+
 function isAlive(pid: number): boolean {
     try {
         process.kill(pid, 0);
@@ -98,13 +119,14 @@ export class McpCliChecks {
         return { ...env, HOME: this.ctx.app.homeDir, XDG_CONFIG_HOME: this.ctx.app.configDir };
     }
 
+    /** `args` follow the app folder, as an AI app passes them: `mcp`, or `--no-sandbox mcp`. */
     private async withStdioClient<T>(
         args: string[],
         run: (client: Client) => Promise<T>,
     ): Promise<{ value: T; stderr: string }> {
         const transport = new StdioClientTransport({
             command: this.electron,
-            args: ['.', 'mcp', ...args],
+            args: ['.', ...args],
             cwd: this.ctx.repoRoot,
             env: this.env(),
             stderr: 'pipe',
@@ -200,11 +222,12 @@ export class McpCliChecks {
     /** While the window is open on the same profile: both answer, nothing conflicts. */
     async whileGuiRuns(
         readNoteNames: () => Promise<string[]>,
-        setAllowWrites: (on: boolean) => Promise<void>,
+        updateSettings: (patch: { enabled?: boolean; allowWrites?: boolean }) => Promise<void>,
     ): Promise<void> {
+        const setAllowWrites = (allowWrites: boolean) => updateSettings({ allowWrites });
         console.log('MCP CLI: while the app is open');
         const { check } = this.ctx;
-        const readOnly = await this.withStdioClient([], async (client) => {
+        const readOnly = await this.withStdioClient(['mcp'], async (client) => {
             const names = await this.readSession(client, 'stdio with the app open');
             await this.writeRefused(client, names, 'stdio with the app open');
             return names;
@@ -217,7 +240,7 @@ export class McpCliChecks {
 
         await setAllowWrites(true);
         const noteName = "Note CLI : l'amour du Saint-Esprit";
-        await this.withStdioClient([], async (client) => {
+        await this.withStdioClient(['mcp'], async (client) => {
             const names = (await client.listTools()).tools.map((tool) => tool.name);
             check(
                 'with changes allowed, the write tools are listed',
@@ -240,10 +263,71 @@ export class McpCliChecks {
         );
         await setAllowWrites(false);
 
-        await this.headlessHttp('headless HTTP with the app open');
+        await this.headlessHttp('headless HTTP with the app open', (url) =>
+            this.refusedWhileDisabled(url, updateSettings),
+        );
+        await this.stdioEndsWhenDisabled(updateSettings);
     }
 
-    async headlessHttp(label: string): Promise<void> {
+    /** The app unticks « Serveur MCP » while the headless server runs: the next request is refused. */
+    private async refusedWhileDisabled(
+        url: string,
+        updateSettings: (patch: { enabled: boolean }) => Promise<void>,
+    ): Promise<void> {
+        const { check } = this.ctx;
+        await updateSettings({ enabled: false });
+        try {
+            const refused = await postInitialize(url);
+            check(
+                'unticked in the app: the headless server refuses the next request with an MCP error',
+                refused.status === 503 &&
+                    refused.body.includes('"code":-32000') &&
+                    refused.body.includes('Activez « Serveur MCP »'),
+                refused,
+            );
+        } finally {
+            await updateSettings({ enabled: true });
+        }
+        const served = await postInitialize(url);
+        check('ticked again: the headless server serves again', served.status === 200, served);
+    }
+
+    /** A stdio session has nothing to refuse, so it ends cleanly once the box is unticked. */
+    private async stdioEndsWhenDisabled(
+        updateSettings: (patch: { enabled: boolean }) => Promise<void>,
+    ): Promise<void> {
+        const transport = new StdioClientTransport({
+            command: this.electron,
+            args: ['.', 'mcp'],
+            cwd: this.ctx.repoRoot,
+            env: this.env(),
+            stderr: 'pipe',
+        });
+        let stderr = '';
+        transport.stderr?.on('data', (data) => (stderr += data));
+        const client = new Client({ name: 'wmb-table-cli-e2e', version: '1.0.0' });
+        const closed = new Promise<void>((resolve) => (client.onclose = () => resolve()));
+        await client.connect(transport);
+        const tree = processTree(transport.pid ?? -1);
+        await client.listTools();
+        await updateSettings({ enabled: false });
+        try {
+            const ended = await Promise.race([
+                closed.then(() => true),
+                sleep(15_000).then(() => false),
+            ]);
+            this.ctx.check(
+                'unticked in the app: a stdio session ends cleanly and says why',
+                ended && (await allGone(tree)) && stderr.includes('Activez « Serveur MCP »'),
+                { ended, stderr: stderr.slice(-800) },
+            );
+        } finally {
+            await client.close().catch(() => undefined);
+            await updateSettings({ enabled: true });
+        }
+    }
+
+    async headlessHttp(label: string, during?: (url: string) => Promise<void>): Promise<void> {
         const { check } = this.ctx;
         const port = await this.freePort();
         const child = spawn(this.electron, ['.', 'mcp', '--http', '--port', String(port)], {
@@ -274,6 +358,7 @@ export class McpCliChecks {
             } finally {
                 await client.close();
             }
+            await during?.(url);
         } finally {
             child.kill('SIGTERM');
             const exit = await Promise.race([exited, sleep(10_000).then(() => null)]);
@@ -329,10 +414,13 @@ export class McpCliChecks {
             missingLanguage,
         );
 
-        await this.withStdioClient(['--language', this.ctx.languageCode], async (client) => {
-            const names = await this.readSession(client, 'stdio alone');
-            await this.writeRefused(client, names, 'stdio alone');
-        });
+        await this.withStdioClient(
+            ['--no-sandbox', 'mcp', '--language', this.ctx.languageCode],
+            async (client) => {
+                const names = await this.readSession(client, 'stdio alone (--no-sandbox mcp)');
+                await this.writeRefused(client, names, 'stdio alone (--no-sandbox mcp)');
+            },
+        );
         await this.headlessHttp('headless HTTP alone');
         check('the database is intact after both apps used it', this.integrityOk());
     }
