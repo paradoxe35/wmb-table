@@ -1,11 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { parseWmbLink } from '@shared/wmb-link';
 
 // Vitest compiles JSX with the classic runtime here (the app build uses the automatic one).
-vi.stubGlobal('React', React);
-
 vi.mock('@renderer/hooks/use-wmb-link', () => ({
     parseWmbLink,
     useWmbLinkNavigate: () => vi.fn(),

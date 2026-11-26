@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createDefaultAiSettings, type AiSettings } from '@shared/ai.types';
-
-vi.stubGlobal('React', React);
 
 const chatState: Record<string, unknown> = {
     settings: null,

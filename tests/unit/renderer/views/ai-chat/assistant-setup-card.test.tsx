@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { ButtonProps } from 'antd';
 import en from '@shared/i18n/locales/en';
@@ -9,8 +8,6 @@ import es from '@shared/i18n/locales/es';
 import pt from '@shared/i18n/locales/pt';
 import sw from '@shared/i18n/locales/sw';
 import { buildDocsGuideLink } from '@shared/constants';
-
-vi.stubGlobal('React', React);
 
 const buttons: ButtonProps[] = [];
 const appState = { openSettingsTab: vi.fn(), contentLanguage: 'fr' };

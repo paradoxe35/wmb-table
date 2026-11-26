@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createDefaultAiSettings, type AiSettings } from '@shared/ai.types';
-
-vi.stubGlobal('React', React);
 
 const appState = { mainView: 'options', optionView: 'history', showOptions: vi.fn() };
 
@@ -32,7 +29,6 @@ function renderWithStoredSettings(settings: AiSettings): string {
 describe('SidebarMenu', () => {
     afterEach(() => {
         vi.unstubAllGlobals();
-        vi.stubGlobal('React', React);
     });
 
     it('shows the assistant with the default settings', () => {
