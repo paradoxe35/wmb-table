@@ -9,6 +9,7 @@ import {
     encodeStreamFrames,
     pickScenario,
     readScenarioContext,
+    readToolChoice,
     type WireFrame,
 } from './openai-wire';
 import {
@@ -31,7 +32,12 @@ export interface RecordedRequest {
     model: string;
     maxTokens: number | null;
     reasoningEffort: string | null;
+    toolChoice: string | null;
     messageCount: number;
+    /** All message text, tool call arguments included: a rough size of the prompt. */
+    promptChars: number;
+    condensedToolResults: number;
+    lastToolResultChars: number;
     roles: string[];
     toolNames: string[];
     toolResultCount: number;
@@ -160,7 +166,19 @@ function summarizeRequest(path: string, request: ChatRequest, scenario: Scenario
         model: request.model,
         maxTokens: request.max_tokens ?? null,
         reasoningEffort: request.reasoning_effort ?? null,
+        toolChoice: readToolChoice(request),
         messageCount: messages.length,
+        promptChars: messages.reduce(
+            (sum, m) =>
+                sum +
+                contentText(m.content).length +
+                (m.tool_calls ?? []).reduce((n, call) => n + call.function.arguments.length, 0),
+            0,
+        ),
+        condensedToolResults: toolMessages.filter((m) =>
+            contentText(m.content).startsWith('[Condensed earlier result]'),
+        ).length,
+        lastToolResultChars: contentText(toolMessages[toolMessages.length - 1]?.content).length,
         roles: messages.map((message) => message.role),
         toolNames: (request.tools ?? []).map((tool) => tool.function.name),
         toolResultCount: toolMessages.length,

@@ -18,6 +18,7 @@ export interface ChatRequest {
     max_tokens?: number;
     tools?: { type: 'function'; function: { name: string } }[];
     reasoning_effort?: string;
+    tool_choice?: string | { type: string; function?: { name: string } };
     [key: string]: unknown;
 }
 

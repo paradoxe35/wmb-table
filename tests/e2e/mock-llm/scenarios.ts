@@ -54,17 +54,19 @@ function wordFromLastSermonText(ctx: ScenarioContext): string | null {
     return null;
 }
 
-function readSermonFoundBySearch(ctx: ScenarioContext, year: number): Reply {
+function readSermonFoundBySearch(ctx: ScenarioContext, year: number, maxParagraphs = 3): Reply {
     const sermon = lastFoundSermon(ctx);
     if (!sermon) return complete([toolCall('searchSermons', { query: String(year), limit: 3 })]);
     return complete([
         toolCall('getSermonContent', {
             sermonId: sermon.sermonId,
             translationId: sermon.translationId,
-            maxParagraphs: 3,
+            maxParagraphs,
         }),
     ]);
 }
+
+const toolsClosed = (ctx: ScenarioContext) => ctx.request.tool_choice === 'none';
 
 export const LONG_RESEARCH_TOOL_STEPS = 32;
 /** Keeps the run long enough (about 5 s) to watch and screenshot the tool steps. */
@@ -98,6 +100,43 @@ function longResearchStep(ctx: ScenarioContext): Reply {
         reasoning(`Step ${index + 1}: searching sermons from ${year}.`),
         toolCall('searchSermons', { query: String(year), limit: 3 }),
     ]);
+}
+
+export const OVERFLOW_TOOL_STEPS = 41;
+
+/** One search, then the same 50 paragraphs read again and again: the results outgrow the
+ * 128k window unless the app condenses them. */
+function researchOverflowStep(ctx: ScenarioContext): Reply {
+    if (ctx.stepIndex >= OVERFLOW_TOOL_STEPS || toolsClosed(ctx)) {
+        const condensed = ctx.toolResults.filter((r) =>
+            r.content.startsWith('[Condensed earlier result]'),
+        ).length;
+        return complete([
+            reasoning('Enough material. Writing.'),
+            text(
+                `## Overflow research\n\nI read ${ctx.toolResults.length} results ` +
+                    `(${condensed} condensed).\n\n${words(60)}\n\nMOCK-OVERFLOW-DONE`,
+                4,
+            ),
+        ]);
+    }
+    return readSermonFoundBySearch(ctx, 1963, 50);
+}
+
+interface FoundVerse {
+    bookCode?: string;
+    bookName?: string;
+    chapter?: string | number;
+    verse?: string | number;
+}
+
+function firstVerseOf(ctx: ScenarioContext, toolName: string): FoundVerse | null {
+    for (const parsed of latestResultsOf(ctx, toolName)) {
+        const record = parsed as { results?: FoundVerse[]; verses?: FoundVerse[] } | null;
+        const verse = record?.results?.[0] ?? record?.verses?.[0];
+        if (verse?.bookCode) return verse;
+    }
+    return null;
 }
 
 const utilityScenarios: Scenario[] = [
@@ -229,6 +268,62 @@ const answerScenarios: Scenario[] = [
             ]),
     },
     {
+        name: 'research-overflow',
+        description: `${OVERFLOW_TOOL_STEPS} steps reading 50 paragraphs each, more than the window holds`,
+        reply: researchOverflowStep,
+    },
+    {
+        name: 'step-limit',
+        description: 'Calls a tool on every step until the app closes the tools, then answers',
+        reply: (ctx) =>
+            toolsClosed(ctx)
+                ? complete([text(`## Final answer\n\n${words(40)}\n\nMOCK-STEP-LIMIT-DONE`, 4)])
+                : complete([
+                      toolCall('searchSermons', {
+                          query: String(1950 + (ctx.stepIndex % 15)),
+                          limit: 1,
+                      }),
+                  ]),
+    },
+    {
+        name: 'bible',
+        description:
+            'A Bible search, then the passage around the first hit, then an answer citing it',
+        reply: sequence(
+            () =>
+                complete([
+                    reasoning('The user asks about a Bible verse.'),
+                    toolCall('searchBible', {
+                        query: 'naked',
+                        bibleVersionAbbreviation: 'kjv',
+                        limit: 3,
+                    }),
+                ]),
+            (ctx) => {
+                const hit = firstVerseOf(ctx, 'searchBible');
+                if (!hit) return complete([text('No Bible hit. MOCK-BIBLE-NO-HIT')]);
+                return complete([
+                    toolCall('getBiblePassage', {
+                        bookCode: hit.bookCode,
+                        chapter: String(hit.chapter),
+                        fromVerse: String(hit.verse),
+                        toVerse: String(Number(hit.verse) + 2),
+                        bibleVersionAbbreviation: 'kjv',
+                    }),
+                ]);
+            },
+            (ctx) => {
+                const verse = firstVerseOf(ctx, 'getBiblePassage');
+                const reference = verse
+                    ? `${verse.bookName} ${verse.chapter}:${verse.verse}`
+                    : 'none';
+                return complete([
+                    text(`## Bible\n\nPassage read: ${reference}.\n\nMOCK-BIBLE-DONE`),
+                ]);
+            },
+        ),
+    },
+    {
         name: 'research-worker',
         description: 'Inner steps of the research sub-agent (started by the subagent scenario)',
         reply: sequence(
@@ -245,21 +340,43 @@ const answerScenarios: Scenario[] = [
 const failureScenarios: Scenario[] = [
     {
         name: 'length',
-        description: 'Some answer text, then finish_reason "length"',
-        reply: () =>
-            complete([text(`## Partial answer\n\n${words(120)} MOCK-LENGTH-TEXT`, 4)], {
+        description: 'Answer cut by finish_reason "length", then finished by the continuation',
+        reply: sequence(
+            () =>
+                complete([text(`## Partial answer\n\n${words(120)} MOCK-LENGTH-TEXT`, 4)], {
+                    finishReason: 'length',
+                    usage: { prompt: 2000, completion: 16_384 },
+                }),
+            () => complete([text(` and the rest of the answer. MOCK-LENGTH-DONE`, 3)]),
+        ),
+    },
+    {
+        name: 'length-always',
+        description: 'Every reply, continuations included, ends with finish_reason "length"',
+        reply: (ctx) =>
+            complete([text(` part ${ctx.stepIndex + 1}: ${words(40)} MOCK-LENGTH-PART`, 4)], {
                 finishReason: 'length',
                 usage: { prompt: 2000, completion: 16_384 },
             }),
     },
     {
         name: 'length-empty',
-        description: 'Only reasoning, then finish_reason "length" with no answer text',
-        reply: () =>
-            complete([reasoning(`Reasoning that uses the whole budget. ${words(200)}`, 8)], {
-                finishReason: 'length',
-                usage: { prompt: 2000, completion: 16_384, reasoning: 16_384 },
-            }),
+        description:
+            'Only reasoning, then "length" with no text; the answer comes on the next call',
+        reply: sequence(
+            () =>
+                complete([reasoning(`Reasoning that uses the whole budget. ${words(200)}`, 8)], {
+                    finishReason: 'length',
+                    usage: { prompt: 2000, completion: 16_384, reasoning: 16_384 },
+                }),
+            () =>
+                complete([
+                    text(
+                        `## Answer\n\nThe answer written after the long reasoning. MOCK-LENGTH-EMPTY-DONE`,
+                        3,
+                    ),
+                ]),
+        ),
     },
     {
         name: '401',

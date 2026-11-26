@@ -64,6 +64,12 @@ export function readScenarioContext(request: ChatRequest): ScenarioContext {
     };
 }
 
+export function readToolChoice(request: ChatRequest): string | null {
+    const choice = request.tool_choice;
+    if (typeof choice === 'string') return choice;
+    return choice ? 'function' : null;
+}
+
 export function pickScenario(
     ctx: ScenarioContext,
     scenarios: Scenario[],

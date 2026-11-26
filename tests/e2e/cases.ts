@@ -1,9 +1,11 @@
-import { MOCK_MAX_COMPLETION_TOKENS } from './mock-llm/scenario';
-import { LONG_RESEARCH_TOOL_STEPS } from './mock-llm/scenarios';
+import { MOCK_CONTEXT_WINDOW, MOCK_MAX_COMPLETION_TOKENS } from './mock-llm/scenario';
+import { LONG_RESEARCH_TOOL_STEPS, OVERFLOW_TOOL_STEPS } from './mock-llm/scenarios';
 import { lastAssistantText, type CaseContext, type E2eCase } from './case-runner';
 import type { ChatFacts } from './driver/chat-page';
 
 const hasAssistantText = (facts: ChatFacts) => lastAssistantText(facts).length > 0;
+const TRUNCATION_NOTICE_FR = /Réponse coupée/;
+const ENGLISH_TRUNCATION_TEXT = /Response truncated/i;
 const hasToolTags = (facts: ChatFacts) => facts.toolTags.length > 0;
 const isIdle = (facts: ChatFacts) => !facts.stopButton;
 
@@ -82,6 +84,16 @@ const normal: E2eCase = {
             ),
             requests.map((r) => r.maxTokens),
         );
+        ctx.check(
+            `the answer may use the model's full output (${MOCK_MAX_COMPLETION_TOKENS}), not a fixed 8192`,
+            requests[requests.length - 1]?.maxTokens === MOCK_MAX_COMPLETION_TOKENS,
+            requests.map((r) => r.maxTokens),
+        );
+        ctx.check(
+            'search steps ask for low reasoning effort',
+            requests[0]?.reasoningEffort === 'low',
+            requests.map((r) => r.reasoningEffort),
+        );
     },
 };
 
@@ -129,27 +141,61 @@ const reasoningHeavy: E2eCase = {
 
 const length: E2eCase = {
     name: 'length',
-    description: 'Answer cut by finish_reason "length"',
+    description: 'Answer cut by finish_reason "length", then continued automatically',
     async run(ctx) {
         const final = await sendAndCapture(ctx, 'Une longue réponse #scenario:length', null);
+        await ctx.shot('continued');
+        const answer = lastAssistantText(final);
+        ctx.check('the cut part is kept', answer.includes('MOCK-LENGTH-TEXT'), answer.slice(-200));
+        ctx.check(
+            'the continuation finishes the answer right after the cut',
+            answer.includes('MOCK-LENGTH-TEXT and the rest of the answer. MOCK-LENGTH-DONE'),
+            answer.slice(-200),
+        );
+        ctx.check(
+            'no truncation notice once the answer is complete',
+            !TRUNCATION_NOTICE_FR.test(answer) && !ENGLISH_TRUNCATION_TEXT.test(answer),
+            answer.slice(-200),
+        );
+        const requests = ctx.requests().filter((r) => r.scenario === 'length');
+        ctx.check('one continuation request was made', requests.length === 2, requests.length);
+        ctx.check(
+            'the continuation runs without tools and with medium reasoning',
+            requests[1]?.toolChoice === 'none' && requests[1]?.reasoningEffort === 'medium',
+            requests.map((r) => [r.toolChoice, r.reasoningEffort]),
+        );
+        ctx.check('no error banner', final.errorAlerts.length === 0, final.errorAlerts);
+    },
+};
+
+const lengthAlways: E2eCase = {
+    name: 'length-always',
+    description: 'Answer still cut after two continuations: a translated notice',
+    async run(ctx) {
+        const final = await sendAndCapture(
+            ctx,
+            'Une réponse sans fin #scenario:length-always',
+            null,
+        );
         await ctx.shot('truncated');
         const answer = lastAssistantText(final);
         ctx.check(
-            'the partial answer is kept',
-            answer.includes('MOCK-LENGTH-TEXT'),
+            'every cut part is kept',
+            (answer.match(/MOCK-LENGTH-PART/g) ?? []).length === 3,
             answer.slice(-200),
         );
         ctx.check(
             'the user is told the answer was cut',
-            /truncated|tronqu|coupé/i.test(answer),
+            /tronqu|coupé/i.test(answer),
             answer.slice(-200),
         );
         ctx.check(
             'the truncation notice is in the UI language (French)',
-            /tronqu|coupé|interromp/i.test(answer),
+            TRUNCATION_NOTICE_FR.test(answer) && !ENGLISH_TRUNCATION_TEXT.test(answer),
             answer.slice(-120),
-            { knownBug: 'B4/G6 truncation notice is English and not a real banner' },
         );
+        const requests = ctx.requests().filter((r) => r.scenario === 'length-always');
+        ctx.check('two continuations, then it stops', requests.length === 3, requests.length);
         ctx.check('no error banner', final.errorAlerts.length === 0, final.errorAlerts);
     },
 };
@@ -159,16 +205,104 @@ const lengthEmpty: E2eCase = {
     description: 'Budget spent on reasoning: no answer text, finish_reason "length"',
     async run(ctx) {
         const final = await sendAndCapture(ctx, 'Question difficile #scenario:length-empty', null);
-        await ctx.shot('truncated-empty');
+        await ctx.shot('answered');
         const answer = lastAssistantText(final);
         const withoutNotice = answer.replace(/Voir le raisonnement|Masquer le raisonnement/g, '');
         ctx.check(
             'the user gets an answer, not only a truncation notice',
-            /\w{20,}/.test(withoutNotice.replace(/Response truncated due to length limit/i, '')),
+            withoutNotice.includes('MOCK-LENGTH-EMPTY-DONE') &&
+                !TRUNCATION_NOTICE_FR.test(answer) &&
+                !ENGLISH_TRUNCATION_TEXT.test(answer),
             answer.slice(0, 300),
-            { knownBug: 'B1/B3 empty answer when reasoning uses the whole output budget' },
         );
         ctx.check('the input is ready again (no Stop button)', !final.stopButton);
+    },
+};
+
+/** The ratio tokenx, the app estimator, uses for this text; real tokenizers give fewer tokens. */
+const MOCK_CONTEXT_CHARS_PER_TOKEN = 3.5;
+
+const researchOverflow: E2eCase = {
+    name: 'research-overflow',
+    description: `${OVERFLOW_TOOL_STEPS} big sermon reads, more than the model window holds`,
+    async run(ctx) {
+        const final = await sendAndCapture(ctx, 'Lis beaucoup #scenario:research-overflow', {
+            state: 'tools-running',
+            when: (f) => f.toolTags.length >= 2,
+        });
+        await ctx.shot('done');
+        checkCleanEnd(ctx, final, 'MOCK-OVERFLOW-DONE');
+        const requests = ctx.requests().filter((r) => r.scenario === 'research-overflow');
+        const raw = requests.reduce((sum, r) => sum + (r.toolResultChars > 0 ? 1 : 0), 0);
+        ctx.check('the research ran through its tool steps', raw >= OVERFLOW_TOOL_STEPS - 2, raw);
+        ctx.check(
+            'older tool results were condensed',
+            requests.some((r) => r.condensedToolResults > 0),
+            requests.map((r) => r.condensedToolResults),
+        );
+        const largest = Math.max(...requests.map((r) => r.promptChars));
+        ctx.check(
+            `no request outgrew the 128k-token window (largest ${largest} chars)`,
+            largest / MOCK_CONTEXT_CHARS_PER_TOKEN + MOCK_MAX_COMPLETION_TOKENS <
+                MOCK_CONTEXT_WINDOW,
+            largest,
+        );
+        const readChars = Math.max(...requests.map((r) => r.lastToolResultChars));
+        ctx.check(
+            'without condensing, the reads alone would not have fit',
+            (readChars * OVERFLOW_TOOL_STEPS) / MOCK_CONTEXT_CHARS_PER_TOKEN > MOCK_CONTEXT_WINDOW,
+            readChars,
+        );
+        ctx.check(
+            "the app's own estimate stayed under its prompt limit",
+            [...ctx.mainLog().matchAll(/largestPromptTokens: (\d+),\s+promptLimit: (\d+)/g)].every(
+                ([, largestTokens, limit]) => Number(largestTokens) <= Number(limit),
+            ),
+        );
+    },
+};
+
+const stepLimit: E2eCase = {
+    name: 'step-limit',
+    description: 'The model never stops calling tools: the last step must write the answer',
+    async run(ctx) {
+        const final = await sendAndCapture(ctx, 'Cherche sans fin #scenario:step-limit', null);
+        await ctx.shot('done');
+        checkCleanEnd(ctx, final, 'MOCK-STEP-LIMIT-DONE');
+        const requests = ctx.requests().filter((r) => r.scenario === 'step-limit');
+        ctx.check('the run stopped at the 50-step limit', requests.length === 50, requests.length);
+        const last = requests[requests.length - 1];
+        ctx.check(
+            'the last step had its tools closed and medium reasoning',
+            last?.toolChoice === 'none' && last?.reasoningEffort === 'medium',
+            [last?.toolChoice, last?.reasoningEffort],
+        );
+        ctx.check(
+            'the app logged that the step limit was reached',
+            /stepLimitReached: true/.test(ctx.mainLog()),
+        );
+    },
+};
+
+const bible: E2eCase = {
+    name: 'bible',
+    description: 'Bible search, then the passage, then an answer citing it',
+    async run(ctx) {
+        const final = await sendAndCapture(
+            ctx,
+            'Qui t’a dit que tu étais nu ? #scenario:bible',
+            null,
+        );
+        await ctx.shot('done');
+        checkCleanEnd(ctx, final, 'MOCK-BIBLE-DONE');
+        const answer = lastAssistantText(final);
+        ctx.check(
+            'the answer cites the passage the tool returned',
+            /Passage read: \S.* \d+:\d+\./.test(answer),
+            answer.slice(0, 200),
+        );
+        const requests = ctx.requests().filter((r) => r.scenario === 'bible');
+        ctx.check('search, passage and answer: 3 calls', requests.length === 3, requests.length);
     },
 };
 
@@ -471,7 +605,11 @@ export const cases: E2eCase[] = [
     longResearch,
     reasoningHeavy,
     length,
+    lengthAlways,
     lengthEmpty,
+    researchOverflow,
+    stepLimit,
+    bible,
     httpErrorCase('401', 'Wrong API key', { cause: /api key/i, causeInFrench: /clé API/i }, 1),
     httpErrorCase('404', 'Model not found', { cause: /model/i, causeInFrench: /modèle/i }, 1),
     httpErrorCase(
