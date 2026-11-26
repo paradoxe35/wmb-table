@@ -140,4 +140,38 @@ const settingsTyping: E2eCase = {
     },
 };
 
-export const uiReviewCases: E2eCase[] = [settingsTabs, settingsTyping];
+const READ_NOTICE_OVERFLOW = `[...document.querySelectorAll('.ai-chat__run-notice')].flatMap((notice) => {
+    const box = notice.getBoundingClientRect();
+    return [...notice.querySelectorAll('button')]
+        .filter((button) => button.getBoundingClientRect().right > box.right + 0.5)
+        .map((button) => button.innerText.trim());
+})`;
+
+const narrowBanners: E2eCase = {
+    name: 'narrow-banners',
+    description: 'Banner buttons with long Swahili labels stay inside the banner in a small window',
+    async run(ctx) {
+        try {
+            await ctx.page.setUiLanguage('sw');
+            await ctx.page.setViewport(760, 560);
+            for (const scenario of ['401', 'step-limit']) {
+                await ctx.page.startNewConversation();
+                await ctx.page.send(`Narrow ${scenario} #scenario:${scenario}`);
+                await ctx.waitForRunEnd();
+                await ctx.waitUntil(() => true, 'a settled banner');
+                const outside = await ctx.page.evaluate<string[]>(READ_NOTICE_OVERFLOW);
+                ctx.check(
+                    `the ${scenario} banner buttons fit inside the banner`,
+                    (await ctx.page.noticeTexts()).length > 0 && outside.length === 0,
+                    outside,
+                );
+                await ctx.shot(`sw-760-${scenario}`);
+            }
+        } finally {
+            await ctx.page.resetViewport();
+            await ctx.page.setUiLanguage('fr');
+        }
+    },
+};
+
+export const uiReviewCases: E2eCase[] = [settingsTabs, settingsTyping, narrowBanners];

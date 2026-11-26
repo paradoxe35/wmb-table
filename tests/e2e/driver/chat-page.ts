@@ -34,12 +34,13 @@ const SELECTORS = {
     send: 'button.ai-chat__send-button',
 };
 
-const SEND_LABELS: Record<string, string> = {
-    fr: 'Envoyer',
-    en: 'Send',
-    es: 'Enviar',
-    pt: 'Enviar',
-    sw: 'Tuma',
+/** The "new conversation" label differs in every language, unlike "Envoyer" (es and pt: "Enviar"). */
+const NEW_CONVERSATION_LABELS: Record<string, string> = {
+    fr: 'Nouvelle conversation',
+    en: 'New conversation',
+    es: 'Nueva conversación',
+    pt: 'Nova conversa',
+    sw: 'Mazungumzo mapya',
 };
 
 const READ_FACTS = `(() => {
@@ -210,18 +211,24 @@ export class ChatPage {
 
     /** Switches the UI language the way the settings do, then reloads and reopens the chat. */
     async setUiLanguage(language: string): Promise<void> {
-        await this.cdp.evaluate(`(async () => {
-            await window.api.app.setUiLanguage(${JSON.stringify(language)});
-            const stored = JSON.parse(localStorage.getItem('wmb-theme') ?? '{"state":{}}');
-            stored.state.uiLanguagePreference = ${JSON.stringify(language)};
-            localStorage.setItem('wmb-theme', JSON.stringify(stored));
-        })()`);
-        await this.cdp.reload();
-        await this.open();
-        await this.cdp.waitFor(
-            `document.querySelector('${SELECTORS.send}')?.title === ${JSON.stringify(SEND_LABELS[language])}`,
-            `the chat in "${language}"`,
-        );
+        const shown = `document.querySelector('${SELECTORS.newConversation}')?.getAttribute('aria-label') === ${JSON.stringify(NEW_CONVERSATION_LABELS[language])}`;
+        // The old page sometimes saves its own language again while it unloads, so try again
+        for (let attempt = 1; ; attempt++) {
+            await this.cdp.evaluate(`(async () => {
+                await window.api.app.setUiLanguage(${JSON.stringify(language)});
+                const stored = JSON.parse(localStorage.getItem('wmb-theme') ?? '{"state":{}}');
+                stored.state.uiLanguagePreference = ${JSON.stringify(language)};
+                localStorage.setItem('wmb-theme', JSON.stringify(stored));
+            })()`);
+            await this.cdp.reload();
+            await this.open();
+            try {
+                await this.cdp.waitFor(shown, `the chat in "${language}"`, 8000);
+                break;
+            } catch (error) {
+                if (attempt === 3) throw error;
+            }
+        }
         // After a reload the app may take main's theme while the emulated media is unchanged
         await this.cdp.send('Emulation.setEmulatedMedia', {
             features: [{ name: 'prefers-color-scheme', value: 'dark' }],

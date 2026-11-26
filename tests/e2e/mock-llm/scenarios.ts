@@ -537,3 +537,37 @@ const subAgentScenarios: Scenario[] = [
 ];
 
 scenarios.push(...subAgentScenarios);
+
+const MARKDOWN_SHOWCASE = [
+    '## Réponse avec du markdown',
+    '',
+    'Un paragraphe avec du **gras**, de l’*italique*, du `code en ligne` et une référence [63-0318 §12](wmb://sermon/63-0318/fr/1/12).',
+    '',
+    '- Premier point d’une liste',
+    '- Deuxième point, assez long pour passer à la ligne dans une bulle étroite sans dépasser',
+    '  - Sous-point imbriqué',
+    '',
+    '1. Étape une',
+    '2. Étape deux',
+    '',
+    '> Une citation : « Qui t’a dit que tu étais nu ? » (Genèse 3:11)',
+    '',
+    '| Sermon | Date | Lieu |',
+    '| --- | --- | --- |',
+    '| La Parole parlée est la semence originelle | 1962-03-18 | Jeffersonville, Indiana, États-Unis |',
+    '| Le Dieu de cet âge mauvais | 1965-08-01 | Jeffersonville |',
+    '',
+    '```ts',
+    'const reference = searchSermons({ query: "Saint-Esprit", limit: 3, includeParagraphs: true, language: "fr" });',
+    '```',
+    '',
+    'Un lien externe : https://wmb-table.web.app/guide/settings-assistant-avec-une-url-tres-longue-qui-ne-se-coupe-pas',
+    '',
+    'MOCK-MARKDOWN-DONE',
+].join('\n');
+
+scenarios.push({
+    name: 'markdown-showcase',
+    description: 'An answer with lists, a table, a code block, a quote and long links',
+    reply: () => complete([text(MARKDOWN_SHOWCASE, 4)], { chunkDelayMs: 20 }),
+});
