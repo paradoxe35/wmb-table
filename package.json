@@ -29,6 +29,7 @@
         "test": "vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
+        "test:e2e": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --import ./scripts/ts-aliases.mjs tests/e2e/run.ts",
         "typecheck": "tsc --noEmit -p tsconfig.main.json && tsc --noEmit -p tsconfig.preload.json && tsc --noEmit -p tsconfig.renderer.json",
         "typecheck:main": "tsc --noEmit -p tsconfig.main.json",
         "typecheck:preload": "tsc --noEmit -p tsconfig.preload.json",
