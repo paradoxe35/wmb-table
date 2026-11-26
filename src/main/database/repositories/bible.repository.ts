@@ -5,6 +5,7 @@ import type { BibleBook, BibleIndex, BibleSearchResult, BookRequest } from '@sha
 import * as bibleService from '@main/services/bible.service';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as bibleSchema from '../bible-schema';
+import { sanitizeFtsQuery } from '../fts-query';
 
 function toBook(row: typeof bibleVerses.$inferSelect): BibleBook {
     return {
@@ -79,17 +80,6 @@ export function getBooks(request: BookRequest): BibleBook[] {
             return rows.map(toBook);
         }) ?? []
     );
-}
-
-function sanitizeFtsQuery(raw: string): string {
-    return raw
-        .replace(/[""(){}*:^~]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .split(' ')
-        .filter((w) => w.length >= 2)
-        .map((w) => `"${w}"`)
-        .join(' ');
 }
 
 export function search(query: string, pageNumber: number, testament?: string): BibleSearchResult {
