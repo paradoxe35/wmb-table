@@ -18,6 +18,7 @@ import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/sync
 import { disposeTtsService } from '@main/services/tts';
 import { disposeAiService } from '@main/services/ai';
 import { disposePowerSaveBlocker } from '@main/services/power-save.service';
+import { startMcpServerIfEnabled, stopMcpServer } from '@main/services/mcp/mcp-server.service';
 import * as configRepo from '@main/database/repositories/config.repository';
 import { getAudioCacheDir, getTtsCacheDir } from '@main/lib/app-paths';
 import { applyNativeChromeTheme, getThemeState } from '@main/lib/native-theme';
@@ -68,6 +69,7 @@ function bootstrapPrimaryInstance(): void {
         });
         createMainWindow();
         tryStartSynchronizer();
+        void startMcpServerIfEnabled();
 
         app.on('activate', () => {
             if (BrowserWindow.getAllWindows().length === 0) {
@@ -78,6 +80,7 @@ function bootstrapPrimaryInstance(): void {
 
     app.on('will-quit', () => {
         stopSynchronizer();
+        void stopMcpServer();
         terminateWorker();
         disposeTtsService();
         disposeAiService();

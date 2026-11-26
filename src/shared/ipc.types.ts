@@ -95,6 +95,7 @@ import type {
 } from './ai.types';
 import type { UiLanguagePreference } from './constants';
 import type { ThemeMode, ThemeState } from './theme';
+import type { McpServerSettingsPatch, McpServerStatus } from './mcp.types';
 
 // ---------------------------------------------------------------------------
 // Invoke channels — renderer → main (request/response via ipcRenderer.invoke)
@@ -212,6 +213,11 @@ export const SyncChannels = {
 
 export const PowerChannels = {
     setActive: 'power:setActive',
+} as const;
+
+export const McpChannels = {
+    getStatus: 'mcp:getStatus',
+    updateSettings: 'mcp:updateSettings',
 } as const;
 
 export const AppChannels = {
@@ -509,6 +515,10 @@ export interface InvokeChannelMap {
 
     // Power save
     [PowerChannels.setActive]: { args: [boolean]; return: void };
+
+    // MCP server
+    [McpChannels.getStatus]: { args: []; return: McpServerStatus };
+    [McpChannels.updateSettings]: { args: [McpServerSettingsPatch]; return: McpServerStatus };
 
     // App
     [AppChannels.isInitialized]: { args: []; return: boolean };
