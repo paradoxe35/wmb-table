@@ -127,16 +127,12 @@ export const modelLimitsInputSchema = z.strictObject({
     baseUrl: textSchema.optional(),
 });
 
-export class InvalidAiInputError extends Error {
-    override name = 'InvalidAiInputError';
-}
-
 export function parseAiInput<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
     const result = schema.safeParse(value);
     if (result.success) return result.data;
 
     const tooLong = result.error.issues.some((issue) => issue.message === MESSAGE_TOO_LONG_ERROR);
-    if (tooLong) throw new InvalidAiInputError(MESSAGE_TOO_LONG_ERROR);
+    if (tooLong) throw new Error(MESSAGE_TOO_LONG_ERROR);
 
-    throw new InvalidAiInputError(`Invalid ${label}: ${z.prettifyError(result.error)}`);
+    throw new Error(`Invalid ${label}: ${z.prettifyError(result.error)}`);
 }

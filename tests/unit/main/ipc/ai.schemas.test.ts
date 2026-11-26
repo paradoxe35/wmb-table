@@ -5,7 +5,6 @@ import {
     conversationsPageRequestSchema,
     conversationTitleSchema,
     createConversationInputSchema,
-    InvalidAiInputError,
     MAX_MESSAGE_LENGTH,
     MAX_MESSAGES_PER_SEND,
     MESSAGE_TOO_LONG_ERROR,
@@ -160,7 +159,7 @@ describe('sendMessageRequestSchema', () => {
         const messages = ['ok', 'a'.repeat(MAX_MESSAGE_LENGTH + 1)];
         expect(() =>
             parseAiInput(sendMessageRequestSchema, { ...validSend, messages }, 'message request'),
-        ).toThrow(new InvalidAiInputError(MESSAGE_TOO_LONG_ERROR));
+        ).toThrow(new Error(MESSAGE_TOO_LONG_ERROR));
     });
 
     it.each([
