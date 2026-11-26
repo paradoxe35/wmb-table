@@ -771,6 +771,16 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    min-width: 0;
+}
+
+/* Long labels (sw, pt) wrap inside the button instead of leaving the banner */
+.ai-chat__run-notice-actions .ant-btn {
+    max-width: 100%;
+    height: auto;
+    min-height: var(--ant-control-height-sm);
+    white-space: normal;
+    text-align: start;
 }
 
 .ai-chat__notice-row {
