@@ -84,8 +84,8 @@ const es: Record<string, string> = {
 
     // ── MCP server ──
     'Serveur MCP': 'Servidor MCP',
-    'Permet à votre propre application d’IA (Claude Desktop, Claude Code, Codex…) d’utiliser votre bibliothèque Wmb Table.':
-        'Permite que su propia aplicación de IA (Claude Desktop, Claude Code, Codex…) use su biblioteca de Wmb Table.',
+    'Permet à votre propre application d’IA (Claude Desktop, Codex…) d’utiliser votre bibliothèque Wmb Table.':
+        'Permite que su propia aplicación de IA (Claude Desktop, Codex…) use su biblioteca de Wmb Table.',
     'Autoriser les modifications (notes et sujets)': 'Permitir cambios (notas y temas)',
     'Votre application d’IA peut créer et modifier vos notes et vos sujets.':
         'Su aplicación de IA puede crear y modificar sus notas y sus temas.',
@@ -94,7 +94,6 @@ const es: Record<string, string> = {
     'Adresse du serveur': 'Dirección del servidor',
     'Le port habituel {{defaultPort}} était occupé : Wmb Table utilise le port {{port}}.':
         'El puerto habitual {{defaultPort}} estaba ocupado: Wmb Table usa el puerto {{port}}.',
-    'Lancez cette commande dans un terminal.': 'Ejecute este comando en una terminal.',
     'Ajoutez ces lignes au fichier ~/.codex/config.toml.':
         'Añada estas líneas al archivo ~/.codex/config.toml.',
     'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop. Node.js doit être installé.':

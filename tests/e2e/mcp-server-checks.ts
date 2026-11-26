@@ -38,9 +38,8 @@ const ADVANCED_LABELS: Record<string, string> = {
     sw: 'Ya kina',
 };
 const CLIENTS = [
-    ['claude-code', 'Claude Code'],
-    ['codex', 'Codex'],
     ['claude-desktop', 'Claude Desktop'],
+    ['codex', 'Codex'],
 ] as const;
 const ERROR = '[data-testid="mcp-server-error"]';
 const WRITE_TOOLS = ['createNote', 'editNote', 'createSubject', 'removeSubjectReference'];
@@ -384,16 +383,6 @@ export class McpServerChecks {
                 launch.dev,
             launch,
         );
-        await this.openClient('Claude Code', 'claude-code');
-        const recommended = await this.snippet('claude-code', 'recommended');
-        const command = await this.snippet('claude-code', 'alternative');
-        this.ctx.check(
-            'Claude Code: HTTP is recommended, the command is the other way',
-            recommended === `claude mcp add --transport http --scope user wmb-table ${url}` &&
-                command.startsWith('claude mcp add --scope user wmb-table -- ') &&
-                command.endsWith(`${launch.command} ${launch.args[0]} --no-sandbox mcp`),
-            { recommended, command },
-        );
         await this.openClient('Claude Desktop', 'claude-desktop');
         const desktop = JSON.parse(await this.snippet('claude-desktop', 'recommended')) as {
             mcpServers: Record<string, { command: string; args: string[] }>;
@@ -423,7 +412,7 @@ export class McpServerChecks {
         await this.sectionShot('mcp-config-other');
         await this.openAdvanced('fr');
         await this.sectionShot('mcp-config-advanced', HEADLESS);
-        await this.openClient('Claude Code', 'claude-code');
+        await this.openClient('Claude Desktop', 'claude-desktop');
     }
 
     private async languageShots(): Promise<void> {

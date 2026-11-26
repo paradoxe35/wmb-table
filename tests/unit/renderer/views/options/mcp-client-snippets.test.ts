@@ -78,23 +78,10 @@ function setup(launch: McpLaunchCommand, id: McpClientId): McpClientSetup {
 describe('buildMcpClientSetups', () => {
     it('offers one tab per client, in this order', () => {
         expect(buildMcpClientSetups(DEB, URL).map((s) => s.id)).toEqual([
-            'claude-code',
-            'codex',
             'claude-desktop',
+            'codex',
             'other',
         ]);
-    });
-
-    it('recommends HTTP for Claude Code, for every project', () => {
-        const claudeCode = setup(DEB, 'claude-code');
-        expect(claudeCode.recommended).toMatchObject({
-            method: 'http',
-            code: 'claude mcp add --transport http --scope user wmb-table http://127.0.0.1:23133/mcp',
-        });
-        expect(claudeCode.alternative).toMatchObject({
-            method: 'command',
-            code: "claude mcp add --scope user wmb-table -- '/opt/Wmb Table/wmb-table' --no-sandbox mcp",
-        });
     });
 
     it('recommends the Codex url table, with the command table as the other way', () => {
@@ -129,14 +116,14 @@ describe('buildMcpClientSetups', () => {
     });
 
     it('leaves a path without special characters unquoted', () => {
-        expect(setup(APPIMAGE, 'claude-code').alternative.code).toBe(
-            'claude mcp add --scope user wmb-table -- /home/marie/Applications/Wmb-Table-2.0.0.AppImage --no-sandbox mcp',
+        expect(setup(APPIMAGE, 'other').alternative.code).toBe(
+            '/home/marie/Applications/Wmb-Table-2.0.0.AppImage --no-sandbox mcp',
         );
     });
 
     it('uses double quotes and keeps backslashes for a Windows path in the shell', () => {
-        expect(setup(WINDOWS, 'claude-code').alternative.code).toBe(
-            'claude mcp add --scope user wmb-table -- "C:\\Users\\Marie\\AppData\\Local\\Programs\\wmb-table\\Wmb Table.exe" mcp',
+        expect(setup(WINDOWS, 'other').alternative.code).toBe(
+            '"C:\\Users\\Marie\\AppData\\Local\\Programs\\wmb-table\\Wmb Table.exe" mcp',
         );
     });
 
@@ -172,8 +159,8 @@ describe('buildMcpClientSetups', () => {
     });
 
     it('starts a development checkout through Electron with the app folder', () => {
-        expect(setup(DEV, 'claude-code').alternative.code).toBe(
-            'claude mcp add --scope user wmb-table -- /home/dev/wmb-table/node_modules/electron/dist/electron /home/dev/wmb-table --no-sandbox mcp',
+        expect(setup(DEV, 'other').alternative.code).toBe(
+            '/home/dev/wmb-table/node_modules/electron/dist/electron /home/dev/wmb-table --no-sandbox mcp',
         );
     });
 });
@@ -238,9 +225,7 @@ describe('setup texts', () => {
         ['pt', pt],
         ['sw', sw],
     ])('every label and hint is translated in %s', (_name, locale) => {
-        const translatable = texts.filter(
-            (text) => !['Claude Code', 'Codex', 'Claude Desktop'].includes(text),
-        );
+        const translatable = texts.filter((text) => !['Codex', 'Claude Desktop'].includes(text));
         expect(translatable.filter((text) => !locale[text])).toEqual([]);
     });
 });

@@ -49,7 +49,7 @@ Wmb Table is a free desktop app for Windows, macOS and Linux to read and study t
 
 **MCP server (optional)**
 
-- Lets your own AI app (Claude Code, Codex, Claude Desktop) use your Wmb Table library.
+- Lets your own AI app (Claude Desktop, Codex) use your Wmb Table library.
 - Off by default. It only listens on your computer (`127.0.0.1`) and is read-only unless you allow changes.
 
 **And also**

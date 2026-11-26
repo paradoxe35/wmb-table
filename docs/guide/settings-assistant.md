@@ -195,15 +195,15 @@ Revenez ici si :
 
 ## Utiliser votre propre application d'IA (serveur MCP)
 
-Si vous utilisez déjà une application d'IA sur votre ordinateur, comme Claude Desktop, Claude Code ou Codex, elle peut lire votre bibliothèque Wmb Table : prédications, Bible, vos documents, vos notes et vos sujets. C'est votre propre abonnement qui est utilisé ; Wmb Table n'a pas besoin de clé API pour cela.
+Si vous utilisez déjà une application d'IA sur votre ordinateur, comme Claude Desktop ou Codex, elle peut lire votre bibliothèque Wmb Table : prédications, Bible, vos documents, vos notes et vos sujets. C'est votre propre abonnement qui est utilisé ; Wmb Table n'a pas besoin de clé API pour cela.
 
 1. Tout en bas de cet onglet, cochez `Serveur MCP`. Tant que la case n'est pas cochée, rien d'autre ne s'affiche.
-2. Dans `Configuration`, ouvrez l'onglet de votre application : `Claude Code`, `Codex`, `Claude Desktop` ou `Autre application`.
+2. Dans `Configuration`, ouvrez l'onglet de votre application : `Claude Desktop`, `Codex` ou `Autre application`.
 3. Copiez l'exemple marqué `(recommandé)` et suivez la petite explication au-dessus. Les exemples contiennent déjà le chemin complet de Wmb Table sur votre ordinateur : vous n'avez rien à chercher.
 
 Chaque onglet propose deux méthodes :
 
-- `HTTP` : votre application se connecte à l'adresse affichée, par exemple `http://127.0.0.1:23132/mcp`. Wmb Table doit être ouvert. C'est la méthode recommandée pour Claude Code et Codex.
+- `HTTP` : votre application se connecte à l'adresse affichée, par exemple `http://127.0.0.1:23132/mcp`. Wmb Table doit être ouvert. C'est la méthode recommandée pour Codex.
 - `Commande` : votre application lance Wmb Table elle-même, sans fenêtre, avec la commande `wmb-table mcp`. Cela fonctionne même quand Wmb Table est fermé. C'est la méthode recommandée pour Claude Desktop, qui n'a alors pas besoin de Node.js.
 
 La partie `Avancé`, en bas, donne la commande `wmb-table mcp --http --port 23132` : elle démarre le serveur HTTP dans un terminal, sans ouvrir Wmb Table. `Ctrl+C` l'arrête. Fermez d'abord Wmb Table s'il est ouvert, car il utilise déjà ce port.

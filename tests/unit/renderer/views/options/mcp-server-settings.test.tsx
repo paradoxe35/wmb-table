@@ -34,7 +34,7 @@ describe('McpServerSection', () => {
     it('shows only the switch and its explanation while the server is off', () => {
         const html = render({ settings: off });
         expect(html).toContain('id="mcp-server-enabled"');
-        expect(html).toContain('Claude Desktop, Claude Code, Codex');
+        expect(html).toContain('Claude Desktop, Codex');
         expect(html).not.toContain('mcp-server-allow-writes');
         expect(html).not.toContain('127.0.0.1');
         expect(html).not.toContain('mcp-snippet-');
@@ -57,21 +57,21 @@ describe('McpServerSection', () => {
         expect(html).toContain('id="mcp-server-allow-writes"');
         expect(html).toContain(URL);
         expect(html).toContain('data-testid="mcp-configuration"');
-        expect(html).toContain('data-testid="mcp-snippet-claude-code-recommended"');
-        expect(html).toContain('data-testid="mcp-snippet-claude-code-alternative"');
+        expect(html).toContain('data-testid="mcp-snippet-claude-desktop-recommended"');
+        expect(html).toContain('data-testid="mcp-snippet-claude-desktop-alternative"');
         expect(html).toContain('/opt/Wmb Table/wmb-table');
         expect(html).not.toContain('Le port habituel');
     });
 
     it('offers one tab per client, the recommended way first, the headless server under Avancé', () => {
         const html = render({ settings: on, url: URL });
-        const tabs = ['Claude Code', 'Codex', 'Claude Desktop', 'Autre application'].map((label) =>
+        const tabs = ['Claude Desktop', 'Codex', 'Autre application'].map((label) =>
             html.indexOf(`>${label}<`),
         );
         expect(tabs.every((index) => index > -1)).toBe(true);
         expect([...tabs].sort((a, b) => a - b)).toEqual(tabs);
-        expect(html.indexOf('mcp-snippet-claude-code-recommended')).toBeLessThan(
-            html.indexOf('mcp-snippet-claude-code-alternative'),
+        expect(html.indexOf('mcp-snippet-claude-desktop-recommended')).toBeLessThan(
+            html.indexOf('mcp-snippet-claude-desktop-alternative'),
         );
         expect(html).toContain('Wmb Table doit être ouvert.');
         expect(html).toContain('Fonctionne même quand Wmb Table est fermé.');
@@ -85,7 +85,7 @@ describe('McpServerSection', () => {
                 renderClientAction={(id) => <button data-testid={`auto-${id}`} />}
             />,
         );
-        expect(html).toContain('data-testid="auto-claude-code"');
+        expect(html).toContain('data-testid="auto-claude-desktop"');
     });
 
     it('labels a development checkout', () => {
@@ -112,6 +112,6 @@ describe('McpServerSection', () => {
         });
         expect(html).toContain('data-testid="mcp-server-error"');
         expect(html).not.toContain('data-testid="mcp-server-url"');
-        expect(html).toContain('data-testid="mcp-snippet-claude-code-recommended"');
+        expect(html).toContain('data-testid="mcp-snippet-claude-desktop-recommended"');
     });
 });

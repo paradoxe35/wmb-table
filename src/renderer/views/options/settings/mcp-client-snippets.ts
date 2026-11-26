@@ -1,6 +1,6 @@
 import { MCP_SERVER_NAME, type McpLaunchCommand, type McpLaunchPlatform } from '@shared/mcp.types';
 
-export type McpClientId = 'claude-code' | 'codex' | 'claude-desktop' | 'other';
+export type McpClientId = 'claude-desktop' | 'codex' | 'other';
 
 /** `http` needs Wmb Table open; with `command` the AI app starts Wmb Table itself (stdio). */
 export type McpConnectionMethod = 'http' | 'command';
@@ -20,7 +20,6 @@ export interface McpClientSetup {
     alternative: McpSnippet;
 }
 
-const CLAUDE_CODE_HINT = 'Lancez cette commande dans un terminal.';
 const CODEX_HINT = 'Ajoutez ces lignes au fichier ~/.codex/config.toml.';
 const CLAUDE_DESKTOP_HINT =
     'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop.';
@@ -80,17 +79,17 @@ export function buildMcpClientSetups(launch: McpLaunchCommand, url: string): Mcp
     const commandLine = shellWords(launch).join(' ');
     return [
         {
-            id: 'claude-code',
-            label: 'Claude Code',
+            id: 'claude-desktop',
+            label: 'Claude Desktop',
             recommended: {
-                method: 'http',
-                hint: CLAUDE_CODE_HINT,
-                code: `claude mcp add --transport http --scope user ${MCP_SERVER_NAME} ${url}`,
+                method: 'command',
+                hint: CLAUDE_DESKTOP_HINT,
+                code: claudeDesktopJson({ command: launch.command, args }),
             },
             alternative: {
-                method: 'command',
-                hint: CLAUDE_CODE_HINT,
-                code: `claude mcp add --scope user ${MCP_SERVER_NAME} -- ${commandLine}`,
+                method: 'http',
+                hint: CLAUDE_DESKTOP_REMOTE_HINT,
+                code: claudeDesktopJson({ command: 'npx', args: ['-y', 'mcp-remote', url] }),
             },
         },
         {
@@ -109,20 +108,6 @@ export function buildMcpClientSetups(launch: McpLaunchCommand, url: string): Mcp
                     `command = ${tomlString(launch.command)}`,
                     `args = ${tomlArray(args)}`,
                 ].join('\n'),
-            },
-        },
-        {
-            id: 'claude-desktop',
-            label: 'Claude Desktop',
-            recommended: {
-                method: 'command',
-                hint: CLAUDE_DESKTOP_HINT,
-                code: claudeDesktopJson({ command: launch.command, args }),
-            },
-            alternative: {
-                method: 'http',
-                hint: CLAUDE_DESKTOP_REMOTE_HINT,
-                code: claudeDesktopJson({ command: 'npx', args: ['-y', 'mcp-remote', url] }),
             },
         },
         {

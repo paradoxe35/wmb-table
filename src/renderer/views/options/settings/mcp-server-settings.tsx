@@ -62,7 +62,7 @@ export function McpServerSection({ status, pending, saveFailed, update }: McpSer
                     </Checkbox>
                     <Hint>
                         {t(
-                            'Permet à votre propre application d’IA (Claude Desktop, Claude Code, Codex…) d’utiliser votre bibliothèque Wmb Table.',
+                            'Permet à votre propre application d’IA (Claude Desktop, Codex…) d’utiliser votre bibliothèque Wmb Table.',
                         )}
                     </Hint>
                 </div>

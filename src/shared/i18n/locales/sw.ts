@@ -85,8 +85,8 @@ const sw: Record<string, string> = {
 
     // ── MCP server ──
     'Serveur MCP': 'Seva ya MCP',
-    'Permet à votre propre application d’IA (Claude Desktop, Claude Code, Codex…) d’utiliser votre bibliothèque Wmb Table.':
-        'Inaruhusu programu yako mwenyewe ya AI (Claude Desktop, Claude Code, Codex…) kutumia maktaba yako ya Wmb Table.',
+    'Permet à votre propre application d’IA (Claude Desktop, Codex…) d’utiliser votre bibliothèque Wmb Table.':
+        'Inaruhusu programu yako mwenyewe ya AI (Claude Desktop, Codex…) kutumia maktaba yako ya Wmb Table.',
     'Autoriser les modifications (notes et sujets)': 'Ruhusu mabadiliko (maelezo na mada)',
     'Votre application d’IA peut créer et modifier vos notes et vos sujets.':
         'Programu yako ya AI inaweza kuunda na kubadilisha maelezo na mada zako.',
@@ -95,7 +95,6 @@ const sw: Record<string, string> = {
     'Adresse du serveur': 'Anwani ya seva',
     'Le port habituel {{defaultPort}} était occupé : Wmb Table utilise le port {{port}}.':
         'Mlango wa kawaida {{defaultPort}} ulikuwa unatumika: Wmb Table inatumia mlango {{port}}.',
-    'Lancez cette commande dans un terminal.': 'Endesha amri hii kwenye terminal.',
     'Ajoutez ces lignes au fichier ~/.codex/config.toml.':
         'Ongeza mistari hii kwenye faili ~/.codex/config.toml.',
     'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop. Node.js doit être installé.':

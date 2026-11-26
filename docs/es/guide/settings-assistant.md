@@ -164,15 +164,15 @@ Vuelva aquí si:
 
 ## Usar su propia aplicación de IA (servidor MCP)
 
-Si ya usa una aplicación de IA en su ordenador, como Claude Desktop, Claude Code o Codex, puede leer su biblioteca de Wmb Table: prédicas, Biblia, sus documentos, notas y temas. Se usa su propia suscripción; Wmb Table no necesita una clave API para esto.
+Si ya usa una aplicación de IA en su ordenador, como Claude Desktop o Codex, puede leer su biblioteca de Wmb Table: prédicas, Biblia, sus documentos, notas y temas. Se usa su propia suscripción; Wmb Table no necesita una clave API para esto.
 
 1. Al final de esta pestaña, marque `Servidor MCP`. Mientras la casilla no esté marcada, no se muestra nada más.
-2. En `Configuración`, abra la pestaña de su aplicación: `Claude Code`, `Codex`, `Claude Desktop` u `Otra aplicación`.
+2. En `Configuración`, abra la pestaña de su aplicación: `Claude Desktop`, `Codex` u `Otra aplicación`.
 3. Copie el ejemplo marcado `(recomendado)` y siga la breve explicación que aparece encima. Los ejemplos ya contienen la ruta completa de Wmb Table en su ordenador: no tiene que buscar nada.
 
 Cada pestaña ofrece dos métodos:
 
-- `HTTP`: su aplicación se conecta a la dirección mostrada, por ejemplo `http://127.0.0.1:23132/mcp`. Wmb Table debe estar abierto. Es el método recomendado para Claude Code y Codex.
+- `HTTP`: su aplicación se conecta a la dirección mostrada, por ejemplo `http://127.0.0.1:23132/mcp`. Wmb Table debe estar abierto. Es el método recomendado para Codex.
 - `Comando`: su aplicación inicia Wmb Table por sí misma, sin ventana, con el comando `wmb-table mcp`. Funciona incluso con Wmb Table cerrado. Es el método recomendado para Claude Desktop, que así no necesita Node.js.
 
 La parte `Avanzado`, abajo, da el comando `wmb-table mcp --http --port 23132`: inicia el servidor HTTP en una terminal sin abrir Wmb Table. `Ctrl+C` lo detiene. Cierre primero Wmb Table si está abierto, porque ya usa este puerto.

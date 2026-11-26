@@ -189,15 +189,15 @@ Come back here if:
 
 ## Use your own AI app (MCP server)
 
-If you already use an AI app on your computer, such as Claude Desktop, Claude Code or Codex, it can read your Wmb Table library: sermons, Bible, your documents, notes and subjects. Your own subscription is used; Wmb Table needs no API key for this.
+If you already use an AI app on your computer, such as Claude Desktop or Codex, it can read your Wmb Table library: sermons, Bible, your documents, notes and subjects. Your own subscription is used; Wmb Table needs no API key for this.
 
 1. At the bottom of this tab, check `MCP server`. Until the box is checked, nothing else shows.
-2. Under `Configuration`, open the tab for your app: `Claude Code`, `Codex`, `Claude Desktop` or `Other app`.
+2. Under `Configuration`, open the tab for your app: `Claude Desktop`, `Codex` or `Other app`.
 3. Copy the example marked `(recommended)` and follow the short note above it. The examples already hold the full path of Wmb Table on your computer: there is nothing to look up.
 
 Each tab offers two methods:
 
-- `HTTP`: your app connects to the address shown, for example `http://127.0.0.1:23132/mcp`. Wmb Table must be open. This is the recommended method for Claude Code and Codex.
+- `HTTP`: your app connects to the address shown, for example `http://127.0.0.1:23132/mcp`. Wmb Table must be open. This is the recommended method for Codex.
 - `Command`: your app starts Wmb Table itself, without a window, with the command `wmb-table mcp`. This works even when Wmb Table is closed. This is the recommended method for Claude Desktop, which then needs no Node.js.
 
 The `Advanced` part at the bottom gives the command `wmb-table mcp --http --port 23132`: it starts the HTTP server in a terminal without opening Wmb Table. `Ctrl+C` stops it. Close Wmb Table first if it is open, since it already uses this port.
