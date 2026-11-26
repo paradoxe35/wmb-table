@@ -2,6 +2,7 @@ import { Form, Input, Modal } from 'antd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AiCustomProviderConfig } from '@shared/ai.types';
+import { AutoFocusInput } from '@renderer/components/auto-focus-input';
 import { describeBaseUrlProblem } from './ai-shared';
 import {
     checkCustomProviderDraft,
@@ -69,9 +70,10 @@ export default function AiCustomProviderModal({
                             : undefined
                     }
                 >
-                    <Input
+                    <AutoFocusInput
                         id="ai-custom-provider-name"
                         value={draft.name}
+                        onPressEnter={handleSave}
                         onChange={(e) => setField('name', e.target.value)}
                         placeholder={t('ex: Mon Service IA')}
                     />
@@ -87,6 +89,7 @@ export default function AiCustomProviderModal({
                 >
                     <Input
                         id="ai-custom-provider-base-url"
+                        onPressEnter={handleSave}
                         value={draft.baseUrl}
                         onChange={(e) => setField('baseUrl', e.target.value)}
                         placeholder="http://127.0.0.1:1234/v1"
@@ -99,6 +102,7 @@ export default function AiCustomProviderModal({
                 >
                     <Input.Password
                         id="ai-custom-provider-api-key"
+                        onPressEnter={handleSave}
                         value={draft.apiKey}
                         onChange={(e) => setField('apiKey', e.target.value)}
                         placeholder={t('Optionnel')}
@@ -112,6 +116,7 @@ export default function AiCustomProviderModal({
                 >
                     <Input
                         id="ai-custom-provider-model"
+                        onPressEnter={handleSave}
                         value={draft.defaultModel}
                         onChange={(e) => setField('defaultModel', e.target.value)}
                         placeholder={t('ex: gpt-4o-mini')}
