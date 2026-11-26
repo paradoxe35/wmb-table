@@ -177,8 +177,6 @@ const sw: Record<string, string> = {
         'Sauti hii haiwezi kuchezwa kwenye kompyuta hii.',
 
     // ── AI errors ──
-    "L'assistant IA est désactivé dans les paramètres.":
-        'Msaidizi wa AI amezimwa kwenye mipangilio.',
     'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.':
         'Hakuna mtoa huduma wa AI aliyesanidiwa. Chagua mtoa huduma kwenye mipangilio.',
     'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.':

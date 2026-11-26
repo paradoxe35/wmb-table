@@ -178,8 +178,6 @@ const pt: Record<string, string> = {
         'Esta voz não pode ser reproduzida neste computador.',
 
     // ── AI errors ──
-    "L'assistant IA est désactivé dans les paramètres.":
-        'O assistente de IA está desativado nas configurações.',
     'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.':
         'Nenhum provedor de IA configurado. Selecione um provedor nas configurações.',
     'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.':

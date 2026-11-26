@@ -174,8 +174,6 @@ const en: Record<string, string> = {
         'This voice cannot be played on this computer.',
 
     // ── AI errors ──
-    "L'assistant IA est désactivé dans les paramètres.":
-        'The AI assistant is disabled in settings.',
     'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.':
         'No AI provider configured. Select a provider in settings.',
     'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.':
