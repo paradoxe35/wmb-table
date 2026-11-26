@@ -16,7 +16,7 @@ import { initializeTantivy, terminateWorker } from '@main/services/tantivy.servi
 import { refreshInstalledLanguageUpdates } from '@main/services/language-pack.service';
 import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/synchronizer';
 import { disposeTtsService } from '@main/services/tts';
-import { disposeAiService } from '@main/services/ai';
+import { disposeAiService, stopAiRunsWhenPageGoes } from '@main/services/ai';
 import { disposePowerSaveBlocker } from '@main/services/power-save.service';
 import { startMcpServerIfEnabled, stopMcpServer } from '@main/services/mcp/mcp-server.service';
 import * as configRepo from '@main/database/repositories/config.repository';
@@ -201,6 +201,7 @@ function createWindow(resolvedTheme: ResolvedTheme): void {
 
     mainWindow.on('closed', disposePowerSaveBlocker);
     mainWindow.webContents.on('render-process-gone', disposePowerSaveBlocker);
+    stopAiRunsWhenPageGoes(mainWindow);
 
     // Show window when ready, maximized (matches legacy behavior)
     mainWindow.on('ready-to-show', () => {
