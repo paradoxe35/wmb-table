@@ -4,7 +4,7 @@ import { extname, join, relative, sep } from 'node:path';
 import log from 'electron-log';
 import pLimitModule from 'p-limit';
 import { getMainWindow } from '@main/lib/window';
-import { sendToRenderer } from '@main/ipc/register';
+import { sendToRenderer } from '@main/ipc/ipc-bridge';
 import { PushChannels } from '@shared/ipc.types';
 import { getTtsDemoText } from '@shared/tts-demo-texts';
 import type { TtsProvider } from './provider';

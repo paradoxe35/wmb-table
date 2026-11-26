@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import { AppChannels } from '@shared/ipc.types';
 import { applyResolvedTheme, getThemeState } from '@main/lib/native-theme';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import * as configRepo from '@main/database/repositories/config.repository';
 import * as customDocsRepo from '@main/database/repositories/custom-documents.repository';
 import * as historyRepo from '@main/database/repositories/history.repository';

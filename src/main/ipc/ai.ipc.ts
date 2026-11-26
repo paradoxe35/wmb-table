@@ -1,6 +1,6 @@
 import { BrowserWindow, type IpcMainInvokeEvent } from 'electron';
 import { AiChannels } from '@shared/ipc.types';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import { getAiService } from '@main/services/ai';
 import {
     conversationIdSchema,

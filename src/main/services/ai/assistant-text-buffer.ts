@@ -1,6 +1,6 @@
 import type { BrowserWindow } from 'electron';
 import * as aiRepo from '@main/database/repositories/ai.repository';
-import { sendToRenderer } from '@main/ipc/register';
+import { sendToRenderer } from '@main/ipc/ipc-bridge';
 import { PushChannels } from '@shared/ipc.types';
 
 const FLUSH_INTERVAL_MS = 40;

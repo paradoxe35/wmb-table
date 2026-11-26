@@ -8,7 +8,7 @@ vi.mock('electron-log', () => ({
     default: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 vi.mock('@main/lib/window', () => ({ getMainWindow: () => mainWindow }));
-vi.mock('@main/ipc/register', () => ({
+vi.mock('@main/ipc/ipc-bridge', () => ({
     sendToRenderer: (...args: unknown[]) => sendToRenderer(...args),
 }));
 vi.mock('@main/lib/app-paths', () => ({

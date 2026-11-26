@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { BrowserWindow } from 'electron';
 import log from '@main/lib/logger';
 import * as aiRepo from '@main/database/repositories/ai.repository';
-import { sendToRenderer } from '@main/ipc/register';
+import { sendToRenderer } from '@main/ipc/ipc-bridge';
 import { PushChannels } from '@shared/ipc.types';
 import type { AiMessage, AiRunOutcome } from '@shared/ai.types';
 import { AssistantTextBuffer, type ReplyTarget } from './assistant-text-buffer';

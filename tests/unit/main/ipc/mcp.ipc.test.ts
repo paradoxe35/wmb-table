@@ -7,7 +7,7 @@ const service = {
     updateMcpServerSettings: vi.fn(async (patch: unknown) => ({ patch })),
 };
 
-vi.mock('@main/ipc/register', () => ({ registerHandler: registerHandlerMock }));
+vi.mock('@main/ipc/ipc-bridge', () => ({ registerHandler: registerHandlerMock }));
 vi.mock('@main/services/mcp/mcp-server.service', () => service);
 
 type Handler = (event: unknown, ...args: unknown[]) => Promise<unknown>;

@@ -1,5 +1,5 @@
 import { PushChannels } from '@shared/ipc.types';
-import { sendToRenderer } from '@main/ipc/register';
+import { sendToRenderer } from '@main/ipc/ipc-bridge';
 import type { AgentDispatch } from './types';
 
 /**

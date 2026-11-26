@@ -22,7 +22,7 @@ vi.mock('@main/lib/logger', () => ({
     default: { info: vi.fn(), warn: logWarnMock, error: vi.fn() },
 }));
 
-vi.mock('@main/ipc/register', () => ({ sendToRenderer: sendToRendererMock }));
+vi.mock('@main/ipc/ipc-bridge', () => ({ sendToRenderer: sendToRendererMock }));
 
 function fakeTool(name: string) {
     return {

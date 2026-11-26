@@ -7,7 +7,7 @@ vi.mock('electron', () => ({
     dialog: { showMessageBox: vi.fn() },
 }));
 vi.mock('@electron-toolkit/utils', () => ({ is: { dev: false } }));
-vi.mock('@main/ipc/register', () => ({ sendToRenderer: vi.fn() }));
+vi.mock('@main/ipc/ipc-bridge', () => ({ sendToRenderer: vi.fn() }));
 vi.mock('@main/lib/i18n', () => ({ default: { t: (key: string) => key } }));
 
 import { isDevToolsShortcut } from '@main/lib/menu';

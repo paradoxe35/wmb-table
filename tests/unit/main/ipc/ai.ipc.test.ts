@@ -19,7 +19,7 @@ const service = {
     resolveModelLimits: vi.fn(),
 };
 
-vi.mock('@main/ipc/register', () => ({ registerHandler: registerHandlerMock }));
+vi.mock('@main/ipc/ipc-bridge', () => ({ registerHandler: registerHandlerMock }));
 vi.mock('@main/services/ai', () => ({ getAiService: () => service }));
 vi.mock('electron', () => ({
     BrowserWindow: { fromWebContents: vi.fn(() => browserWindow) },

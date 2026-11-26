@@ -24,7 +24,7 @@ const resolveEnvironmentMock = vi.fn();
 const buildToolsMock = vi.fn((): ToolSet => ({}));
 const generateTitleMock = vi.fn(async (): Promise<string | null> => null);
 
-vi.mock('@main/ipc/register', () => ({
+vi.mock('@main/ipc/ipc-bridge', () => ({
     sendToRenderer: (_window: unknown, channel: string, payload: Record<string, unknown>) => {
         pushed.push({ channel, payload, syncedMessageIds: syncedAssistantIds() });
     },

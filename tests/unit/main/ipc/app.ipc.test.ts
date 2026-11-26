@@ -6,7 +6,7 @@ const openExternalMock = vi.fn();
 const warnMock = vi.fn();
 const appMock = { relaunch: vi.fn(), exit: vi.fn(), quit: vi.fn() };
 
-vi.mock('@main/ipc/register', () => ({ registerHandler: registerHandlerMock }));
+vi.mock('@main/ipc/ipc-bridge', () => ({ registerHandler: registerHandlerMock }));
 vi.mock('electron', () => ({
     app: appMock,
     shell: { openExternal: openExternalMock },

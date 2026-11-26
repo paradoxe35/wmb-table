@@ -1,5 +1,5 @@
 import { TtsChannels } from '@shared/ipc.types';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import { getTtsService } from '@main/services/tts';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
 

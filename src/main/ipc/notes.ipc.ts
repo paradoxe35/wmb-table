@@ -1,6 +1,6 @@
 import { NotesChannels } from '@shared/ipc.types';
 import type { NoteItem } from '@shared/types';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import * as notesRepo from '@main/database/repositories/notes.repository';
 import { exportHtmlToPdf } from '@main/lib/pdf-export';
 import { exportHtmlToDocx } from '@main/lib/docx-export';

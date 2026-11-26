@@ -1,5 +1,5 @@
 import { HighlightChannels } from '@shared/ipc.types';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import * as highlightsRepo from '@main/database/repositories/highlights.repository';
 import { exportHtmlToPdf } from '@main/lib/pdf-export';
 import { buildHighlightsExportHtml } from '@main/lib/highlights-export';

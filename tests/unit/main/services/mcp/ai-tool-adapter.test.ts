@@ -5,7 +5,7 @@ import type { AiToolDefinition } from '@main/services/ai/tools/types';
 import { WRITE_TOOL_NAMES } from '@main/services/ai/tools/tool-access';
 import { registerAiTools, runAiTool, selectExposedTools } from '@main/services/mcp/ai-tool-adapter';
 
-vi.mock('@main/ipc/register', () => ({ sendToRenderer: vi.fn() }));
+vi.mock('@main/ipc/ipc-bridge', () => ({ sendToRenderer: vi.fn() }));
 
 const { buildToolExecutors } = await import('@main/services/ai/tools');
 

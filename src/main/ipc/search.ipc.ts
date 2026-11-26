@@ -1,5 +1,5 @@
 import { SearchChannels } from '@shared/ipc.types';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import * as suggestionsRepo from '@main/database/repositories/suggestions.repository';
 import * as tantivyService from '@main/services/tantivy.service';
 import * as referenceDataService from '@main/services/reference-data.service';

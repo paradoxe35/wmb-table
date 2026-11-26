@@ -1,5 +1,5 @@
 import { PowerChannels } from '@shared/ipc.types';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import { setPowerSaveBlocker } from '@main/services/power-save.service';
 
 export function registerPowerHandlers(): void {

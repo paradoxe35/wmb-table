@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { WRITE_TOOL_NAMES, isWriteTool } from '@main/services/ai/tools/tool-access';
 
-vi.mock('@main/ipc/register', () => ({ sendToRenderer: vi.fn() }));
+vi.mock('@main/ipc/ipc-bridge', () => ({ sendToRenderer: vi.fn() }));
 
 const { buildToolExecutors } = await import('@main/services/ai/tools');
 

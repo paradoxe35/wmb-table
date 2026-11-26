@@ -53,7 +53,7 @@ vi.mock('@main/services/language-pack.service', () => ({
 }));
 
 const sendToRendererMock = vi.fn();
-vi.mock('@main/ipc/register', () => ({
+vi.mock('@main/ipc/ipc-bridge', () => ({
     sendToRenderer: sendToRendererMock,
 }));
 

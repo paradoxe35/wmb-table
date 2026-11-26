@@ -1,5 +1,5 @@
 import { McpChannels } from '@shared/ipc.types';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import { parseAiInput } from './ai.schemas';
 import { mcpSettingsPatchSchema } from './mcp.schemas';
 import { getMcpServerStatus, updateMcpServerSettings } from '@main/services/mcp/mcp-server.service';

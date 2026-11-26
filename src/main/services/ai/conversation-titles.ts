@@ -2,7 +2,7 @@ import type { BrowserWindow } from 'electron';
 import type { LanguageModel } from 'ai';
 import log from '@main/lib/logger';
 import * as aiRepo from '@main/database/repositories/ai.repository';
-import { sendToRenderer } from '@main/ipc/register';
+import { sendToRenderer } from '@main/ipc/ipc-bridge';
 import { PushChannels } from '@shared/ipc.types';
 import { generateConversationTitle, shouldGenerateTitle } from './title-generator';
 

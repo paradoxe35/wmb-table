@@ -9,7 +9,7 @@ import {
     DOCS_LINK,
     WEBSITE_LINK,
 } from '@shared/constants';
-import { sendToRenderer } from '@main/ipc/register';
+import { sendToRenderer } from '@main/ipc/ipc-bridge';
 import i18n from '@main/lib/i18n';
 
 /**

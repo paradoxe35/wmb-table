@@ -4,7 +4,7 @@ import { createTestDb } from '../unit/main/database/test-helpers';
 import { createBibleFixture, removeBibleFixture } from '../helpers/bible-fixture';
 import { freeLoopbackPort } from '../helpers/free-port';
 
-vi.mock('@main/ipc/register', () => ({ sendToRenderer: vi.fn() }));
+vi.mock('@main/ipc/ipc-bridge', () => ({ sendToRenderer: vi.fn() }));
 
 vi.mock('@main/services/tantivy.service', () => ({ getInstalledLanguages: () => ['fr', 'en'] }));
 
