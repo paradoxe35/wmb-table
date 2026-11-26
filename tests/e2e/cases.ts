@@ -32,14 +32,11 @@ function checkCleanEnd(ctx: CaseContext, final: ChatFacts, marker: string): void
     ctx.check('the input is ready again (no Stop button)', !final.stopButton);
 }
 
-const RAW_ERROR_BUG = 'B15 provider errors are shown raw, in English';
-
 function checkErrorShown(
     ctx: CaseContext,
     final: ChatFacts,
     cause: RegExp,
     causeInFrench: RegExp,
-    retryKnownBug?: string,
 ): void {
     const alerts = final.errorAlerts;
     ctx.check('an error banner is shown', alerts.length > 0, alerts);
@@ -52,11 +49,8 @@ function checkErrorShown(
         `the error is written in French (${causeInFrench})`,
         alerts.some((a) => causeInFrench.test(a)),
         alerts,
-        { knownBug: RAW_ERROR_BUG },
     );
-    ctx.check('a Retry button is offered', final.retryButtons > 0, final.retryButtons, {
-        knownBug: retryKnownBug,
-    });
+    ctx.check('a Retry button is offered', final.retryButtons > 0, final.retryButtons);
     ctx.check('the input is ready again (no Stop button)', !final.stopButton);
 }
 
