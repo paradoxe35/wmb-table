@@ -11,6 +11,7 @@ import {
     AI_MESSAGE_HISTORY_PAGE_SIZE,
     createDefaultAiSettings,
     isBuiltinProviderId,
+    MAX_HISTORY_CONVERSATIONS,
     type AiConversation,
     type AiConversationHistoryPage,
     type AiConversationHistoryPageRequest,
@@ -56,13 +57,22 @@ function toMessage(row: typeof aiMessages.$inferSelect): AiMessage {
     };
 }
 
+/** Older builds could store 0 or any number, and 0 would delete every conversation. */
+function readHistoryLimit(stored: number, fallback: number): number {
+    if (!Number.isInteger(stored) || stored < MAX_HISTORY_CONVERSATIONS.min) return fallback;
+    return Math.min(stored, MAX_HISTORY_CONVERSATIONS.max);
+}
+
 function rowToSettings(row: typeof aiSettings.$inferSelect): AiSettings {
     const defaults = createDefaultAiSettings();
     return {
         enabled: row.enabled,
         activeProvider: row.activeProvider,
         languagePreference: row.languagePreference as AiSettings['languagePreference'],
-        maxHistoryConversations: row.maxHistoryConversations,
+        maxHistoryConversations: readHistoryLimit(
+            row.maxHistoryConversations,
+            defaults.maxHistoryConversations,
+        ),
         providers: {
             ...defaults.providers,
             ...parseJsonOrFallback<AiProviders>(row.providers, defaults.providers, {
@@ -309,6 +319,7 @@ export function clearAllConversations(): void {
 }
 
 export function trimConversationHistory(limit: number): void {
+    if (!Number.isInteger(limit) || limit < 1) return;
     const rows = getDb()
         .select({ id: aiConversations.id })
         .from(aiConversations)

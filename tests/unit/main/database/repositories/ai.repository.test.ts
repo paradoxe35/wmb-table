@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createTestDb } from '../test-helpers';
 import * as aiRepo from '@main/database/repositories/ai.repository';
+import { getDb } from '@main/database';
+import { aiSettings } from '@main/database/schema';
 
 describe('ai.repository', () => {
     beforeEach(() => {
@@ -245,6 +247,29 @@ describe('ai.repository', () => {
     });
 
     describe('settings', () => {
+        it.each([0, -3, 1.5, 10_000])(
+            'reads a bad stored history limit (%s) as a usable one',
+            (stored) => {
+                aiRepo.ensureSettings();
+                getDb().update(aiSettings).set({ maxHistoryConversations: stored }).run();
+
+                const limit = aiRepo.ensureSettings().maxHistoryConversations;
+                expect(Number.isInteger(limit)).toBe(true);
+                expect(limit).toBeGreaterThanOrEqual(1);
+                expect(limit).toBeLessThanOrEqual(500);
+            },
+        );
+
+        it('trimConversationHistory ignores a limit that is not a positive whole number', () => {
+            aiRepo.createConversation('en', 'A');
+            aiRepo.createConversation('en', 'B');
+
+            aiRepo.trimConversationHistory(Number.NaN);
+            aiRepo.trimConversationHistory(0);
+
+            expect(aiRepo.getConversations()).toHaveLength(2);
+        });
+
         it('ensureSettings creates defaults', () => {
             const settings = aiRepo.ensureSettings();
             expect(settings.enabled).toBe(true);

@@ -101,6 +101,8 @@ export const BUILTIN_PROVIDER_REQUIRES_API_KEY: Record<AiBuiltinProviderId, bool
     ollama: false,
 };
 
+export const MAX_HISTORY_CONVERSATIONS = { min: 1, max: 500 } as const;
+
 export function createDefaultAiSettings(): AiSettings {
     const providers = {} as AiProviders;
     for (const id of BUILTIN_PROVIDER_IDS) {

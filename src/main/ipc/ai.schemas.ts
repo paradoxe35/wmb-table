@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
     BUILTIN_PROVIDER_IDS,
+    MAX_HISTORY_CONVERSATIONS,
     type AiConversationHistoryPageRequest,
     type AiCustomProviderConfig,
     type AiMessageHistoryPageRequest,
@@ -12,7 +13,6 @@ import {
     type AiSettings,
 } from '@shared/ai.types';
 
-export const MAX_HISTORY_CONVERSATIONS = { min: 1, max: 500 } as const;
 export const MAX_MESSAGE_LENGTH = 100_000;
 export const MAX_MESSAGES_PER_SEND = 50;
 export const MESSAGE_TOO_LONG_ERROR = 'Le message est trop long. Raccourcissez-le puis réessayez.';
