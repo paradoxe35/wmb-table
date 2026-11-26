@@ -67,6 +67,8 @@ function readSermonFoundBySearch(ctx: ScenarioContext, year: number): Reply {
 }
 
 export const LONG_RESEARCH_TOOL_STEPS = 32;
+/** Keeps the run long enough (about 5 s) to watch and screenshot the tool steps. */
+const TOOL_STEP_THINKING_MS = 300;
 const RESEARCH_YEARS = Array.from({ length: 16 }, (_, i) => 1950 + i);
 
 function longResearchStep(ctx: ScenarioContext): Reply {
@@ -84,11 +86,15 @@ function longResearchStep(ctx: ScenarioContext): Reply {
     }
     if (index === LONG_RESEARCH_TOOL_STEPS - 1) {
         const word = wordFromLastSermonText(ctx) ?? 'faith';
-        return complete([toolCall('searchContent', { query: word, limit: 5 })]);
+        return complete([
+            pause(TOOL_STEP_THINKING_MS),
+            toolCall('searchContent', { query: word, limit: 5 }),
+        ]);
     }
     const year = RESEARCH_YEARS[Math.floor(index / 2)];
     if (index % 2 === 1) return readSermonFoundBySearch(ctx, year);
     return complete([
+        pause(TOOL_STEP_THINKING_MS),
         reasoning(`Step ${index + 1}: searching sermons from ${year}.`),
         toolCall('searchSermons', { query: String(year), limit: 3 }),
     ]);
@@ -135,7 +141,7 @@ const answerScenarios: Scenario[] = [
                             2,
                         ),
                     ],
-                    { chunkDelayMs: 15, usage: { prompt: 4000, completion: 120 } },
+                    { chunkDelayMs: 60, usage: { prompt: 4000, completion: 120 } },
                 );
             },
         ),
@@ -155,7 +161,7 @@ const answerScenarios: Scenario[] = [
                         reasoning(`Thinking hard. ${words(600)}`, 6),
                         toolCall('searchSermons', { query: '1965', limit: 2 }),
                     ],
-                    { chunkDelayMs: 5, usage: { prompt: 3000, completion: 900, reasoning: 850 } },
+                    { chunkDelayMs: 20, usage: { prompt: 3000, completion: 900, reasoning: 850 } },
                 ),
             () =>
                 complete(
@@ -163,7 +169,7 @@ const answerScenarios: Scenario[] = [
                         reasoning(`Still thinking. ${words(300)}`, 6),
                         text('Short answer after long thought. MOCK-REASONING-DONE'),
                     ],
-                    { chunkDelayMs: 5, usage: { prompt: 3500, completion: 500, reasoning: 480 } },
+                    { chunkDelayMs: 20, usage: { prompt: 3500, completion: 500, reasoning: 480 } },
                 ),
         ),
     },
