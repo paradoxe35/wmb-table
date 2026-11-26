@@ -319,11 +319,26 @@ export interface AiStreamCancelEvent {
     messageId: string;
 }
 
+export type AiErrorCode =
+    | 'not-configured'
+    | 'auth'
+    | 'model-not-found'
+    | 'rate-limit'
+    | 'quota'
+    | 'context-too-long'
+    | 'provider-unavailable'
+    | 'network'
+    | 'timeout'
+    | 'invalid-request'
+    | 'unknown';
+
 export interface AiStreamErrorEvent {
     conversationId: string;
     generationId: string;
     messageId: string;
     error: string;
+    code?: AiErrorCode;
+    retryable?: boolean;
 }
 
 export interface AiToolEvent {
