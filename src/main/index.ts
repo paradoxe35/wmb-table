@@ -78,14 +78,14 @@ function bootstrapPrimaryInstance(): void {
         });
     });
 
-    app.on('will-quit', () => {
-        stopSynchronizer();
-        void stopMcpServer();
-        terminateWorker();
-        disposeTtsService();
-        disposeAiService();
-        disposePowerSaveBlocker();
-        closeDatabase();
+    let servicesStopped = false;
+    app.on('will-quit', (event) => {
+        if (servicesStopped) return;
+        event.preventDefault();
+        void stopServicesBeforeQuit().finally(() => {
+            servicesStopped = true;
+            app.quit();
+        });
     });
 
     app.on('window-all-closed', () => {
@@ -93,6 +93,22 @@ function bootstrapPrimaryInstance(): void {
             app.quit();
         }
     });
+}
+
+const MCP_STOP_TIMEOUT_MS = 2_000;
+
+/** Everything that can still write (MCP requests, AI replies) stops before the database closes. */
+async function stopServicesBeforeQuit(): Promise<void> {
+    stopSynchronizer();
+    await Promise.race([
+        stopMcpServer().catch((error) => log.warn('[mcp] Stop at quit failed:', error)),
+        new Promise((resolve) => setTimeout(resolve, MCP_STOP_TIMEOUT_MS)),
+    ]);
+    terminateWorker();
+    disposeTtsService();
+    disposeAiService();
+    disposePowerSaveBlocker();
+    closeDatabase();
 }
 
 function registerPrivilegedSchemes(): void {
