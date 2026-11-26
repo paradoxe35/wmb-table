@@ -1,13 +1,15 @@
 import '@main/lib/sentry';
 
-import { app, BrowserWindow, protocol, session, shell } from 'electron';
+import { app, BrowserWindow, protocol, session } from 'electron';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { is } from '@electron-toolkit/utils';
 import { APP_NAME } from '@shared/constants';
 import { initializeIpc } from '@main/ipc/register';
 import { getMainWindow, setMainWindow } from '@main/lib/window';
 import MenuBuilder from '@main/lib/menu';
 import { initializeLogger } from '@main/lib/logger';
+import { secureWindowNavigation } from '@main/lib/safe-external';
 import { initializeUpdater } from '@main/lib/updater';
 import { initializeDatabase, closeDatabase } from '@main/database';
 import { initializeTantivy, terminateWorker } from '@main/services/tantivy.service';
@@ -203,11 +205,10 @@ function createWindow(resolvedTheme: ResolvedTheme): void {
         mainWindow.show();
     });
 
-    // Open external links in the user's browser
-    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        shell.openExternal(url);
-        return { action: 'deny' };
-    });
+    const devServerUrl = is.dev ? process.env['ELECTRON_RENDERER_URL'] : undefined;
+    const appPagePath = join(__dirname, '../renderer/index.html');
+
+    secureWindowNavigation(mainWindow.webContents, devServerUrl ?? pathToFileURL(appPagePath).href);
 
     // Build application menu
     const menuBuilder = new MenuBuilder(mainWindow);
@@ -226,9 +227,9 @@ function createWindow(resolvedTheme: ResolvedTheme): void {
     }
 
     // Load the app
-    if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-        mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    if (devServerUrl) {
+        mainWindow.loadURL(devServerUrl);
     } else {
-        mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+        mainWindow.loadFile(appPagePath);
     }
 }

@@ -1,4 +1,4 @@
-import { app, shell } from 'electron';
+import { app } from 'electron';
 import { AppChannels } from '@shared/ipc.types';
 import { applyResolvedTheme, getThemeState } from '@main/lib/native-theme';
 import { registerHandler } from './register';
@@ -18,6 +18,7 @@ import {
 import i18n from '@main/lib/i18n';
 import MenuBuilder from '@main/lib/menu';
 import { getMainWindow } from '@main/lib/window';
+import { openExternalSafely } from '@main/lib/safe-external';
 import { resolveUiLanguage } from '@shared/constants';
 
 const langToLocale: Record<string, string> = {
@@ -68,7 +69,7 @@ export function registerAppHandlers(): void {
     });
 
     registerHandler(AppChannels.openExternal, async (_event, url) => {
-        await shell.openExternal(url);
+        await openExternalSafely(url, 'ipc');
     });
 
     registerHandler(AppChannels.restart, async () => {
