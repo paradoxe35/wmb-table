@@ -1,5 +1,6 @@
 import { generateText, type LanguageModel } from 'ai';
 import log from '@main/lib/logger';
+import { TITLE_TIMEOUT_MS } from './model-timeouts';
 
 const TITLE_PROMPT =
     'Generate a short conversation title (max 8 words) that captures the main topic. ' +
@@ -42,6 +43,7 @@ export async function generateConversationTitle(
             ].join('\n'),
             maxOutputTokens: TITLE_MAX_OUTPUT_TOKENS,
             abortSignal,
+            timeout: { totalMs: TITLE_TIMEOUT_MS },
         });
 
         const title = text
