@@ -83,8 +83,6 @@ describe('startMcpHttpServer', () => {
     it.each([
         ['no Origin (desktop clients)', {}],
         ['Host localhost', { Host: 'localhost' }],
-        ['Origin http://localhost:5173', { Origin: 'http://localhost:5173' }],
-        ['Origin http://127.0.0.1', { Origin: 'http://127.0.0.1' }],
     ])('accepts a request with %s', async (_label, headers) => {
         const { port } = await start();
         const response = await post(port, headers);
@@ -94,6 +92,12 @@ describe('startMcpHttpServer', () => {
 
     it.each([
         ['Origin https://evil.example', { Origin: 'https://evil.example' }],
+        [
+            'Origin http://localhost:5173 (a local dev server page)',
+            { Origin: 'http://localhost:5173' },
+        ],
+        ['Origin http://127.0.0.1:8080', { Origin: 'http://127.0.0.1:8080' }],
+        ['Origin http://127.0.0.1', { Origin: 'http://127.0.0.1' }],
         ['Origin null (sandboxed page)', { Origin: 'null' }],
         ['Host evil.example (DNS rebinding)', { Host: 'evil.example' }],
         ['Host evil.example with a local port', { Host: 'evil.example:23132' }],
