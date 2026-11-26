@@ -184,7 +184,7 @@ function applyMatch(entries: Entry[], match: Match, newText: string): Entry[] | 
         .find((found) => found !== null);
     if (unsupported) {
         return {
-            error: `This part of the note uses formatting that markdown cannot carry (${unsupported}). Editing it here would drop that formatting — use updateNoteContent to rewrite the note.`,
+            error: `This part of the note uses formatting that markdown cannot carry (${unsupported}). Editing it here would drop that formatting. Edit only the plain parts with editNote, or ask the user to change this part in the note editor.`,
         };
     }
 
