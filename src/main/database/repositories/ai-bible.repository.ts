@@ -151,6 +151,22 @@ export function getPassage(input: {
     }
 }
 
+interface BookRow {
+    book: string;
+    book_name: string;
+}
+
+function listBooks(db: Database.Database): BookRow[] {
+    return db
+        .prepare(
+            'SELECT DISTINCT book, book_name FROM bible_verses ORDER BY CAST(book AS integer), book',
+        )
+        .all() as BookRow[];
+}
+
+/** A single letter is a prefix of several books ("J": Josué, Job, Jean…), so it names none. */
+const MIN_BOOK_NAME_LENGTH = 2;
+
 /** Resolve a book name or code to the internal book code used in the DB. */
 export function resolveBookCode(db: Database.Database, book: string): string | null {
     const trimmed = book.trim();
@@ -163,12 +179,10 @@ export function resolveBookCode(db: Database.Database, book: string): string | n
 
     // Normalize input the same way we do for sermon search (strips accents + lowercases)
     const normalized = strNormalize(trimmed);
+    const joined = stripSeparators(normalized);
+    if (joined.length < MIN_BOOK_NAME_LENGTH) return null;
 
-    // Load all distinct book names and match with normalization
-    const allBooks = db.prepare('SELECT DISTINCT book, book_name FROM bible_verses').all() as {
-        book: string;
-        book_name: string;
-    }[];
+    const allBooks = listBooks(db);
 
     // Exact normalized match (e.g. "revelation" matches "Révélation", "apocalypse" matches "Apocalypse")
     const exactMatch = allBooks.find((r) => strNormalize(r.book_name) === normalized);
@@ -179,7 +193,6 @@ export function resolveBookCode(db: Database.Database, book: string): string | n
     if (prefixMatch) return prefixMatch.book;
 
     // Last resort, for a query that ran the words together: "1jean" for "1 Jean"
-    const joined = stripSeparators(normalized);
     const joinedMatch = allBooks.find((r) =>
         stripSeparators(strNormalize(r.book_name)).startsWith(joined),
     );
