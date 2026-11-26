@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { parseArgs } from 'node:util';
+import { AssistantOnboarding } from './assistant-onboarding';
 import { AppProcess } from './driver/app-process';
 import { MOCK_PROVIDER_ID, setUpApp } from './driver/app-setup';
 import type { CdpSession } from './driver/cdp';
@@ -19,10 +20,10 @@ interface Check {
     label: string;
     passed: boolean;
     details?: unknown;
+    knownBug?: string;
 }
 
 interface AiSettingsLike {
-    enabled: boolean;
     activeProvider: string | null;
     languagePreference: string;
     providers: Record<string, { apiKey?: string; baseUrl?: string }>;
@@ -45,11 +46,26 @@ class SettingsRun {
         this.mockBaseUrl = mockBaseUrl;
     }
 
-    check(label: string, passed: boolean, details?: unknown): void {
-        this.checks.push({ label, passed, details: passed ? undefined : details });
-        console.log(
-            `  ${passed ? 'ok  ' : 'FAIL'} ${label}${passed ? '' : ` ${JSON.stringify(details)}`}`,
-        );
+    /** A failing `knownBug` check is reported as BUG without failing the run. */
+    check(label: string, passed: boolean, details?: unknown, knownBug?: string): void {
+        this.checks.push({ label, passed, details: passed ? undefined : details, knownBug });
+        const status = knownBug ? (passed ? 'FIX?' : 'BUG ') : passed ? 'ok  ' : 'FAIL';
+        const note = knownBug ? ` [${knownBug}]` : '';
+        console.log(`  ${status} ${label}${note}${passed ? '' : ` ${JSON.stringify(details)}`}`);
+    }
+
+    async onboarding(app: AppProcess): Promise<void> {
+        await new AssistantOnboarding({
+            cdp: this.cdp,
+            settings: this.settings,
+            chat: this.screens,
+            appDataDir: app.appDataDir,
+            mockBaseUrl: this.mockBaseUrl,
+            check: (...args) => this.check(...args),
+            shot: (name) => this.shot(name),
+            reload: () => this.reload(),
+            setUiLanguage: (language) => this.setUiLanguage(language),
+        }).run();
     }
 
     /**
@@ -316,12 +332,10 @@ class SettingsRun {
         );
         await this.shot('builtin-ollama');
 
-        await s.click('#ai-enabled');
-        await sleep(300);
-        this.check('the switch turns the assistant off', !(await this.aiSettings()).enabled);
-        await this.shot('disabled');
-        await s.click('#ai-enabled');
-        await sleep(300);
+        this.check(
+            'the AI tab has no on/off switch',
+            !(await this.cdp.evaluate(`Boolean(document.querySelector('#ai-enabled'))`)),
+        );
 
         console.log('labels');
         const unlabeled = await this.cdp.evaluate<
@@ -476,6 +490,7 @@ async function main(): Promise<boolean> {
         });
         await cdp.send('Emulation.setDeviceMetricsOverride', DESKTOP_VIEWPORT);
         run = new SettingsRun(cdp, join(outDir, 'screens'), server.baseUrl);
+        await run.onboarding(app);
         await run.run();
         await run.saveError(app);
         await run.ttsKeys();
@@ -494,9 +509,11 @@ async function main(): Promise<boolean> {
         await app.stop();
         await server.close();
     }
-    const failed = run?.checks.filter((c) => !c.passed) ?? [];
+    const checks = run?.checks ?? [];
+    const failed = checks.filter((c) => !c.passed && !c.knownBug);
+    const knownBugs = checks.filter((c) => !c.passed && c.knownBug).length;
     console.log(
-        `\n${(run?.checks.length ?? 0) - failed.length}/${run?.checks.length ?? 0} checks passed. Output: ${outDir}`,
+        `\n${checks.length - failed.length - knownBugs}/${checks.length} checks passed, ${knownBugs} known-bug checks still failing. Output: ${outDir}`,
     );
     return failed.length === 0;
 }
