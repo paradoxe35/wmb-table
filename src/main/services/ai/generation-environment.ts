@@ -8,7 +8,7 @@ import type { AiSettings } from '@shared/ai.types';
 import type { InstalledLanguage } from '@shared/types';
 import { resolveUiLanguage } from '@shared/constants';
 import { resolveActiveModel, resolveLanguageModel } from './provider-resolver';
-import { getModelLimits } from './model-fetcher';
+import { getModelLimits, getModelReasoningSupport } from './model-fetcher';
 import { isLocalProvider, resolveChatTimeouts, type ChatTimeouts } from './model-timeouts';
 import type { ModelLimits } from './token-budget';
 
@@ -26,12 +26,23 @@ export interface GenerationEnvironment {
     reasoningControl: boolean;
 }
 
+const OPENAI_REASONING_MODEL = /^(o\d|gpt-5)(?![\w.-]*-chat)/i;
+const GEMINI_THINKING_MODEL = /^gemini-(2\.5|[3-9])/i;
+
 /**
- * Claude turns a reasoning level into extended thinking, whose blocks must round-trip between
- * tool steps; the reasoning filter in model-wrapper strips them, so Claude keeps its default.
+ * A reasoning level goes only to models known to take one: others (llama3.2 on Ollama, many
+ * custom servers) answer 400. Claude turns it into extended thinking, whose blocks must
+ * round-trip between tool steps; the reasoning filter in model-wrapper strips them.
  */
-function supportsReasoningControl(providerId: string): boolean {
-    return providerId !== 'claude';
+export async function supportsReasoningControl(
+    providerId: string,
+    modelId: string,
+    baseUrl?: string,
+): Promise<boolean> {
+    if (providerId === 'claude') return false;
+    if (providerId === 'openai') return OPENAI_REASONING_MODEL.test(modelId);
+    if (providerId === 'gemini') return GEMINI_THINKING_MODEL.test(modelId);
+    return (await getModelReasoningSupport(providerId, modelId, baseUrl)) === true;
 }
 
 function requireContentLanguage(): string {
@@ -113,6 +124,6 @@ export async function resolveGenerationEnvironment(
         model,
         installedLanguages,
         timeouts: resolveChatTimeouts(isLocalProvider(providerId, providerBaseUrl)),
-        reasoningControl: supportsReasoningControl(providerId),
+        reasoningControl: await supportsReasoningControl(providerId, modelId, providerBaseUrl),
     };
 }

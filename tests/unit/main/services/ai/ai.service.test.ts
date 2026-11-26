@@ -81,6 +81,7 @@ vi.mock('@main/services/ai/provider-catalog', () => ({
 vi.mock('@main/services/ai/model-fetcher', () => ({
     fetchProviderModels: vi.fn(),
     getModelLimits: getModelLimitsMock,
+    getModelReasoningSupport: vi.fn(async () => undefined),
 }));
 
 const runnerRunMock = vi.fn();
@@ -301,6 +302,7 @@ describe('AiService', () => {
         });
 
         expect(runnerRunMock.mock.calls[0]?.[0].reasoningControl).toBe(false);
+        expect(runnerRunMock.mock.calls[1]?.[0].reasoningControl).toBe(false);
         expect(runnerRunMock.mock.calls[1]?.[0].timeouts.firstChunkMs).toBe(15 * 60_000);
     });
 

@@ -65,6 +65,8 @@ export interface AiModelLimits {
 export interface AiRemoteModel extends AiModelLimits {
     id: string;
     name: string;
+    /** Unknown when the provider's model list does not say. */
+    supportsReasoning?: boolean;
 }
 
 // ---------------------------------------------------------------------------

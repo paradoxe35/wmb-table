@@ -85,8 +85,8 @@ const normal: E2eCase = {
             requests.map((r) => r.maxTokens),
         );
         ctx.check(
-            'search steps ask for low reasoning effort',
-            requests[0]?.reasoningEffort === 'low',
+            'no reasoning effort goes to a model whose list does not offer it',
+            requests.every((r) => r.reasoningEffort === null),
             requests.map((r) => r.reasoningEffort),
         );
     },
@@ -155,8 +155,8 @@ const length: E2eCase = {
         const requests = ctx.requests().filter((r) => r.scenario === 'length');
         ctx.check('one continuation request was made', requests.length === 2, requests.length);
         ctx.check(
-            'the continuation runs without tools and with medium reasoning',
-            requests[1]?.toolChoice === 'none' && requests[1]?.reasoningEffort === 'medium',
+            'the continuation runs without tools',
+            requests[1]?.toolChoice === 'none' && requests[1]?.reasoningEffort === null,
             requests.map((r) => [r.toolChoice, r.reasoningEffort]),
         );
         ctx.check('no error banner', final.errorAlerts.length === 0, final.errorAlerts);
@@ -268,8 +268,8 @@ const stepLimit: E2eCase = {
         ctx.check('the run stopped at the 50-step limit', requests.length === 50, requests.length);
         const last = requests[requests.length - 1];
         ctx.check(
-            'the last step had its tools closed and medium reasoning',
-            last?.toolChoice === 'none' && last?.reasoningEffort === 'medium',
+            'the last step had its tools closed',
+            last?.toolChoice === 'none' && last?.reasoningEffort === null,
             [last?.toolChoice, last?.reasoningEffort],
         );
         ctx.check(

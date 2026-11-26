@@ -34,7 +34,7 @@ vi.mock('@main/lib/logger', () => ({
     default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-const { fetchProviderModels, getModelContextWindow, getModelLimits } =
+const { fetchProviderModels, getModelContextWindow, getModelLimits, getModelReasoningSupport } =
     await import('@main/services/ai/model-fetcher');
 
 function createSettings(): AiSettings {
@@ -222,5 +222,63 @@ describe('model-fetcher', () => {
             'ai-model-context:custom-a%3Ahttps%3A%2F%2Fexample-b.test%2Fv1:model-a',
         );
         expect(cacheKeys).not.toContain('ai-model-context:model-a');
+    });
+
+    describe('getModelReasoningSupport', () => {
+        function listModels(models: unknown[]): void {
+            globalThis.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({ data: models }),
+            }) as typeof fetch;
+        }
+
+        it('reads reasoning from the supported parameters of the model list', async () => {
+            listModels([
+                { id: 'model-a', supported_parameters: ['tools', 'reasoning'] },
+                { id: 'model-b', supported_parameters: ['tools'] },
+            ]);
+            await fetchProviderModels(createSettings(), {
+                providerId: 'custom-a',
+                baseUrl: 'https://example-a.test/v1',
+            });
+
+            const base = 'https://example-a.test/v1/';
+            expect(await getModelReasoningSupport('custom-a', 'model-a', base)).toBe(true);
+            expect(await getModelReasoningSupport('custom-a', 'model-b', base)).toBe(false);
+        });
+
+        it('stays unknown for a server whose model list does not say', async () => {
+            listModels([{ id: 'llama3.2' }]);
+            await fetchProviderModels(createSettings(), {
+                providerId: 'ollama',
+                baseUrl: 'http://localhost:11434/v1',
+            });
+
+            expect(
+                await getModelReasoningSupport('ollama', 'llama3.2', 'http://localhost:11434/v1'),
+            ).toBeUndefined();
+        });
+
+        it('falls back to the public OpenRouter list for OpenRouter models', async () => {
+            cacheData.set('ctx-registry:openrouter', [
+                { id: 'deepseek/deepseek-r1:free', supported_parameters: ['reasoning'] },
+                { id: 'meta-llama/llama-3.3-8b-instruct:free', supported_parameters: ['tools'] },
+            ]);
+            const base = 'https://openrouter.ai/api/v1';
+
+            expect(
+                await getModelReasoningSupport('openrouter', 'deepseek/deepseek-r1:free', base),
+            ).toBe(true);
+            expect(
+                await getModelReasoningSupport(
+                    'openrouter',
+                    'meta-llama/llama-3.3-8b-instruct:free',
+                    base,
+                ),
+            ).toBe(false);
+            expect(
+                await getModelReasoningSupport('openrouter', 'unknown/model', base),
+            ).toBeUndefined();
+        });
     });
 });

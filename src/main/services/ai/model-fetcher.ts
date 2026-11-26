@@ -16,7 +16,12 @@ import {
     getCachedMaxOutputTokens,
     getCachedContextWindow,
 } from './model-context-cache';
-import { lookupModelLimits, type ModelLimits } from './model-context-registry';
+import {
+    lookupModelLimits,
+    lookupOpenRouterReasoningSupport,
+    supportsReasoningParameter,
+    type ModelLimits,
+} from './model-context-registry';
 
 const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
@@ -81,6 +86,7 @@ interface OpenAICompatibleModelEntry {
     id: string;
     name?: string;
     context_length?: number;
+    supported_parameters?: string[];
     top_provider?: {
         context_length?: number;
         max_completion_tokens?: number;
@@ -149,6 +155,7 @@ async function fetchOpenAICompatibleModels(
             name: m.name ?? m.id,
             contextWindow: toPositiveInt(m.context_length ?? m.top_provider?.context_length),
             maxOutputTokens: toPositiveInt(m.top_provider?.max_completion_tokens),
+            supportsReasoning: supportsReasoningParameter(m.supported_parameters),
         }))
         .sort((a, b) => a.id.localeCompare(b.id));
 }
@@ -305,4 +312,19 @@ export async function getModelContextWindow(
         cacheContextWindow(modelId, fromRegistry.contextWindow, cacheScope);
     }
     return fromRegistry?.contextWindow;
+}
+
+/** Whether the provider's model list says the model takes a reasoning level; unknown if unlisted. */
+export async function getModelReasoningSupport(
+    providerId: string,
+    modelId: string,
+    baseUrl?: string,
+): Promise<boolean | undefined> {
+    const listed = getCachedProviderModels(providerId, normalizeBaseUrl(baseUrl))?.find(
+        (model) => model.id === modelId,
+    )?.supportsReasoning;
+    if (listed !== undefined || providerId !== 'openrouter') {
+        return listed;
+    }
+    return lookupOpenRouterReasoningSupport(modelId);
 }

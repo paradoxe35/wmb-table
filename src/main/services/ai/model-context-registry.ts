@@ -18,6 +18,7 @@ const FETCH_TIMEOUT_MS = 10_000;
 interface OpenRouterModel {
     id: string;
     context_length?: number;
+    supported_parameters?: string[];
     top_provider?: {
         context_length?: number;
         max_completion_tokens?: number;
@@ -371,6 +372,23 @@ export async function lookupModelLimits(
     }
 
     return mergeLimits(...matches);
+}
+
+/** OpenRouter lists `reasoning` among the parameters of models that accept a reasoning level. */
+export function supportsReasoningParameter(supportedParameters: unknown): boolean | undefined {
+    return Array.isArray(supportedParameters)
+        ? supportedParameters.includes('reasoning')
+        : undefined;
+}
+
+export async function lookupOpenRouterReasoningSupport(
+    modelId: string,
+): Promise<boolean | undefined> {
+    const models = await openRouterCache
+        .getOrFetch(fetchOpenRouterModels)
+        .catch(() => openRouterCache.getStale());
+    const model = models?.find((entry) => entry.id.toLowerCase() === modelId.toLowerCase());
+    return supportsReasoningParameter(model?.supported_parameters);
 }
 
 export async function lookupContextWindow(modelId: string): Promise<number | undefined> {
