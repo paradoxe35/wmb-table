@@ -120,7 +120,7 @@ function setupCSP(): void {
                         "default-src 'self'",
                         "script-src 'self' 'wasm-unsafe-eval'",
                         "style-src 'self' 'unsafe-inline'",
-                        "img-src 'self' data: https:",
+                        "img-src 'self' data:",
                         "font-src 'self' data:",
                         "media-src 'self' blob: https: audio-cache: tts-cache:",
                         "connect-src 'self' https:",
