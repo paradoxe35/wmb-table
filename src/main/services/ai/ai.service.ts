@@ -9,14 +9,9 @@ import {
 } from '@main/lib/ai-chat-export';
 import * as aiRepo from '@main/database/repositories/ai.repository';
 import * as configRepo from '@main/database/repositories/config.repository';
-import * as languagePackService from '@main/services/language-pack.service';
 import { PushChannels } from '@shared/ipc.types';
 import type { PdfExportResult } from '@shared/ipc.types';
-import {
-    BUILTIN_PROVIDER_IDS,
-    RECOMMENDED_MIN_CONTEXT_WINDOW,
-    resolveProviderBaseUrl,
-} from '@shared/ai.types';
+import { BUILTIN_PROVIDER_IDS, resolveProviderBaseUrl } from '@shared/ai.types';
 import type {
     AiConversation,
     AiConversationHistoryPage,
@@ -33,25 +28,17 @@ import type {
     AiModelLimits,
     AiRemoteModel,
 } from '@shared/ai.types';
-import type { InstalledLanguage } from '@shared/types';
 import { normalizeCustomProvider } from '@shared/ai-provider-input';
-import { buildSystemPrompt } from './system-prompt';
 import { buildAiTools } from './tools';
 import { sendToRenderer } from '@main/ipc/register';
-import { buildConversationContext } from './context-memory';
-import {
-    buildContextReminder,
-    shouldInjectContextReminder,
-    withContextReminder,
-} from './context-reminder';
-import { calculateRemoteTokenBudget, measurePromptTokens, measureToolTokens } from './token-budget';
-import { resolveActiveModel, resolveLanguageModel } from './provider-resolver';
+import { resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
 import { fetchProviderModels, getModelLimits } from './model-fetcher';
 import { GenerationRunnerImpl } from './runners';
 import { shouldGenerateTitle, generateConversationTitle } from './title-generator';
-import { resolveUiLanguage } from '@shared/constants';
-import * as bibleService from '@main/services/bible.service';
+import { resolveGenerationEnvironment, type GenerationEnvironment } from './generation-environment';
+import { buildGenerationPrompt, type GenerationPrompt } from './generation-prompt';
+import { isLocalProvider, resolveProviderTestTimeoutMs } from './model-timeouts';
 
 interface RunGenerationOptions {
     runner: GenerationRunnerImpl;
@@ -59,30 +46,10 @@ interface RunGenerationOptions {
     conversation: AiConversation;
     generationId: string;
     assistantMessage: AiMessage;
-    model: ReturnType<typeof resolveLanguageModel>;
-    systemPrompt: string;
-    history: ReturnType<typeof buildConversationContext>['recentMessages'];
+    environment: GenerationEnvironment;
+    prompt: GenerationPrompt;
     tools: ReturnType<typeof buildAiTools>;
     abortController: AbortController;
-    contextWindow?: number;
-    maxOutputTokens?: number;
-    toolTokens: number;
-    systemPromptTokens: number;
-    contentLanguageCode: string;
-    uiLanguageCode: string;
-}
-
-interface GenerationEnvironment {
-    settings: AiSettings;
-    providerId: string;
-    modelId: string;
-    contentLanguageCode: string;
-    uiLanguageCode: string;
-    activeBibleVersion?: string;
-    contextWindow?: number;
-    maxOutputTokens?: number;
-    model: ReturnType<typeof resolveLanguageModel>;
-    installedLanguages: InstalledLanguage[];
 }
 
 interface ActiveRun {
@@ -232,9 +199,16 @@ export class AiService {
         apiKey?: string;
         baseUrl?: string;
     }): Promise<AiProviderTestResult> {
+        const settings = this.getSettings();
+        const timeoutMs = resolveProviderTestTimeoutMs(
+            isLocalProvider(
+                input.providerId,
+                input.baseUrl ?? resolveProviderBaseUrl(settings, input.providerId),
+            ),
+        );
         try {
             const model = resolveLanguageModel({
-                settings: this.getSettings(),
+                settings,
                 providerId: input.providerId,
                 modelId: input.model,
                 apiKey: input.apiKey,
@@ -244,9 +218,16 @@ export class AiService {
                 model,
                 prompt: 'Reply with the single word OK.',
                 maxOutputTokens: 20,
+                timeout: { totalMs: timeoutMs },
             });
             return { valid: true };
         } catch (error) {
+            if (isAbortError(error)) {
+                return {
+                    valid: false,
+                    error: `The provider test timed out after ${timeoutMs / 1000} s.`,
+                };
+            }
             const message =
                 error instanceof Error ? error.message : 'Validation du fournisseur impossible.';
 
@@ -290,7 +271,7 @@ export class AiService {
             throw new Error('Le message ne peut pas être vide.');
         }
 
-        const environment = await this.resolveGenerationEnvironment();
+        const environment = await resolveGenerationEnvironment(this.getSettings());
         const conversation =
             aiRepo.getConversation(request.conversationId) ?? this.createConversation();
 
@@ -334,7 +315,7 @@ export class AiService {
         browserWindow: BrowserWindow,
         request: AiRetryMessageRequest,
     ): Promise<AiRetryMessageResult> {
-        const environment = await this.resolveGenerationEnvironment();
+        const environment = await resolveGenerationEnvironment(this.getSettings());
         const conversation = aiRepo.getConversation(request.conversationId);
         if (!conversation) {
             throw new Error('Conversation introuvable.');
@@ -424,88 +405,6 @@ export class AiService {
         return providers.map(normalizeCustomProvider);
     }
 
-    private async resolveGenerationEnvironment(): Promise<GenerationEnvironment> {
-        const settings = this.getSettings();
-        if (!settings.enabled) {
-            throw new Error("L'assistant IA est désactivé dans les paramètres.");
-        }
-
-        const providerId = settings.activeProvider;
-        if (!providerId) {
-            throw new Error(
-                'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.',
-            );
-        }
-
-        const modelId = resolveActiveModel(settings);
-        if (!modelId) {
-            throw new Error(
-                'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.',
-            );
-        }
-
-        const contentLanguageCode = configRepo.getContentLanguage();
-        if (!contentLanguageCode) {
-            throw new Error(
-                'Aucune langue sélectionnée. Veuillez choisir une langue dans les paramètres.',
-            );
-        }
-
-        const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
-
-        const resolvedBibleVersion = bibleService.getResolvedBibleVersionForLanguage(
-            contentLanguageCode,
-            configRepo.getActiveBibleVersionAbbreviation(),
-        );
-
-        const providerBaseUrl = resolveProviderBaseUrl(settings, providerId);
-
-        const modelLimits = await getModelLimits(providerId, modelId, providerBaseUrl);
-        const contextWindow = modelLimits.contextWindow;
-
-        // An unknown window stays allowed: it cannot be proven too small, and refusing would
-        // block custom providers the registries do not list.
-        if (contextWindow != null && contextWindow < RECOMMENDED_MIN_CONTEXT_WINDOW) {
-            log.warn('Model rejected: context window below the supported minimum', {
-                providerId,
-                modelId,
-                contextWindow,
-                minRequired: RECOMMENDED_MIN_CONTEXT_WINDOW,
-            });
-            throw new Error(
-                "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre dans les paramètres.",
-            );
-        }
-
-        if (contextWindow == null) {
-            log.warn('Unknown context window — proceeding without a verified limit', {
-                providerId,
-                modelId,
-            });
-        }
-
-        const model = resolveLanguageModel({
-            settings,
-            providerId,
-            modelId,
-            baseUrl: providerBaseUrl,
-        });
-        const installedLanguages = await languagePackService.getInstalledLanguages();
-
-        return {
-            settings,
-            providerId,
-            modelId,
-            contentLanguageCode,
-            uiLanguageCode,
-            activeBibleVersion: resolvedBibleVersion?.abbreviation,
-            contextWindow,
-            maxOutputTokens: modelLimits.maxOutputTokens,
-            model,
-            installedLanguages,
-        };
-    }
-
     private startConversationGeneration(
         browserWindow: BrowserWindow,
         conversation: AiConversation,
@@ -518,7 +417,7 @@ export class AiService {
             model: environment.model,
             uiLanguage: environment.uiLanguageCode,
             activeBibleVersion: environment.activeBibleVersion,
-            maxOutputTokens: environment.maxOutputTokens,
+            maxOutputTokens: environment.modelLimits.maxOutputTokens,
             abortSignal: controller.signal,
             browserWindow,
             conversationId: conversation.id,
@@ -526,40 +425,7 @@ export class AiService {
             assistantMessageId: assistantMessage.id,
         });
 
-        const system = buildSystemPrompt({
-            contentLanguageCode: environment.contentLanguageCode,
-            uiLanguageCode: environment.uiLanguageCode,
-            installedLanguages: environment.installedLanguages,
-            languagePreference: environment.settings.languagePreference,
-            activeBibleVersion: environment.activeBibleVersion,
-        });
-        const toolTokens = measureToolTokens(tools);
-        const baseSystemPromptTokens = measurePromptTokens(system);
-        // Reserved even when not injected, so it can never push the request over.
-        const reminder = buildContextReminder();
-        const historyTokenBudget = calculateRemoteTokenBudget({
-            modelLimits: {
-                contextWindow: environment.contextWindow,
-                maxOutputTokens: environment.maxOutputTokens,
-            },
-            prompt: {
-                toolTokens,
-                systemPromptTokens: baseSystemPromptTokens + measurePromptTokens(reminder),
-            },
-        });
-        const { recentMessages, historyTokenCount, recentTokenCount, summary } =
-            buildConversationContext(conversation.id, historyTokenBudget);
-        const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
-        const systemPromptTokens = measurePromptTokens(systemPrompt);
-        const promptTokens = systemPromptTokens + toolTokens + recentTokenCount;
-        const needsReminder = shouldInjectContextReminder({
-            compacted: summary != null,
-            promptTokens,
-            contextWindow: environment.contextWindow,
-        });
-        const history = needsReminder
-            ? withContextReminder(recentMessages, reminder)
-            : recentMessages;
+        const prompt = buildGenerationPrompt(conversation.id, environment, tools);
         const runner = new GenerationRunnerImpl();
 
         this.activeRuns.set(conversation.id, {
@@ -574,14 +440,12 @@ export class AiService {
             providerId: environment.providerId,
             modelId: environment.modelId,
             conversationId: conversation.id,
-            modelContextWindow: environment.contextWindow ?? 'unknown',
-            modelMaxOutputTokens: environment.maxOutputTokens ?? 'unknown',
-            historyTokenBudget,
-            historyTokenCount,
-            promptTokens,
-            toolTokens,
-            systemPromptTokens,
-            contextReminder: needsReminder,
+            modelContextWindow: environment.modelLimits.contextWindow ?? 'unknown',
+            modelMaxOutputTokens: environment.modelLimits.maxOutputTokens ?? 'unknown',
+            historyTokenBudget: prompt.budget.historyBudget,
+            answerTokens: prompt.budget.answerTokens,
+            promptLimit: prompt.budget.promptLimit,
+            ...prompt.stats,
         });
 
         void this.runGeneration({
@@ -590,17 +454,10 @@ export class AiService {
             conversation,
             generationId,
             assistantMessage,
-            model: environment.model,
-            systemPrompt,
-            history,
+            environment,
+            prompt,
             tools,
             abortController: controller,
-            contextWindow: environment.contextWindow,
-            maxOutputTokens: environment.maxOutputTokens,
-            toolTokens,
-            systemPromptTokens,
-            contentLanguageCode: environment.contentLanguageCode,
-            uiLanguageCode: environment.uiLanguageCode,
         });
     }
 
@@ -611,31 +468,25 @@ export class AiService {
             conversation,
             generationId,
             assistantMessage,
-            model,
-            systemPrompt,
-            history,
+            environment,
+            prompt,
             tools,
             abortController,
-            contextWindow,
-            maxOutputTokens,
-            toolTokens,
-            systemPromptTokens,
-            contentLanguageCode,
-            uiLanguageCode,
         } = opts;
+        const { model, contentLanguageCode, uiLanguageCode } = environment;
         const abortSignal = abortController.signal;
         const isCurrentRun = () =>
             this.isCurrentRun(conversation.id, generationId, assistantMessage.id);
 
         try {
-            await runner.run({
+            const outcome = await runner.run({
                 browserWindow,
                 conversationId: conversation.id,
                 generationId,
                 assistantMessageId: assistantMessage.id,
                 model,
-                systemPrompt,
-                history,
+                systemPrompt: prompt.systemPrompt,
+                history: prompt.history,
                 tools,
                 abortSignal,
                 isCurrentRun: (_generationId, assistantMessageId) => {
@@ -650,10 +501,10 @@ export class AiService {
                         delta,
                     );
                 },
-                contextWindow,
-                maxOutputTokens,
-                toolTokens,
-                systemPromptTokens,
+                budget: prompt.budget,
+                fixedPromptTokens: prompt.fixedPromptTokens,
+                reasoningControl: environment.reasoningControl,
+                timeouts: environment.timeouts,
             });
 
             this.flushAssistantText(assistantMessage.id);
@@ -668,6 +519,7 @@ export class AiService {
                 conversationId: conversation.id,
                 generationId,
                 messageId: assistantMessage.id,
+                outcome,
             });
 
             const current = aiRepo.getConversation(conversation.id);

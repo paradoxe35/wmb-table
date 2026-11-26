@@ -70,5 +70,6 @@ export function dispatchToolCallComplete(
         toolName: toolResult.name,
         toolCallId: toolResult.toolCallId,
         payload: toolResult.output,
+        isError: toolResult.isError === true,
     });
 }

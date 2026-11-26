@@ -289,10 +289,28 @@ export interface AiStreamChunkEvent {
     delta: string;
 }
 
+export type AiRunFinishReason =
+    'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'interrupted' | 'other';
+
+export type AiRunStoppedBy = 'model' | 'stop-condition' | 'tool-without-execute' | 'approval';
+
+/** How a finished run ended, so the renderer can tell a full answer from a cut one. */
+export interface AiRunOutcome {
+    finishReason: AiRunFinishReason;
+    stoppedBy: AiRunStoppedBy;
+    /** The answer is still cut by the output limit after the automatic continuations. */
+    truncated: boolean;
+    /** The step limit was reached, so the last step was made to write the answer. */
+    stepLimitReached: boolean;
+    steps: number;
+    continuations: number;
+}
+
 export interface AiStreamCompleteEvent {
     conversationId: string;
     generationId: string;
     messageId: string;
+    outcome?: AiRunOutcome;
 }
 
 export interface AiStreamCancelEvent {
@@ -315,6 +333,16 @@ export interface AiToolEvent {
     toolName: string;
     toolCallId: string;
     payload?: unknown;
+    isError?: boolean;
+}
+
+/** Tools report expected failures by returning `{ error }`; agents return `status: 'failed'`. */
+export function isToolErrorOutput(output: unknown): boolean {
+    if (!output || typeof output !== 'object' || Array.isArray(output)) return false;
+    const record = output as { error?: unknown; status?: unknown };
+    return (
+        (typeof record.error === 'string' && record.error.length > 0) || record.status === 'failed'
+    );
 }
 
 export interface AiReasoningEvent {
