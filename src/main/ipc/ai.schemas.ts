@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import {
+    AI_MESSAGE_MAX_LENGTH,
+    AI_MESSAGE_TOO_LONG_ERROR,
     BUILTIN_PROVIDER_IDS,
     MAX_HISTORY_CONVERSATIONS,
     type AiConversationHistoryPageRequest,
@@ -13,9 +15,9 @@ import {
     type AiSettings,
 } from '@shared/ai.types';
 
-export const MAX_MESSAGE_LENGTH = 100_000;
+export const MAX_MESSAGE_LENGTH = AI_MESSAGE_MAX_LENGTH;
 export const MAX_MESSAGES_PER_SEND = 50;
-export const MESSAGE_TOO_LONG_ERROR = 'Le message est trop long. Raccourcissez-le puis réessayez.';
+export const MESSAGE_TOO_LONG_ERROR = AI_MESSAGE_TOO_LONG_ERROR;
 
 const MAX_ID_LENGTH = 200;
 const MAX_TEXT_LENGTH = 4_096;

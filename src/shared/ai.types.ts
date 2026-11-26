@@ -9,6 +9,9 @@ export type AiMessageRole = 'system' | 'user' | 'assistant' | 'tool';
 export type AiLanguagePreference = 'active' | 'explicit-only';
 export const AI_CONVERSATION_HISTORY_PAGE_SIZE = 30;
 export const AI_MESSAGE_HISTORY_PAGE_SIZE = 30;
+export const AI_MESSAGE_MAX_LENGTH = 100_000;
+export const AI_MESSAGE_TOO_LONG_ERROR =
+    'Le message est trop long. Raccourcissez-le puis réessayez.';
 
 /** Below this the assistant warns in settings and refuses to run: the prompt alone would not fit. */
 export const RECOMMENDED_MIN_CONTEXT_WINDOW = 32_000;
