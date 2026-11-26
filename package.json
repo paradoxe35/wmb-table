@@ -56,7 +56,7 @@
         "@googleapis/drive": "^22.0.0",
         "@googleapis/oauth2": "^6.0.0",
         "@pngwasi/node-tantivy-binding": "^0.3.4",
-        "@sentry/electron": "^7.20.2",
+        "@sentry/electron": "^8.4.0",
         "@turbodocx/html-to-docx": "^1.23.3",
         "ai": "7.0.181",
         "better-sqlite3": "^13.2.0",
