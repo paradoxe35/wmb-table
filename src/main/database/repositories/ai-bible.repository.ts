@@ -1,9 +1,11 @@
 import Database from 'better-sqlite3';
+import log from 'electron-log';
 import { existsSync } from 'node:fs';
 import * as bibleService from '@main/services/bible.service';
 import { normalizeBibleAbbreviation } from '@shared/types';
 import { strNormalize, stripSeparators } from '@shared/searchable';
 import type { BibleBook, BibleSearchResult } from '@shared/types';
+import { sanitizeFtsQuery } from '../fts-query';
 
 export interface ResolvedBibleVersion {
     abbreviation: string;
@@ -188,6 +190,15 @@ export function resolveBookCode(db: Database.Database, book: string): string | n
     return null;
 }
 
+const MAX_PAGE_SIZE = 40;
+
+interface SearchPage {
+    query: string;
+    testament: string | undefined;
+    limit: number;
+    offset: number;
+}
+
 export function searchVerses(input: {
     query: string;
     abbreviation?: string;
@@ -196,8 +207,12 @@ export function searchVerses(input: {
     limit?: number;
     offset?: number;
 }): BibleSearchResult | { error: string } {
-    const maxResults = Math.max(1, Math.min(input.limit ?? 20, 40));
-    const offset = Math.max(0, input.offset ?? 0);
+    const page: SearchPage = {
+        query: input.query,
+        testament: input.testament,
+        limit: Math.max(1, Math.min(input.limit ?? 20, MAX_PAGE_SIZE)),
+        offset: Math.max(0, input.offset ?? 0),
+    };
 
     const source = resolveVersionSource(input.abbreviation, input.languageCode);
     if (!source) {
@@ -208,12 +223,10 @@ export function searchVerses(input: {
 
     const db = new Database(source.dbPath, { readonly: true });
     try {
-        // Try FTS first
-        const ftsResult = searchWithFts(db, input.query, input.testament, maxResults, offset);
-        if (ftsResult.total > 0) return ftsResult;
+        const ftsResult = trySearchWithFts(db, page);
+        if (ftsResult && ftsResult.total > 0) return ftsResult;
 
-        // Fallback: normalize and filter with LIKE (accent-insensitive)
-        return searchWithNormalize(db, input.query, input.testament, maxResults, offset);
+        return searchWithNormalize(db, page);
     } catch (err) {
         return {
             error: `Bible search failed: ${err instanceof Error ? err.message : String(err)}. Try simplifying your query.`,
@@ -223,16 +236,34 @@ export function searchVerses(input: {
     }
 }
 
-function searchWithFts(
-    db: Database.Database,
-    query: string,
-    testament: string | undefined,
-    limit: number,
-    offset: number,
-): BibleSearchResult {
-    const testamentFilter = testament ? ` AND bv.testament = ?` : '';
-    const params: (string | number)[] = [query];
-    if (testament) params.push(testament);
+function toSearchResult(page: SearchPage, rows: BibleBook[], total: number): BibleSearchResult {
+    return {
+        end: page.offset + rows.length >= total,
+        itemsPerPage: page.limit,
+        query: page.query,
+        pageNumber: Math.floor(page.offset / page.limit) + 1,
+        total,
+        data: rows.map((item, i) => ({ item, matches: [], refIndex: i })),
+    };
+}
+
+/** A failed MATCH must not end the search: the LIKE fallback can still answer. */
+function trySearchWithFts(db: Database.Database, page: SearchPage): BibleSearchResult | null {
+    const match = sanitizeFtsQuery(page.query);
+    if (!match) return null;
+
+    try {
+        return searchWithFts(db, match, page);
+    } catch (err) {
+        log.warn('AI Bible FTS search failed, falling back to LIKE:', err);
+        return null;
+    }
+}
+
+function searchWithFts(db: Database.Database, match: string, page: SearchPage): BibleSearchResult {
+    const testamentFilter = page.testament ? ` AND bv.testament = ?` : '';
+    const params: (string | number)[] = [match];
+    if (page.testament) params.push(page.testament);
 
     const countResult = db
         .prepare(
@@ -253,46 +284,47 @@ function searchWithFts(
              ORDER BY rank, bv.rowid
              LIMIT ? OFFSET ?`,
         )
-        .all(...params, limit, offset) as BibleBook[];
+        .all(...params, page.limit, page.offset) as BibleBook[];
 
-    return {
-        end: offset + rows.length >= total,
-        itemsPerPage: limit,
-        query,
-        pageNumber: Math.floor(offset / limit) + 1,
-        total,
-        data: rows.map((item, i) => ({ item, matches: [], refIndex: i })),
-    };
+    return toSearchResult(page, rows, total);
 }
 
-function searchWithNormalize(
-    db: Database.Database,
-    query: string,
-    testament: string | undefined,
-    limit: number,
-    offset: number,
-): BibleSearchResult {
-    const words = query
+/** SQLite rejects a much longer LIKE chain: "Expression tree is too large". */
+const MAX_LIKE_TERMS = 32;
+const TYPOGRAPHIC_APOSTROPHES = /[‘’ʼ]/g;
+
+function normalizeForLike(text: string): string {
+    return strNormalize(text).replace(TYPOGRAPHIC_APOSTROPHES, "'");
+}
+
+function toLikePattern(word: string): string {
+    const escaped = normalizeForLike(word).replace(/[\\%_]/g, (char) => `\\${char}`);
+    return `%${escaped}%`;
+}
+
+function searchWithNormalize(db: Database.Database, page: SearchPage): BibleSearchResult {
+    const patterns = page.query
         .trim()
         .split(/\s+/)
         .filter((w) => w.length >= 2)
-        .map((w) => strNormalize(w));
+        .slice(0, MAX_LIKE_TERMS)
+        .map(toLikePattern);
 
-    if (words.length === 0) {
-        return { end: true, itemsPerPage: limit, query, pageNumber: 1, total: 0, data: [] };
+    if (patterns.length === 0) {
+        return toSearchResult(page, [], 0);
     }
 
-    // Build SQL LIKE conditions for each normalized word.
-    // We register a custom strNormalize function in SQLite so normalization
-    // happens in the DB engine, avoiding loading all rows into JS.
+    // Registering the normalizer in SQLite keeps the filtering in the engine,
+    // instead of loading every verse into JS.
     db.function('str_normalize', (val: unknown) =>
-        typeof val === 'string' ? strNormalize(val) : '',
+        typeof val === 'string' ? normalizeForLike(val) : '',
     );
 
-    const testamentFilter = testament ? ` AND testament = ?` : '';
-    const likeConditions = words.map(() => `str_normalize(content) LIKE ?`).join(' AND ');
-    const likeParams = words.map((w) => `%${w}%`);
-    const params = [...likeParams, ...(testament ? [testament] : [])];
+    const testamentFilter = page.testament ? ` AND testament = ?` : '';
+    const likeConditions = patterns
+        .map(() => `str_normalize(content) LIKE ? ESCAPE '\\'`)
+        .join(' AND ');
+    const params = [...patterns, ...(page.testament ? [page.testament] : [])];
 
     const countResult = db
         .prepare(
@@ -310,14 +342,7 @@ function searchWithNormalize(
              ORDER BY rowid
              LIMIT ? OFFSET ?`,
         )
-        .all(...params, limit, offset) as BibleBook[];
+        .all(...params, page.limit, page.offset) as BibleBook[];
 
-    return {
-        end: offset + rows.length >= total,
-        itemsPerPage: limit,
-        query,
-        pageNumber: Math.floor(offset / limit) + 1,
-        total,
-        data: rows.map((item, i) => ({ item, matches: [], refIndex: i })),
-    };
+    return toSearchResult(page, rows, total);
 }
