@@ -4,7 +4,7 @@ import {
     condenseToolResults,
     shrinkMessages,
     withoutUnansweredToolCalls,
-} from '@main/services/ai/runners/step-messages';
+} from '@main/services/ai/steps/step-messages';
 
 function toolExchange(id: string, query: string, output: unknown): ModelMessage[] {
     return [

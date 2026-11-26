@@ -15,8 +15,8 @@ import {
 } from '@shared/ai.types';
 import { AiTimeoutError, isTimeoutReason, timeoutKindOf } from '../model-timeouts';
 import type { GenerationContext, GenerationRunner } from './types';
-import { withoutUnansweredToolCalls } from './step-messages';
-import { StepPlanner, type PassMode } from './step-planner';
+import { withoutUnansweredToolCalls } from '../steps/step-messages';
+import { StepPlanner, type PassMode } from '../steps/step-planner';
 import {
     dispatchReasoningDelta,
     dispatchToolCallStart,
