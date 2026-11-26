@@ -40,13 +40,16 @@ export interface SubAgentDeadlines {
     deadline: number;
 }
 
+/** A sub-agent that waited for a slot only has what is left of the parent's tool time. */
 export function resolveSubAgentDeadlines(
     timeouts: ChatTimeouts,
     startedAt: number,
+    parentCutoffAt = startedAt + timeouts.agentToolMs,
 ): SubAgentDeadlines {
+    const availableMs = Math.max(0, Math.min(timeouts.agentToolMs, parentCutoffAt - startedAt));
     return {
-        wrapUpAt: startedAt + Math.floor(timeouts.agentToolMs * SUB_AGENT_RESEARCH_SHARE),
-        deadline: startedAt + Math.floor(timeouts.agentToolMs * SUB_AGENT_DEADLINE_SHARE),
+        wrapUpAt: startedAt + Math.floor(availableMs * SUB_AGENT_RESEARCH_SHARE),
+        deadline: startedAt + Math.floor(availableMs * SUB_AGENT_DEADLINE_SHARE),
     };
 }
 

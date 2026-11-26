@@ -3,6 +3,7 @@ import { tool, type ToolSet } from 'ai';
 import { estimateTokenCount } from 'tokenx';
 import { z } from 'zod';
 import {
+    apiError,
     callTool,
     createScriptedModel,
     pause,
@@ -249,6 +250,38 @@ describe('GenerationRunnerImpl', () => {
             });
 
             expect(calls.every((call) => call.reasoning === undefined)).toBe(true);
+        });
+    });
+
+    describe('reasoning the provider refuses', () => {
+        const refused = (
+            message = 'registry.ollama.ai/library/llama3.2 does not support thinking',
+        ) => step([], { reject: apiError(400, message) });
+
+        it('retries without reasoning for the rest of the run', async () => {
+            const { calls, text } = await runScript([refused(), ...searchSteps(1), answer('Fin.')]);
+
+            expect(calls.map((call) => call.reasoning)).toEqual(['low', undefined, undefined]);
+            expect(text).toBe('Fin.');
+        });
+
+        it('recognises an unsupported reasoning_effort parameter', async () => {
+            const { calls } = await runScript([
+                refused('Unrecognized request argument supplied: reasoning_effort'),
+                answer(),
+            ]);
+
+            expect(calls.map((call) => call.reasoning)).toEqual(['low', undefined]);
+        });
+
+        it('fails on a 400 about something else', async () => {
+            await expect(
+                runScript([refused('Invalid tool schema for searchSermons'), answer()]),
+            ).rejects.toThrow(/Invalid tool schema/);
+        });
+
+        it('retries only once', async () => {
+            await expect(runScript([refused(), refused(), answer()])).rejects.toThrow(/thinking/);
         });
     });
 

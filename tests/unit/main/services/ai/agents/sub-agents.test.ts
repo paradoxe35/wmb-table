@@ -3,6 +3,7 @@ import { estimateTokenCount } from 'tokenx';
 import { z } from 'zod';
 import { MockLanguageModelV4 } from 'ai/test';
 import {
+    apiError,
     callTool,
     createScriptedModel,
     pause,
@@ -107,6 +108,23 @@ function readSermon(script: ScriptStep[], overrides: Partial<AgentContextInput> 
         run: () =>
             tools.readSermon.execute({ sermonId: '63-0318', question: 'Que dit-il des Sceaux ?' }),
     };
+}
+
+function slowReportModel(delayMs: number) {
+    return new MockLanguageModelV4({
+        doGenerate: async () => {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            return {
+                content: [{ type: 'text', text: REPORT }],
+                finishReason: { unified: 'stop', raw: 'stop' },
+                usage: {
+                    inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: undefined },
+                    outputTokens: { total: 5, text: 5, reasoning: 0 },
+                },
+                warnings: [],
+            };
+        },
+    });
 }
 
 function toolCompleteEvents() {
@@ -397,6 +415,46 @@ describe('sub-agents', () => {
         });
     });
 
+    describe('reasoning the provider refuses', () => {
+        const refused = () =>
+            step([], { reject: apiError(400, 'This model does not support thinking') });
+
+        it('retries once without reasoning', async () => {
+            const { scripted, run } = research([refused(), report()], { reasoningControl: true });
+
+            const result = await run();
+
+            expect(result).toMatchObject({ status: 'completed', response: REPORT });
+            expect(scripted.calls.map((call) => call.reasoning)).toEqual(['low', undefined]);
+        });
+
+        it('starts the next sub-agent of the run without reasoning', async () => {
+            const scripted = createScriptedModel([refused(), report(), report()]);
+            const tools = buildAgentTools(agentContext(scripted.model, { reasoningControl: true }));
+
+            await tools.researchTopic.execute({ topic: 'la foi' });
+            await tools.researchTopic.execute({ topic: "l'amour" });
+
+            expect(scripted.calls.map((call) => call.reasoning)).toEqual([
+                'low',
+                undefined,
+                undefined,
+            ]);
+        });
+
+        it('does not retry a 400 about something else', async () => {
+            const { scripted, run } = research(
+                [step([], { reject: apiError(400, 'Invalid tool schema') }), report()],
+                { reasoningControl: true },
+            );
+
+            const result = await run();
+
+            expect(result).toMatchObject({ status: 'failed', reason: 'error' });
+            expect(scripted.calls).toHaveLength(1);
+        });
+    });
+
     describe('parallel runs', () => {
         it('runs at most two sub-agents at the same time and queues the third', async () => {
             let active = 0;
@@ -437,6 +495,34 @@ describe('sub-agents', () => {
                 'completed',
                 'completed',
             ]);
+        });
+
+        it('counts the time of a queued sub-agent from when it gets a slot', async () => {
+            const model = slowReportModel(150);
+            const tools = buildAgentTools(agentContext(model));
+
+            const results = await Promise.all([
+                tools.researchTopic.execute({ topic: 'la foi' }),
+                tools.researchTopic.execute({ topic: "l'amour" }),
+                tools.readSermon.execute({ sermonId: '63-0318' }),
+            ]);
+
+            expect((results[2] as { durationMs: number }).durationMs).toBeLessThan(250);
+        });
+
+        it('refuses a seventh sub-agent call in one run with a clear error', async () => {
+            const model = slowReportModel(0);
+            const tools = buildAgentTools(agentContext(model));
+
+            const results = [];
+            for (let call = 0; call < 7; call++) {
+                results.push(await tools.researchTopic.execute({ topic: `sujet ${call}` }));
+            }
+
+            expect(model.doGenerateCalls).toHaveLength(6);
+            expect(results[5]).toMatchObject({ status: 'completed' });
+            expect(results[6]).toMatchObject({ status: 'failed', reason: 'call-limit' });
+            expect((results[6] as { response: string }).response).toMatch(/6 .*answer/i);
         });
     });
 });

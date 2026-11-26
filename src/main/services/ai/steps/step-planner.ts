@@ -5,6 +5,7 @@ import {
     type RunBudget,
     type StepPhase,
 } from '../token-budget';
+import { isReasoningRejection } from '../ai-errors';
 import { estimateMessagesTokens, shrinkMessages } from './step-messages';
 
 export type FinalStepReason = 'step-limit' | 'context' | 'time-limit';
@@ -54,8 +55,33 @@ export class StepPlanner {
     finalStepReason: FinalStepReason | null = null;
     private calibration = 1;
     private passRawEstimates = new Map<number, number>();
+    private sendsReasoning: boolean;
 
-    constructor(private readonly options: StepPlannerOptions) {}
+    constructor(private readonly options: StepPlannerOptions) {
+        this.sendsReasoning = options.reasoningControl;
+    }
+
+    get reasoningRefused(): boolean {
+        return this.options.reasoningControl && !this.sendsReasoning;
+    }
+
+    /**
+     * Runs one pass. A provider that refuses the reasoning setting on the pass's first step gets
+     * the pass once more without it, and the rest of the run stays without it.
+     */
+    async runPass<T>(pass: () => Promise<T>): Promise<T> {
+        const plannedBefore = this.plans.length;
+        try {
+            return await pass();
+        } catch (error) {
+            const failedOnFirstStep = this.plans.length - plannedBefore <= 1;
+            if (!this.sendsReasoning || !failedOnFirstStep || !isReasoningRejection(error)) {
+                throw error;
+            }
+            this.sendsReasoning = false;
+            return pass();
+        }
+    }
 
     startPass(): void {
         this.passRawEstimates = new Map();
@@ -92,9 +118,7 @@ export class StepPlanner {
         return {
             ...(pruned ? { messages } : {}),
             maxOutputTokens,
-            ...(this.options.reasoningControl
-                ? { reasoning: phase === 'answer' ? 'medium' : 'low' }
-                : {}),
+            ...(this.sendsReasoning ? { reasoning: phase === 'answer' ? 'medium' : 'low' } : {}),
             ...(phase === 'answer' ? this.answerOnlySettings(mode) : {}),
         };
     }

@@ -29,6 +29,8 @@ const pLimit = resolveDefaultExport(pLimitModule);
 
 /** Each sub-agent runs a whole tool loop; more at once mostly multiplies cost and rate limits. */
 export const MAX_PARALLEL_SUB_AGENTS = 2;
+/** A chat answer that needs more research than this should narrow its question instead. */
+export const MAX_SUB_AGENT_CALLS_PER_RUN = 6;
 const SUB_AGENT_MAX_RETRIES = 3;
 const MAX_FOLLOW_UPS = 1;
 
@@ -46,7 +48,14 @@ const WRITE_REPORT_PROMPT = 'Write your report now, from the research above.';
 
 export type SubAgentStatus = 'completed' | 'incomplete' | 'failed';
 export type SubAgentStopReason =
-    'step-limit' | 'context' | 'time-limit' | 'report-cut' | 'no-report' | 'timeout' | 'error';
+    | 'step-limit'
+    | 'context'
+    | 'time-limit'
+    | 'report-cut'
+    | 'no-report'
+    | 'timeout'
+    | 'error'
+    | 'call-limit';
 
 export interface SubAgentResult {
     status: SubAgentStatus;
@@ -152,6 +161,27 @@ function failedResult(
     };
 }
 
+function callLimitResult(label: string): SubAgentResult {
+    const error =
+        `this answer already used its ${MAX_SUB_AGENT_CALLS_PER_RUN} sub-agent calls. ` +
+        'Answer from the results you have, or use the search tools directly.';
+    return {
+        status: 'failed',
+        reason: 'call-limit',
+        response: `${label} failed: ${error}`,
+        error,
+        steps: 0,
+        durationMs: 0,
+    };
+}
+
+/** What the sub-agents of one chat run share. */
+interface SubAgentRunShared {
+    /** The parent's tool call starts its timer when it is queued, not when a slot frees up. */
+    queuedAt: number;
+    reasoning: { refused: boolean };
+}
+
 class SubAgentRun {
     private readonly startedAt = Date.now();
     private readonly timeouts: ChatTimeouts;
@@ -162,9 +192,14 @@ class SubAgentRun {
     constructor(
         private readonly ctx: AgentContext,
         private readonly task: SubAgentTask,
+        private readonly shared: SubAgentRunShared,
     ) {
         this.timeouts = ctx.timeouts ?? resolveChatTimeouts(false);
-        const { wrapUpAt, deadline } = resolveSubAgentDeadlines(this.timeouts, this.startedAt);
+        const { wrapUpAt, deadline } = resolveSubAgentDeadlines(
+            this.timeouts,
+            this.startedAt,
+            shared.queuedAt + this.timeouts.agentToolMs,
+        );
         this.deadline = deadline;
         this.tools = Object.fromEntries(
             Object.entries(task.tools).map(([name, definition]) => [name, tool(definition)]),
@@ -179,7 +214,7 @@ class SubAgentRun {
             fixedPromptTokens,
             systemPrompt: task.instructions,
             maxSteps: task.maxSteps,
-            reasoningControl: ctx.reasoningControl ?? false,
+            reasoningControl: (ctx.reasoningControl ?? false) && !shared.reasoning.refused,
             finalStepNote: REPORT_NOTE,
             wrapUpAt,
         });
@@ -236,6 +271,14 @@ class SubAgentRun {
     }
 
     private async runPass(messages: ModelMessage[], mode: PassMode): Promise<PassResult> {
+        try {
+            return await this.planner.runPass(() => this.generatePass(messages, mode));
+        } finally {
+            if (this.planner.reasoningRefused) this.shared.reasoning.refused = true;
+        }
+    }
+
+    private async generatePass(messages: ModelMessage[], mode: PassMode): Promise<PassResult> {
         let lastStepMessages = messages;
         this.planner.startPass();
         try {
@@ -323,11 +366,21 @@ class SubAgentRun {
     }
 }
 
-/** One runner per chat run: its sub-agents share the parallel limit, and extra calls wait. */
+/**
+ * One runner per chat run: its sub-agents share the parallel limit and the call cap, and extra
+ * calls wait. A sub-agent's time starts when it gets a slot.
+ */
 export function createSubAgentRunner(ctx: AgentContext): SubAgentRunner {
     const limit = pLimit(MAX_PARALLEL_SUB_AGENTS);
-    return (task) => {
-        const run = new SubAgentRun(ctx, task);
-        return limit(() => run.run());
+    const reasoning = { refused: false };
+    let calls = 0;
+    return async (task) => {
+        calls++;
+        if (calls > MAX_SUB_AGENT_CALLS_PER_RUN) {
+            log.warn('Sub-agent call refused: run limit reached', { agent: task.name, calls });
+            return callLimitResult(task.label);
+        }
+        const queuedAt = Date.now();
+        return limit(() => new SubAgentRun(ctx, task, { queuedAt, reasoning }).run());
     };
 }

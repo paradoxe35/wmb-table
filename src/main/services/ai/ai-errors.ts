@@ -136,3 +136,15 @@ export function classifyAiError(error: unknown): ClassifiedAiError {
     }
     return { code: 'unknown', retryable: true, detail };
 }
+
+const REASONING_PARAMETER = /reasoning|thinking/i;
+
+/** A model without reasoning support answers 400 and names the setting it cannot take. */
+export function isReasoningRejection(error: unknown): boolean {
+    return errorChain(error).some(
+        (candidate) =>
+            APICallError.isInstance(candidate) &&
+            candidate.statusCode === 400 &&
+            REASONING_PARAMETER.test(`${candidate.message} ${candidate.responseBody ?? ''}`),
+    );
+}

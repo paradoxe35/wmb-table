@@ -67,4 +67,29 @@ describe('resolveSubAgentDeadlines', () => {
             expect(deadline - wrapUpAt).toBeGreaterThanOrEqual(timeouts.agentToolMs / 5);
         },
     );
+
+    it('fits a sub-agent that waited for a slot into what is left of the parent tool time', () => {
+        const timeouts = resolveChatTimeouts(false);
+        const parentCutoffAt = 1_000 + timeouts.agentToolMs;
+        const startedAt = 1_000 + timeouts.agentToolMs / 2;
+
+        const { wrapUpAt, deadline } = resolveSubAgentDeadlines(
+            timeouts,
+            startedAt,
+            parentCutoffAt,
+        );
+
+        expect(wrapUpAt).toBeGreaterThan(startedAt);
+        expect(deadline).toBeGreaterThan(wrapUpAt);
+        expect(deadline).toBeLessThan(parentCutoffAt);
+    });
+
+    it('leaves no time once the parent tool time is gone', () => {
+        const timeouts = resolveChatTimeouts(false);
+
+        expect(resolveSubAgentDeadlines(timeouts, 5_000, 4_000)).toEqual({
+            wrapUpAt: 5_000,
+            deadline: 5_000,
+        });
+    });
 });

@@ -160,6 +160,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
             conversationId: ctx.conversationId,
             ...outcome,
             finalStepReason: planner.finalStepReason,
+            reasoningRefused: planner.reasoningRefused,
             prunedSteps: planner.plans.filter((plan) => plan.pruned).length,
             largestPromptTokens: Math.max(0, ...planner.plans.map((plan) => plan.promptTokens)),
             promptLimit: ctx.budget.promptLimit,
@@ -172,7 +173,20 @@ export class GenerationRunnerImpl implements GenerationRunner {
         return outcome;
     }
 
-    private async runPass(
+    private runPass(
+        ctx: GenerationContext,
+        planner: StepPlanner,
+        answer: AnswerText,
+        messages: ModelMessage[],
+        mode: PassMode,
+        deadline: number,
+    ): Promise<PassResult> {
+        return planner.runPass(() =>
+            this.streamPass(ctx, planner, answer, messages, mode, deadline),
+        );
+    }
+
+    private async streamPass(
         ctx: GenerationContext,
         planner: StepPlanner,
         answer: AnswerText,
