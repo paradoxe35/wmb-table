@@ -102,6 +102,33 @@ describe('parseCliCommand', () => {
     });
 });
 
+describe('the --no-sandbox the Linux snippets put before mcp', () => {
+    it('is accepted in a packaged launch', () => {
+        expect(parse([PACKAGED, '--no-sandbox', 'mcp', '--http'])).toEqual({
+            kind: 'mcp',
+            transport: 'http',
+        });
+    });
+
+    it('is accepted in a development launch after the app folder', () => {
+        expect(parse([ELECTRON, '/src/wmb-table', '--no-sandbox', 'mcp'], true)).toEqual({
+            kind: 'mcp',
+            transport: 'stdio',
+        });
+    });
+
+    it('is kept by the relaunch, and the relaunched child serves without relaunching again', () => {
+        const argv = [PACKAGED, '--no-sandbox', 'mcp', '--language', 'fr'];
+        const relaunch = planHeadlessRelaunch({ argv, platform: 'linux', defaultApp: false });
+        expect(relaunch).toEqual(['--no-sandbox', 'mcp', '--language', 'fr', ...HEADLESS_SWITCHES]);
+        const child = [PACKAGED, ...(relaunch ?? [])];
+        expect(parse(child)).toEqual({ kind: 'mcp', transport: 'stdio', language: 'fr' });
+        expect(
+            planHeadlessRelaunch({ argv: child, platform: 'linux', defaultApp: false }),
+        ).toBeNull();
+    });
+});
+
 describe('planHeadlessRelaunch', () => {
     it('relaunches a Linux MCP command with the headless switches', () => {
         expect(

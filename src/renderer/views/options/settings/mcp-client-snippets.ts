@@ -52,8 +52,17 @@ function claudeDesktopJson(server: Record<string, unknown>): string {
     return JSON.stringify({ mcpServers: { [MCP_SERVER_NAME]: server } }, null, 2);
 }
 
+/**
+ * On Linux, Chromium starts its sandbox before Wmb Table's own code runs, and that fails as
+ * root, in containers and where user namespaces are restricted. This mode never loads a web
+ * page, so the switch costs nothing and lets the command start everywhere.
+ */
+function sandboxSwitches(platform: McpLaunchPlatform): string[] {
+    return platform === 'linux' ? ['--no-sandbox'] : [];
+}
+
 function mcpCommandArgs(launch: McpLaunchCommand, extra: readonly string[] = []): string[] {
-    return [...launch.args, 'mcp', ...extra];
+    return [...launch.args, ...sandboxSwitches(launch.platform), 'mcp', ...extra];
 }
 
 function shellWords(launch: McpLaunchCommand, extra: readonly string[] = []): string[] {

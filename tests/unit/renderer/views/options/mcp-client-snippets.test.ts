@@ -64,6 +64,11 @@ function posixWords(line: string): string[] {
     );
 }
 
+/** Linux adds --no-sandbox before mcp; Windows and macOS need nothing. */
+function expectedArgs(launch: McpLaunchCommand): string[] {
+    return [...launch.args, ...(launch.platform === 'linux' ? ['--no-sandbox'] : []), 'mcp'];
+}
+
 function setup(launch: McpLaunchCommand, id: McpClientId): McpClientSetup {
     const found = buildMcpClientSetups(launch, URL).find((s) => s.id === id);
     if (!found) throw new Error(`No setup ${id}`);
@@ -88,7 +93,7 @@ describe('buildMcpClientSetups', () => {
         });
         expect(claudeCode.alternative).toMatchObject({
             method: 'command',
-            code: "claude mcp add --scope user wmb-table -- '/opt/Wmb Table/wmb-table' mcp",
+            code: "claude mcp add --scope user wmb-table -- '/opt/Wmb Table/wmb-table' --no-sandbox mcp",
         });
     });
 
@@ -105,7 +110,7 @@ describe('buildMcpClientSetups', () => {
         const desktop = setup(DEB, 'claude-desktop');
         expect(desktop.recommended.method).toBe('command');
         expect(JSON.parse(desktop.recommended.code)).toEqual({
-            mcpServers: { 'wmb-table': { command: DEB.command, args: ['mcp'] } },
+            mcpServers: { 'wmb-table': { command: DEB.command, args: ['--no-sandbox', 'mcp'] } },
         });
         expect(desktop.recommended.hint).not.toContain('Node.js');
         expect(JSON.parse(desktop.alternative.code)).toEqual({
@@ -119,13 +124,13 @@ describe('buildMcpClientSetups', () => {
         expect(other.recommended).toMatchObject({ method: 'http', code: URL });
         expect(other.alternative).toMatchObject({
             method: 'command',
-            code: "'/opt/Wmb Table/wmb-table' mcp",
+            code: "'/opt/Wmb Table/wmb-table' --no-sandbox mcp",
         });
     });
 
     it('leaves a path without special characters unquoted', () => {
         expect(setup(APPIMAGE, 'claude-code').alternative.code).toBe(
-            'claude mcp add --scope user wmb-table -- /home/marie/Applications/Wmb-Table-2.0.0.AppImage mcp',
+            'claude mcp add --scope user wmb-table -- /home/marie/Applications/Wmb-Table-2.0.0.AppImage --no-sandbox mcp',
         );
     });
 
@@ -144,7 +149,7 @@ describe('buildMcpClientSetups', () => {
     ])('gives Claude Desktop the exact command and args (%s)', (_name, launch) => {
         expect(JSON.parse(setup(launch, 'claude-desktop').recommended.code)).toEqual({
             mcpServers: {
-                'wmb-table': { command: launch.command, args: [...launch.args, 'mcp'] },
+                'wmb-table': { command: launch.command, args: expectedArgs(launch) },
             },
         });
     });
@@ -163,12 +168,12 @@ describe('buildMcpClientSetups', () => {
     ])('writes a Codex command table that reads back to the same command (%s)', (_name, launch) => {
         const parsed = parseCodexTable(setup(launch, 'codex').alternative.code);
         expect(parsed.table).toBe('[mcp_servers.wmb-table]');
-        expect(parsed.values).toEqual({ command: launch.command, args: [...launch.args, 'mcp'] });
+        expect(parsed.values).toEqual({ command: launch.command, args: expectedArgs(launch) });
     });
 
     it('starts a development checkout through Electron with the app folder', () => {
         expect(setup(DEV, 'claude-code').alternative.code).toBe(
-            'claude mcp add --scope user wmb-table -- /home/dev/wmb-table/node_modules/electron/dist/electron /home/dev/wmb-table mcp',
+            'claude mcp add --scope user wmb-table -- /home/dev/wmb-table/node_modules/electron/dist/electron /home/dev/wmb-table --no-sandbox mcp',
         );
     });
 });
@@ -188,10 +193,28 @@ describe('quoteShellArgument', () => {
     });
 });
 
+describe('--no-sandbox', () => {
+    it.each([
+        ['Windows', WINDOWS],
+        ['macOS', MAC],
+    ])('is not added on %s', (_name, launch) => {
+        for (const s of buildMcpClientSetups(launch, URL)) {
+            expect(s.recommended.code + s.alternative.code).not.toContain('--no-sandbox');
+        }
+        expect(buildHeadlessStartCommand(launch, 23132)).not.toContain('--no-sandbox');
+    });
+
+    it('comes right before mcp in every Linux command', () => {
+        const desktop = JSON.parse(setup(DEB, 'claude-desktop').recommended.code);
+        expect(desktop.mcpServers['wmb-table'].args).toEqual(['--no-sandbox', 'mcp']);
+        expect(setup(DEB, 'codex').alternative.code).toContain('args = ["--no-sandbox", "mcp"]');
+    });
+});
+
 describe('buildHeadlessStartCommand', () => {
     it('starts the HTTP server on the configured port', () => {
         expect(buildHeadlessStartCommand(DEB, 23132)).toBe(
-            "'/opt/Wmb Table/wmb-table' mcp --http --port 23132",
+            "'/opt/Wmb Table/wmb-table' --no-sandbox mcp --http --port 23132",
         );
     });
 
