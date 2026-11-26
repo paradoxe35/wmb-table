@@ -305,7 +305,9 @@ export class GenerationRunnerImpl implements GenerationRunner {
                     pass.toolChoiceViolated = true;
                     break;
                 }
-                throw new Error(toErrorMessage(part.error, 'AI stream failed.'));
+                throw new Error(toErrorMessage(part.error, 'AI stream failed.'), {
+                    cause: part.error,
+                });
             default:
                 break;
         }
