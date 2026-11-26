@@ -100,39 +100,55 @@ describe('keyboard access in the chat', () => {
 
     it('names the menu button of each conversation', async () => {
         await i18n.changeLanguage('en');
-        render(
-            <App>
-                <ChatConversationList
-                    conversations={[
-                        {
-                            id: 'conv-1',
-                            title: 'Genèse 3',
-                            summary: null,
-                            aiTitle: false,
-                            createdAt: '2026-11-26T10:00:00.000Z',
-                            updatedAt: '2026-11-26T10:00:00.000Z',
-                        },
-                    ]}
-                    activeConversationId="conv-1"
-                    streamingConversations={{}}
-                    loading={false}
-                    loadingOlder={false}
-                    hasMore={false}
-                    searchTerm=""
-                    isSearching={false}
-                    onSearchChange={vi.fn()}
-                    onCreateConversation={vi.fn()}
-                    onLoadOlderConversations={vi.fn()}
-                    onSelectConversation={vi.fn()}
-                    onRenameConversation={vi.fn()}
-                    onExportConversation={vi.fn()}
-                    onDeleteConversation={vi.fn()}
-                    onClearConversations={vi.fn()}
-                    hasStreamingConversations={false}
-                />
-            </App>,
-        );
+        renderConversationList(vi.fn());
 
         expect(screen.getByRole('button', { name: 'Conversation actions' })).toBeTruthy();
     });
+
+    it('asks to confirm clearing the history with a red Delete button', async () => {
+        const onClear = vi.fn();
+        renderConversationList(onClear);
+
+        fireEvent.click(screen.getByRole('button', { name: "Vider l'historique" }));
+        const confirm = await screen.findByRole('button', { name: 'Supprimer' });
+
+        expect(confirm.className).toContain('ant-btn-dangerous');
+        fireEvent.click(confirm);
+        expect(onClear).toHaveBeenCalledTimes(1);
+    });
 });
+
+function renderConversationList(onClearConversations: () => void) {
+    return render(
+        <App>
+            <ChatConversationList
+                conversations={[
+                    {
+                        id: 'conv-1',
+                        title: 'Genèse 3',
+                        summary: null,
+                        aiTitle: false,
+                        createdAt: '2026-11-26T10:00:00.000Z',
+                        updatedAt: '2026-11-26T10:00:00.000Z',
+                    },
+                ]}
+                activeConversationId="conv-1"
+                streamingConversations={{}}
+                loading={false}
+                loadingOlder={false}
+                hasMore={false}
+                searchTerm=""
+                isSearching={false}
+                onSearchChange={vi.fn()}
+                onCreateConversation={vi.fn()}
+                onLoadOlderConversations={vi.fn()}
+                onSelectConversation={vi.fn()}
+                onRenameConversation={vi.fn()}
+                onExportConversation={vi.fn()}
+                onDeleteConversation={vi.fn()}
+                onClearConversations={onClearConversations}
+                hasStreamingConversations={false}
+            />
+        </App>,
+    );
+}

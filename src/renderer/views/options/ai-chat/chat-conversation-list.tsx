@@ -264,6 +264,9 @@ export default memo(function ChatConversationList({
                 <div className="ai-chat__sidebar-footer">
                     <Popconfirm
                         title={t('Supprimer toutes les conversations ?')}
+                        okText={t('Supprimer')}
+                        cancelText={t('Annuler')}
+                        okButtonProps={{ danger: true }}
                         onConfirm={onClearConversations}
                     >
                         <Button
