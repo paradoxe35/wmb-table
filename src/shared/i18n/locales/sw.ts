@@ -95,7 +95,6 @@ const sw: Record<string, string> = {
     'Adresse du serveur': 'Anwani ya seva',
     'Le port habituel {{defaultPort}} était occupé : Wmb Table utilise le port {{port}}.':
         'Mlango wa kawaida {{defaultPort}} ulikuwa unatumika: Wmb Table inatumia mlango {{port}}.',
-    'Connecter votre application': 'Unganisha programu yako',
     'Lancez cette commande dans un terminal.': 'Endesha amri hii kwenye terminal.',
     'Ajoutez ces lignes au fichier ~/.codex/config.toml.':
         'Ongeza mistari hii kwenye faili ~/.codex/config.toml.',
@@ -111,6 +110,29 @@ const sw: Record<string, string> = {
         'Seva ya MCP haikuweza kuanza. Jaribu tena au anzisha upya Wmb Table.',
     'Le réglage du serveur MCP n’a pas pu être enregistré.':
         'Mpangilio wa seva ya MCP haukuweza kuhifadhiwa.',
+    'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop.':
+        'Ongeza hii kwenye faili claude_desktop_config.json (Mipangilio, Msanidi, Hariri usanidi), kisha uanzishe upya Claude Desktop.',
+    Configuration: 'Usanidi',
+    'Commande (recommandé)': 'Amri (inapendekezwa)',
+    'HTTP sans interface': 'HTTP bila kiolesura',
+    'Votre application d’IA lance Wmb Table elle-même, sans fenêtre : Wmb Table n’a pas besoin d’être ouvert.':
+        'Programu yako ya AI inaanzisha Wmb Table yenyewe, bila dirisha: Wmb Table haihitaji kuwa wazi.',
+    'Commande de développement : cette copie de Wmb Table n’est pas installée.':
+        'Amri ya usanidi: nakala hii ya Wmb Table haijasakinishwa.',
+    'Wmb Table doit rester ouvert pendant que votre application d’IA l’utilise.':
+        'Wmb Table lazima ibaki wazi wakati programu yako ya AI inaitumia.',
+    'Démarrer le serveur': 'Anzisha seva',
+    'Lancez cette commande dans un terminal et laissez-le ouvert ; Ctrl+C arrête le serveur. Fermez d’abord Wmb Table s’il est ouvert : il utilise déjà ce port.':
+        'Endesha amri hii kwenye terminal na uiache wazi; Ctrl+C inasimamisha seva. Funga Wmb Table kwanza ikiwa iko wazi: tayari inatumia mlango huu.',
+    'Le serveur MCP est désactivé. Activez « Serveur MCP » dans Wmb Table → Paramètres → Assistant.':
+        'Seva ya MCP imezimwa. Washa «Seva ya MCP» katika Wmb Table → Mipangilio → Msaidizi.',
+    'La langue « {{language}} » n’est pas installée dans Wmb Table. Installées : {{installed}}.':
+        'Lugha «{{language}}» haijasakinishwa katika Wmb Table. Zilizosakinishwa: {{installed}}.',
+    'Serveur MCP de Wmb Table : {{url}}': 'Seva ya MCP ya Wmb Table: {{url}}',
+    'Le port {{port}} est déjà utilisé (Wmb Table sert peut-être déjà cette adresse).':
+        'Mlango {{port}} tayari unatumika (huenda Wmb Table tayari inahudumia anwani hii).',
+    'Les ports {{firstPort}} à {{lastPort}} sont déjà utilisés.':
+        'Milango {{firstPort}} hadi {{lastPort}} tayari inatumika.',
 
     // ── AI provider descriptions ──
     'Fonctionne sans connexion internet, directement sur votre ordinateur.':

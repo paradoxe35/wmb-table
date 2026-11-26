@@ -1,3 +1,5 @@
+// Must stay first: `wmb-table mcp` relaunches itself headless before Electron needs a display.
+import { cliCommand } from '@main/cli/cli-entry';
 import '@main/lib/sentry';
 
 import { app, BrowserWindow, protocol, session } from 'electron';
@@ -26,18 +28,27 @@ import { HEADER_BACKGROUND, type ResolvedTheme } from '@shared/theme';
 import i18n from '@main/lib/i18n';
 import log from '@main/lib/logger';
 import { resolveUiLanguage } from '@shared/constants';
+import { runMcpCommand } from '@main/cli/run-mcp-command';
 
 if (process.platform === 'linux' && process.env.APPIMAGE) {
     app.commandLine.appendSwitch('no-sandbox');
 }
 
-// Initialize logger first
-initializeLogger();
-
-if (!app.requestSingleInstanceLock()) {
-    app.quit();
+if (cliCommand.kind === 'mcp') {
+    runMcpCommand(cliCommand);
 } else {
-    bootstrapPrimaryInstance();
+    bootstrapApp();
+}
+
+function bootstrapApp(): void {
+    // Initialize logger first
+    initializeLogger();
+
+    if (!app.requestSingleInstanceLock()) {
+        app.quit();
+    } else {
+        bootstrapPrimaryInstance();
+    }
 }
 
 function bootstrapPrimaryInstance(): void {

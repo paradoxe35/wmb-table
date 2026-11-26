@@ -92,7 +92,6 @@ const en: Record<string, string> = {
     'Adresse du serveur': 'Server address',
     'Le port habituel {{defaultPort}} était occupé : Wmb Table utilise le port {{port}}.':
         'The usual port {{defaultPort}} was busy: Wmb Table uses port {{port}}.',
-    'Connecter votre application': 'Connect your app',
     'Lancez cette commande dans un terminal.': 'Run this command in a terminal.',
     'Ajoutez ces lignes au fichier ~/.codex/config.toml.':
         'Add these lines to the file ~/.codex/config.toml.',
@@ -108,6 +107,29 @@ const en: Record<string, string> = {
         'The MCP server could not start. Try again or restart Wmb Table.',
     'Le réglage du serveur MCP n’a pas pu être enregistré.':
         'The MCP server setting could not be saved.',
+    'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop.':
+        'Add this to the file claude_desktop_config.json (Settings, Developer, Edit Config), then restart Claude Desktop.',
+    Configuration: 'Configuration',
+    'Commande (recommandé)': 'Command (recommended)',
+    'HTTP sans interface': 'Headless HTTP',
+    'Votre application d’IA lance Wmb Table elle-même, sans fenêtre : Wmb Table n’a pas besoin d’être ouvert.':
+        'Your AI app starts Wmb Table itself, without a window: Wmb Table does not need to be open.',
+    'Commande de développement : cette copie de Wmb Table n’est pas installée.':
+        'Development command: this copy of Wmb Table is not installed.',
+    'Wmb Table doit rester ouvert pendant que votre application d’IA l’utilise.':
+        'Wmb Table must stay open while your AI app uses it.',
+    'Démarrer le serveur': 'Start the server',
+    'Lancez cette commande dans un terminal et laissez-le ouvert ; Ctrl+C arrête le serveur. Fermez d’abord Wmb Table s’il est ouvert : il utilise déjà ce port.':
+        'Run this command in a terminal and leave it open; Ctrl+C stops the server. Close Wmb Table first if it is open: it already uses this port.',
+    'Le serveur MCP est désactivé. Activez « Serveur MCP » dans Wmb Table → Paramètres → Assistant.':
+        'The MCP server is turned off. Turn on “MCP server” in Wmb Table → Settings → Assistant.',
+    'La langue « {{language}} » n’est pas installée dans Wmb Table. Installées : {{installed}}.':
+        'The language “{{language}}” is not installed in Wmb Table. Installed: {{installed}}.',
+    'Serveur MCP de Wmb Table : {{url}}': 'Wmb Table MCP server: {{url}}',
+    'Le port {{port}} est déjà utilisé (Wmb Table sert peut-être déjà cette adresse).':
+        'Port {{port}} is already in use (Wmb Table may already serve this address).',
+    'Les ports {{firstPort}} à {{lastPort}} sont déjà utilisés.':
+        'Ports {{firstPort}} to {{lastPort}} are already in use.',
 
     // ── AI provider descriptions ──
     'Fonctionne sans connexion internet, directement sur votre ordinateur.':

@@ -9,11 +9,18 @@ import { registerAiTools, selectExposedTools } from './ai-tool-adapter';
 export interface LibraryMcpServerOptions {
     allowWrites: boolean;
     version: string;
+    /** Overrides the app's content language (`wmb-table mcp --language`). */
+    contentLanguage?: string;
 }
 
 /** Read on every request, so a language changed in the app applies to the next tool call. */
-function resolveContentLanguage(): string {
-    return configRepo.getContentLanguage() ?? tantivyService.getInstalledLanguages()[0] ?? 'en';
+function resolveContentLanguage(override?: string): string {
+    return (
+        override ??
+        configRepo.getContentLanguage() ??
+        tantivyService.getInstalledLanguages()[0] ??
+        'en'
+    );
 }
 
 function describeLibrary(contentLanguage: string, allowWrites: boolean): string {
@@ -28,7 +35,7 @@ function describeLibrary(contentLanguage: string, allowWrites: boolean): string 
 }
 
 export function createLibraryMcpServer(options: LibraryMcpServerOptions): McpServer {
-    const contentLanguage = resolveContentLanguage();
+    const contentLanguage = resolveContentLanguage(options.contentLanguage);
     const bibleVersion = bibleService.getResolvedBibleVersionForLanguage(
         contentLanguage,
         configRepo.getActiveBibleVersionAbbreviation(),

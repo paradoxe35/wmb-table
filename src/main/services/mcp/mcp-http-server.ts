@@ -17,6 +17,8 @@ export interface McpHttpServer {
 
 export interface McpHttpServerOptions {
     firstPort: number;
+    /** How many ports from `firstPort` on to try; 1 means exactly that port. */
+    portAttempts?: number;
     createServer: McpServerFactory;
 }
 
@@ -51,7 +53,12 @@ export async function startMcpHttpServer(options: McpHttpServerOptions): Promise
         });
     });
 
-    const port = await listenOnFreePort(server, MCP_HOST, options.firstPort, MCP_PORT_ATTEMPTS);
+    const port = await listenOnFreePort(
+        server,
+        MCP_HOST,
+        options.firstPort,
+        options.portAttempts ?? MCP_PORT_ATTEMPTS,
+    );
 
     return {
         port,
