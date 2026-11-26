@@ -105,7 +105,9 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
             description:
                 'Retrieve the text content (paragraphs) of a sermon. ' +
                 'You MUST pass sermonId (and translationId if available from searchSermons results). ' +
-                'Use startParagraph and maxParagraphs to paginate through long sermons. ' +
+                'startParagraph is a paragraph number, the same numbers as paragraphNumber in results and searchContent matches; ' +
+                'omit it to start at the first paragraph. ' +
+                'If hasMore is true, pass nextStartParagraph as startParagraph to read on. ' +
                 'To get a general overview, read the first 15 paragraphs. ' +
                 'Each paragraph includes wmbUrl for markdown reference links. ' +
                 'If the requested translation is unavailable, the response will include translationWarning and the resolved translationId.',
@@ -187,25 +189,35 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                         };
                     }
 
-                    const paragraphs: SermonParagraphResult[] = rawParagraphs
-                        .slice(startParagraph, startParagraph + maxParagraphs)
-                        .map((p) => ({
-                            paragraphNumber: p.paragraphIndex,
-                            content: p.content,
-                            wmbUrl: buildSermonWmbLink({
-                                type: 'sermon',
-                                sermonId: meta.sermonId,
-                                languageCode: lang,
-                                translationId: meta.translationId,
-                                paragraphIndex: p.paragraphIndex,
-                            }),
-                        }));
+                    const firstIndex = rawParagraphs.findIndex(
+                        (p) => p.paragraphIndex >= startParagraph,
+                    );
+                    const window =
+                        firstIndex === -1
+                            ? []
+                            : rawParagraphs.slice(firstIndex, firstIndex + maxParagraphs);
+                    const nextParagraph =
+                        firstIndex === -1 ? undefined : rawParagraphs[firstIndex + maxParagraphs];
+
+                    const paragraphs: SermonParagraphResult[] = window.map((p) => ({
+                        paragraphNumber: p.paragraphIndex,
+                        content: p.content,
+                        wmbUrl: buildSermonWmbLink({
+                            type: 'sermon',
+                            sermonId: meta.sermonId,
+                            languageCode: lang,
+                            translationId: meta.translationId,
+                            paragraphIndex: p.paragraphIndex,
+                        }),
+                    }));
 
                     const response: SermonContentResponse = {
                         meta: slimMeta,
                         paragraphs,
                         totalParagraphs: rawParagraphs.length,
-                        startParagraph,
+                        startParagraph: window[0]?.paragraphIndex ?? startParagraph,
+                        hasMore: nextParagraph !== undefined,
+                        nextStartParagraph: nextParagraph?.paragraphIndex,
                         requestedTranslationId,
                         resolvedTranslationId: meta.translationId,
                         fallbackTranslationId:

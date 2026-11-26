@@ -368,6 +368,7 @@ describe('sermon.tools', () => {
         expect(result.hasMore).toBe(false);
         expect(result.nextCursor).toBeUndefined();
     });
+
     describe('searchContent with no searchable word', () => {
         it.each([
             ['punctuation only', '??', undefined],
@@ -401,6 +402,67 @@ describe('sermon.tools', () => {
 
             expect(result.error).toBeUndefined();
             expect(searchSermonsMock).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe('getSermonContent paging by paragraph number', () => {
+        const META = { sermonId: '56-0101', translationId: 1, title: 'Alpha', dateMs: 0 };
+
+        async function read(input: Record<string, unknown>) {
+            const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
+            return (await buildSermonTools('fr').getSermonContent.execute({
+                sermonId: '56-0101',
+                translationId: 1,
+                ...input,
+            })) as {
+                paragraphs: Array<{ paragraphNumber: number }>;
+                startParagraph: number;
+                totalParagraphs: number;
+                hasMore: boolean;
+                nextStartParagraph?: number;
+            };
+        }
+
+        beforeEach(() => {
+            getSermonMetaMock.mockReturnValue(META);
+            getSermonParagraphsMock.mockResolvedValue(
+                [1, 2, 3, 4, 6, 7].map((paragraphIndex) => ({
+                    paragraphIndex,
+                    content: `Paragraphe ${paragraphIndex}`,
+                })),
+            );
+        });
+
+        it('starts at the paragraph a search hit named, with 1-based numbers', async () => {
+            const result = await read({ startParagraph: 3, maxParagraphs: 2 });
+
+            expect(result.paragraphs.map((p) => p.paragraphNumber)).toEqual([3, 4]);
+            expect(result).toMatchObject({ hasMore: true, nextStartParagraph: 6 });
+        });
+
+        it('starts at the next existing paragraph when the number is a gap', async () => {
+            const result = await read({ startParagraph: 5, maxParagraphs: 5 });
+
+            expect(result.paragraphs.map((p) => p.paragraphNumber)).toEqual([6, 7]);
+            expect(result).toMatchObject({
+                startParagraph: 6,
+                hasMore: false,
+                nextStartParagraph: undefined,
+            });
+        });
+
+        it('reads from the first paragraph by default', async () => {
+            const result = await read({ maxParagraphs: 2 });
+
+            expect(result.paragraphs.map((p) => p.paragraphNumber)).toEqual([1, 2]);
+            expect(result).toMatchObject({ startParagraph: 1, totalParagraphs: 6 });
+        });
+
+        it('returns no paragraphs past the end of the sermon', async () => {
+            const result = await read({ startParagraph: 40 });
+
+            expect(result.paragraphs).toEqual([]);
+            expect(result.hasMore).toBe(false);
         });
     });
 });
