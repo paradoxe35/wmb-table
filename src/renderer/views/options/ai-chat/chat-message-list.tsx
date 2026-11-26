@@ -1,14 +1,4 @@
-import {
-    memo,
-    useCallback,
-    useDeferredValue,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
-    type ComponentProps,
-} from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button, Empty, Spin, Tooltip, Typography } from 'antd';
 import {
     BulbOutlined,
@@ -17,8 +7,6 @@ import {
     RobotOutlined,
     UserOutlined,
 } from '@ant-design/icons';
-import Markdown, { defaultUrlTransform } from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useStickToBottom } from 'use-stick-to-bottom';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
@@ -27,63 +15,10 @@ import { useAppStore } from '@renderer/stores';
 import { useAiChatStore, selectActiveProviderLabel } from '@renderer/stores/ai-chat.store';
 import ChatToolResult from './chat-tool-result';
 import { groupToolResults } from './tool-results';
-import AiReferenceLink from './ai-reference-link';
+import AssistantMarkdown from './assistant-markdown';
 import SelectableMessageContent from './selectable-message-content';
 
 const { Text } = Typography;
-const MARKDOWN_REMARK_PLUGINS = [remarkGfm];
-
-function urlTransform(url: string): string {
-    if (url.startsWith('wmb://')) {
-        return url;
-    }
-    return defaultUrlTransform(url);
-}
-
-function sanitizeWmbLinks(content: string): string {
-    return content
-        .replace(/`(\[[^\]]+\]\(wmb:\/\/[^)]+\))`/g, '$1')
-        .replace(
-            /\]\(wmb:\/\/([^)]+)\)/g,
-            (_, path: string) => `](wmb://${path.replace(/ /g, '%20')})`,
-        );
-}
-
-const markdownComponents = {
-    a: AiReferenceLink,
-    table: ({ children, node: _node, ...props }: ComponentProps<'table'> & { node?: unknown }) => (
-        <div className="ai-markdown__table-wrap">
-            <table {...props}>{children}</table>
-        </div>
-    ),
-};
-
-const AssistantMarkdown = memo(function AssistantMarkdown({
-    content,
-    streaming,
-}: {
-    content: string;
-    streaming: boolean;
-}) {
-    const deferredContent = useDeferredValue(content);
-    const markdownSource = useMemo(
-        () => sanitizeWmbLinks(streaming ? deferredContent : content),
-        [content, deferredContent, streaming],
-    );
-
-    return (
-        <div className="ai-markdown">
-            <Markdown
-                remarkPlugins={MARKDOWN_REMARK_PLUGINS}
-                components={markdownComponents}
-                urlTransform={urlTransform}
-            >
-                {markdownSource}
-            </Markdown>
-        </div>
-    );
-});
-
 const MAX_REASONING_LINES = 50;
 const LOAD_OLDER_THRESHOLD_PX = 200;
 const SCROLL_TOP_FADE_THRESHOLD_PX = 2;

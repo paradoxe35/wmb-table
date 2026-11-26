@@ -1,5 +1,6 @@
 import type React from 'react';
 import { Tag } from 'antd';
+import { toSafeExternalUrl } from '@shared/external-url';
 import { parseWmbLink, useWmbLinkNavigate } from '@renderer/hooks/use-wmb-link';
 
 const REF_COLORS = {
@@ -8,22 +9,25 @@ const REF_COLORS = {
     doc: 'orange',
 };
 
+function ExternalLink({ href, children }: { href?: string; children: React.ReactNode }) {
+    const externalUrl = toSafeExternalUrl(href);
+    if (!externalUrl) return <span>{children}</span>;
+
+    return (
+        <a href={externalUrl} target="_blank" rel="noopener noreferrer">
+            {children}
+        </a>
+    );
+}
+
 export default function AiReferenceLink(
     props: React.AnchorHTMLAttributes<HTMLAnchorElement> & { node?: unknown },
 ) {
     const { href, children } = props;
     const navigate = useWmbLinkNavigate();
 
-    if (!href) return <a>{children}</a>;
-
-    const ref = parseWmbLink(href);
-    if (!ref) {
-        return (
-            <a href={href} target="_blank" rel="noopener noreferrer">
-                {children}
-            </a>
-        );
-    }
+    const ref = href ? parseWmbLink(href) : null;
+    if (!href || !ref) return <ExternalLink href={href}>{children}</ExternalLink>;
 
     const handleClick = (e: React.MouseEvent) => {
         e.preventDefault();
