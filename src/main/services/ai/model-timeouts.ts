@@ -30,6 +30,26 @@ const LOCAL_CHAT_TIMEOUTS: ChatTimeouts = {
     agentToolMs: 40 * MINUTE,
 };
 
+/** A sub-agent returns before the chat's own limit for its tool call cuts it off, and keeps the
+ * last part of that time for writing its report. */
+const SUB_AGENT_RESEARCH_SHARE = 0.75;
+const SUB_AGENT_DEADLINE_SHARE = 0.95;
+
+export interface SubAgentDeadlines {
+    wrapUpAt: number;
+    deadline: number;
+}
+
+export function resolveSubAgentDeadlines(
+    timeouts: ChatTimeouts,
+    startedAt: number,
+): SubAgentDeadlines {
+    return {
+        wrapUpAt: startedAt + Math.floor(timeouts.agentToolMs * SUB_AGENT_RESEARCH_SHARE),
+        deadline: startedAt + Math.floor(timeouts.agentToolMs * SUB_AGENT_DEADLINE_SHARE),
+    };
+}
+
 export const TITLE_TIMEOUT_MS = 2 * MINUTE;
 const REMOTE_PROVIDER_TEST_TIMEOUT_MS = 30 * SECOND;
 const LOCAL_PROVIDER_TEST_TIMEOUT_MS = 3 * MINUTE;

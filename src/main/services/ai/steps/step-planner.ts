@@ -7,7 +7,7 @@ import {
 } from '../token-budget';
 import { estimateMessagesTokens, shrinkMessages } from './step-messages';
 
-export type FinalStepReason = 'step-limit' | 'context';
+export type FinalStepReason = 'step-limit' | 'context' | 'time-limit';
 
 /** How a pass of the loop may use tools: freely, or only to write the answer. */
 export type PassMode = 'research' | 'answer' | 'answer-without-tools';
@@ -29,6 +29,10 @@ export interface StepPlannerOptions {
     systemPrompt: string;
     maxSteps: number;
     reasoningControl: boolean;
+    /** Replaces the main chat's "write the final answer" reminder on the answer-only step. */
+    finalStepNote?: string;
+    /** Epoch ms after which research stops so the answer is still written in time. */
+    wrapUpAt?: number;
 }
 
 export interface StepPlan {
@@ -97,7 +101,7 @@ export class StepPlanner {
 
     private answerOnlySettings(mode: PassMode): PrepareStepResult<ToolSet> {
         return {
-            instructions: `${this.options.systemPrompt}\n\n${FINAL_ANSWER_NOTE}`,
+            instructions: `${this.options.systemPrompt}\n\n${this.options.finalStepNote ?? FINAL_ANSWER_NOTE}`,
             ...(mode === 'answer-without-tools' ? { activeTools: [] } : { toolChoice: 'none' }),
         };
     }
@@ -110,6 +114,10 @@ export class StepPlanner {
         }
         if (!canFitToolRound(this.options.budget, promptTokens)) {
             this.finalStepReason = 'context';
+            return 'answer';
+        }
+        if (this.options.wrapUpAt != null && Date.now() >= this.options.wrapUpAt) {
+            this.finalStepReason = 'time-limit';
             return 'answer';
         }
         return 'research';

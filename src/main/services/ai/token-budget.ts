@@ -87,6 +87,21 @@ export function planRunBudget(limits: ModelLimits, fixedPromptTokens: number): R
     };
 }
 
+/** A sub-agent sends its whole history again on every step, so it works in a smaller window
+ * than the chat and condenses older results sooner. */
+export const SUB_AGENT_CONTEXT_WINDOW = 64_000;
+
+export function planSubAgentBudget(limits: ModelLimits, fixedPromptTokens: number): RunBudget {
+    const knownWindow = positive(limits.contextWindow);
+    return planRunBudget(
+        {
+            ...limits,
+            contextWindow: knownWindow && Math.min(knownWindow, SUB_AGENT_CONTEXT_WINDOW),
+        },
+        fixedPromptTokens,
+    );
+}
+
 export function resolveStepOutputTokens(
     budget: RunBudget,
     promptTokens: number,

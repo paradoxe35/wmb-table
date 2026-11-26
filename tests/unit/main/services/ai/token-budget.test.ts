@@ -12,7 +12,9 @@ const {
     measurePromptTokens,
     measureToolTokens,
     planRunBudget,
+    planSubAgentBudget,
     resolveStepOutputTokens,
+    SUB_AGENT_CONTEXT_WINDOW,
 } = await import('@main/services/ai/token-budget');
 
 const FIXED_PROMPT_TOKENS = 7_000;
@@ -137,5 +139,35 @@ describe('measuring prompts', () => {
         };
 
         expect(measureToolTokens(largeTools)).toBeGreaterThan(measureToolTokens(smallTools));
+    });
+});
+
+describe('planSubAgentBudget', () => {
+    it('works in a smaller window than a big chat model, with more output than 4,096', () => {
+        const budget = planSubAgentBudget(
+            { contextWindow: 1_000_000, maxOutputTokens: 64_000 },
+            FIXED_PROMPT_TOKENS,
+        );
+
+        expect(budget.contextWindow).toBe(SUB_AGENT_CONTEXT_WINDOW);
+        expect(budget.answerTokens).toBeGreaterThan(4_096);
+        expect(budget.promptLimit + budget.answerTokens).toBeLessThan(SUB_AGENT_CONTEXT_WINDOW);
+    });
+
+    it('keeps the window and output limit of a smaller model', () => {
+        const budget = planSubAgentBudget(
+            { contextWindow: 32_000, maxOutputTokens: 4_000 },
+            FIXED_PROMPT_TOKENS,
+        );
+
+        expect(budget).toEqual(
+            planRunBudget({ contextWindow: 32_000, maxOutputTokens: 4_000 }, FIXED_PROMPT_TOKENS),
+        );
+    });
+
+    it('plans an unknown window like the chat does', () => {
+        expect(planSubAgentBudget({}, FIXED_PROMPT_TOKENS)).toEqual(
+            planRunBudget({}, FIXED_PROMPT_TOKENS),
+        );
     });
 });

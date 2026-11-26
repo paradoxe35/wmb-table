@@ -3,6 +3,7 @@ import {
     isLocalProvider,
     isTimeoutReason,
     resolveChatTimeouts,
+    resolveSubAgentDeadlines,
     timeoutKindOf,
 } from '@main/services/ai/model-timeouts';
 
@@ -51,4 +52,19 @@ describe('timeout reasons', () => {
         expect(isTimeoutReason('AbortError: This operation was aborted')).toBe(false);
         expect(isTimeoutReason(new DOMException('aborted', 'AbortError'))).toBe(false);
     });
+});
+
+describe('resolveSubAgentDeadlines', () => {
+    it.each([true, false])(
+        'wraps up, then stops, before the chat gives up on the tool call (local: %s)',
+        (local) => {
+            const timeouts = resolveChatTimeouts(local);
+            const { wrapUpAt, deadline } = resolveSubAgentDeadlines(timeouts, 1_000);
+
+            expect(wrapUpAt).toBeGreaterThan(1_000);
+            expect(deadline).toBeGreaterThan(wrapUpAt);
+            expect(deadline).toBeLessThan(1_000 + timeouts.agentToolMs);
+            expect(deadline - wrapUpAt).toBeGreaterThanOrEqual(timeouts.agentToolMs / 5);
+        },
+    );
 });
