@@ -53,8 +53,6 @@ import {
 import { applyRunEnd, type RunEnd } from './ai-chat/run-end';
 import { applyRunStarted, failRun, startRun } from './ai-chat/run-start';
 
-export type { AiRunNotice } from './ai-chat/chat-state';
-
 function createQueuedMessage(content: string): QueuedMessage {
     return {
         id: crypto.randomUUID(),

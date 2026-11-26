@@ -37,6 +37,7 @@ export default function AiReferenceLink(
 
     return (
         <Tag
+            className="ai-reference-tag"
             data-href={href}
             color={REF_COLORS[ref.type]}
             onClick={handleClick}

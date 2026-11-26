@@ -65,7 +65,12 @@ export default function AiChatView() {
     const sendMessage = useAiChatStore((s) => s.sendMessage);
     const stopGeneration = useAiChatStore((s) => s.stopGeneration);
     const removeQueuedMessage = useAiChatStore((s) => s.removeQueuedMessage);
+    const flushQueuedMessages = useAiChatStore((s) => s.flushQueuedMessages);
     const error = useAiChatStore((s) => s.error);
+    const clearError = useAiChatStore((s) => s.clearError);
+    const runNotice = useAiChatStore((s) =>
+        activeConversationId ? (s.runNoticeByConversation[activeConversationId] ?? null) : null,
+    );
     const completionCount = useAiChatStore((s) => s.completionCount);
     const lastCompletedConversationId = useAiChatStore((s) => s.lastCompletedConversationId);
     const [draft, setDraft] = useState('');
@@ -97,9 +102,10 @@ export default function AiChatView() {
         if (!trimmed) {
             return;
         }
+        setDraft('');
         void sendMessage(trimmed).then((accepted) => {
-            if (accepted) {
-                setDraft('');
+            if (!accepted) {
+                setDraft((current) => current || draft);
             }
         });
     }, [draft, sendMessage]);
@@ -154,6 +160,21 @@ export default function AiChatView() {
         [sendMessage],
     );
 
+    const handleRemoveQueuedMessage = useCallback(
+        (queuedMessageId: string) => {
+            if (activeConversationId) {
+                removeQueuedMessage(activeConversationId, queuedMessageId);
+            }
+        },
+        [activeConversationId, removeQueuedMessage],
+    );
+
+    const handleResendQueue = useCallback(() => {
+        if (activeConversationId) {
+            void flushQueuedMessages(activeConversationId);
+        }
+    }, [activeConversationId, flushQueuedMessages]);
+
     const handleLoadOlderMessages = useCallback(() => {
         if (!activeConversationId) {
             return Promise.resolve();
@@ -207,10 +228,11 @@ export default function AiChatView() {
 
                 {error ? (
                     <Alert
+                        key={error}
                         type="error"
                         showIcon
-                        closable
-                        title={t(error)}
+                        closable={{ onClose: clearError }}
+                        title={t(error, { keySeparator: false, nsSeparator: false })}
                         style={{ margin: '12px 16px 0' }}
                     />
                 ) : null}
@@ -225,6 +247,7 @@ export default function AiChatView() {
                     loading={activeLoading}
                     loadingOlder={activeLoadingOlder}
                     hasMoreHistory={activeHasMoreHistory}
+                    runNotice={runNotice}
                     onLoadOlderMessages={handleLoadOlderMessages}
                     onQuickStart={handleQuickStart}
                 />
@@ -240,13 +263,8 @@ export default function AiChatView() {
                     onDraftChange={setDraft}
                     onSend={handleSend}
                     onStop={handleStop}
-                    onRemoveQueuedMessage={(queuedMessageId) => {
-                        if (!activeConversationId) {
-                            return;
-                        }
-
-                        removeQueuedMessage(activeConversationId, queuedMessageId);
-                    }}
+                    onRemoveQueuedMessage={handleRemoveQueuedMessage}
+                    onResendQueue={handleResendQueue}
                 />
             </div>
         </div>

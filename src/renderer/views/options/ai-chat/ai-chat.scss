@@ -644,8 +644,45 @@
 }
 
 .ai-chat__typing-indicator {
-    margin-top: 6px;
-    color: var(--ant-color-text-quaternary);
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.ai-chat__typing-indicator span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ant-color-text-quaternary);
+    animation: ai-chat-typing 1.2s ease-in-out infinite;
+}
+
+.ai-chat__typing-indicator span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.ai-chat__typing-indicator span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes ai-chat-typing {
+    0%,
+    60%,
+    100% {
+        opacity: 0.35;
+        transform: translateY(0);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-3px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ai-chat__typing-indicator span {
+        animation: none;
+    }
 }
 
 .ai-chat__bubble-actions {
@@ -657,12 +694,12 @@
     justify-content: flex-end;
 }
 
-.ai-chat__retry-button.ant-btn {
+.ai-chat__bubble-actions .ai-chat__retry-button.ant-btn {
     color: var(--ant-color-text-secondary);
 }
 
-.ai-chat__retry-button.ant-btn:hover,
-.ai-chat__retry-button.ant-btn:focus-visible {
+.ai-chat__bubble-actions .ai-chat__retry-button.ant-btn:hover,
+.ai-chat__bubble-actions .ai-chat__retry-button.ant-btn:focus-visible {
     color: var(--ant-color-primary);
     background: var(--ant-color-primary-bg);
 }
@@ -679,6 +716,38 @@
 
 .ai-chat__run-notice {
     margin-top: 8px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+}
+
+.ai-chat__run-notice .ant-alert-section {
+    min-width: min(100%, 220px);
+}
+
+.ai-chat__run-notice-detail.ant-typography {
+    display: block;
+    max-width: 100%;
+    font-size: var(--fs-rel-md);
+}
+
+.ai-chat__run-notice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ai-chat__notice-row {
+    margin-left: 38px;
+    max-width: calc(99% - 38px);
+}
+
+.ai-reference-tag.ant-tag {
+    display: inline;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: inherit;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
 }
 
 .ai-chat__tool-results {
@@ -736,6 +805,11 @@
 .ai-chat__queue-caption {
     font-size: var(--fs-rel-xs);
     color: var(--ant-color-text-secondary);
+}
+
+.ai-chat__queue-resend.ant-btn {
+    margin-left: auto;
+    padding-inline: 4px;
 }
 
 .ai-chat__queue-list {

@@ -1,246 +1,27 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Button, Empty, Spin, Tooltip, Typography } from 'antd';
-import {
-    BulbOutlined,
-    LoadingOutlined,
-    ReloadOutlined,
-    RobotOutlined,
-    UserOutlined,
-} from '@ant-design/icons';
-import { AnimatePresence, motion } from 'framer-motion';
+import { Button, Empty, Spin, Typography } from 'antd';
+import { LoadingOutlined, RobotOutlined } from '@ant-design/icons';
+import { AnimatePresence } from 'framer-motion';
 import { useStickToBottom } from 'use-stick-to-bottom';
-import type { AiMessage, AiToolResult } from '@shared/ai.types';
+import type { AiMessage } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
-import { useAiChatStore, selectActiveProviderLabel } from '@renderer/stores/ai-chat.store';
-import ChatToolResult from './chat-tool-result';
+import type { AiRunNotice } from '@renderer/stores/ai-chat/chat-state';
 import ChatRunNotice from './chat-run-notice';
-import { groupToolResults } from './tool-results';
-import AssistantMarkdown from './assistant-markdown';
-import SelectableMessageContent from './selectable-message-content';
+import { MessageBubble } from './message-bubble';
+import { resolveRetryUserMessageId } from './message-retry';
 
 const { Text } = Typography;
-const MAX_REASONING_LINES = 50;
 const LOAD_OLDER_THRESHOLD_PX = 200;
 const SCROLL_TOP_FADE_THRESHOLD_PX = 2;
 
-function ReasoningBlock({ messageId }: { messageId: string }) {
-    const { t } = useTranslation();
-    const reasoning = useAiChatStore((s) => s.reasoningByMessage[messageId]);
-    const [collapsed, setCollapsed] = useState(true);
-
-    if (!reasoning) {
-        return null;
-    }
-
-    const lines = reasoning.split('\n');
-    const truncated = lines.slice(-MAX_REASONING_LINES).join('\n');
-    const wasTruncated = lines.length > MAX_REASONING_LINES;
-
-    return (
-        <div className="ai-reasoning">
-            <div className="ai-reasoning__toggle" onClick={() => setCollapsed((c) => !c)}>
-                <BulbOutlined />
-                <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
-                    {collapsed ? t('Voir le raisonnement') : t('Masquer le raisonnement')}
-                </Text>
-            </div>
-            {!collapsed && (
-                <div className="ai-reasoning__content">
-                    {wasTruncated && (
-                        <Text
-                            type="secondary"
-                            style={{
-                                fontSize: 'var(--fs-rel-md)',
-                                display: 'block',
-                                marginBottom: 4,
-                            }}
-                        >
-                            ({t('{{count}} dernières lignes', { count: MAX_REASONING_LINES })})
-                        </Text>
-                    )}
-                    <pre>{truncated}</pre>
-                </div>
-            )}
-        </div>
+/** The notice sits inside its answer when that answer is shown, otherwise below the thread. */
+function hasVisibleAnswer(messages: AiMessage[], notice: AiRunNotice | null): boolean {
+    return Boolean(
+        notice?.messageId &&
+        messages.some((message) => message.id === notice.messageId && message.content.trim()),
     );
 }
-
-const VISIBLE_TOOL_RESULTS = 3;
-
-function canRetryUserMessageAtIndex(messages: AiMessage[], index: number): boolean {
-    const message = messages[index];
-    if (!message || message.role !== 'user') {
-        return false;
-    }
-
-    const followingMessages = messages.slice(index + 1);
-    return followingMessages.every(
-        (following) => following.role === 'assistant' && !following.content.trim(),
-    );
-}
-
-function isEmptyAssistantMessage(message: AiMessage | undefined): boolean {
-    return Boolean(message && message.role === 'assistant' && !message.content.trim());
-}
-
-function findRetryableUserMessageIdForEmptyAssistant(
-    messages: AiMessage[],
-    index: number,
-): string | null {
-    if (!isEmptyAssistantMessage(messages[index])) {
-        return null;
-    }
-
-    for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
-        if (messages[cursor].role !== 'user') {
-            continue;
-        }
-
-        return canRetryUserMessageAtIndex(messages, cursor) ? messages[cursor].id : null;
-    }
-
-    return null;
-}
-
-function resolveRetryUserMessageId(
-    messages: AiMessage[],
-    index: number,
-    lastMessageId: string | null,
-): string | null {
-    const message = messages[index];
-    if (!message) {
-        return null;
-    }
-
-    if (message.role === 'user') {
-        return message.id === lastMessageId ? message.id : null;
-    }
-
-    return findRetryableUserMessageIdForEmptyAssistant(messages, index);
-}
-
-function ToolResultsList({ results }: { results: AiToolResult[] }) {
-    const { t } = useTranslation();
-    const [expanded, setExpanded] = useState(false);
-    const grouped = useMemo(() => groupToolResults([...results].reverse()), [results]);
-    const shouldCollapse = grouped.length > VISIBLE_TOOL_RESULTS;
-    const visible = shouldCollapse && !expanded ? grouped.slice(0, VISIBLE_TOOL_RESULTS) : grouped;
-    const hiddenCount = grouped.length - VISIBLE_TOOL_RESULTS;
-
-    return (
-        <div className="ai-chat__tool-results">
-            {visible.map((g) => (
-                <ChatToolResult key={g.name} name={g.name} count={g.count} />
-            ))}
-            {shouldCollapse && (
-                <button
-                    type="button"
-                    className="ai-chat__tool-results-more"
-                    onClick={() => setExpanded((e) => !e)}
-                >
-                    {expanded
-                        ? t('Voir moins')
-                        : t(hiddenCount === 1 ? '+{{count}} autre' : '+{{count}} autres', {
-                              count: hiddenCount,
-                          })}
-                </button>
-            )}
-        </div>
-    );
-}
-
-const MessageBubble = memo(function MessageBubble({
-    conversationId,
-    message,
-    isActive,
-    retryUserMessageId,
-}: {
-    conversationId: string | null;
-    message: AiMessage;
-    isActive: boolean;
-    retryUserMessageId: string | null;
-}) {
-    const { t } = useTranslation();
-    const isUser = message.role === 'user';
-    const isEmptyAssistant = !isUser && !isActive && !message.content.trim();
-    const providerLabel = useAiChatStore(selectActiveProviderLabel);
-    const retryLastUserMessage = useAiChatStore((s) => s.retryLastUserMessage);
-    const providerTooltip = isUser ? '' : providerLabel;
-
-    if (isEmptyAssistant && !retryUserMessageId) {
-        return null;
-    }
-
-    const isWaiting = isActive && !message.content;
-
-    const avatarClass = [
-        'ai-chat__avatar',
-        `ai-chat__avatar--${isUser ? 'user' : 'assistant'}`,
-        isActive ? 'ai-chat__avatar--active' : '',
-    ]
-        .filter(Boolean)
-        .join(' ');
-
-    return (
-        <motion.div
-            key={message.id}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className={`ai-chat__bubble ai-chat__bubble--${isUser ? 'user' : 'assistant'}`}
-        >
-            <Tooltip title={providerTooltip} placement="top">
-                <div className={avatarClass}>{isUser ? <UserOutlined /> : <RobotOutlined />}</div>
-            </Tooltip>
-
-            <SelectableMessageContent
-                className={`ai-chat__bubble-content ai-chat__bubble-content--${isUser ? 'user' : 'assistant'}`}
-            >
-                {!isUser && <ReasoningBlock messageId={message.id} />}
-                {isWaiting ? (
-                    <Spin indicator={<LoadingOutlined spin />} size="small" />
-                ) : isEmptyAssistant ? null : isUser ? (
-                    <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
-                ) : (
-                    <AssistantMarkdown content={message.content} streaming={isActive} />
-                )}
-
-                {!isUser && !isActive ? <ChatRunNotice messageId={message.id} /> : null}
-
-                {isActive && !isWaiting ? (
-                    <div className="ai-chat__typing-indicator">
-                        <LoadingOutlined spin style={{ fontSize: 'var(--fs-sm)' }} />
-                    </div>
-                ) : null}
-
-                {isActive && message.toolResults.length > 0 ? (
-                    <ToolResultsList results={message.toolResults} />
-                ) : null}
-
-                {retryUserMessageId && conversationId ? (
-                    <div
-                        className={`ai-chat__bubble-actions ${isUser ? 'ai-chat__bubble-actions--user' : ''}`}
-                    >
-                        <Tooltip title={t('Réessayer')}>
-                            <Button
-                                type="text"
-                                size="small"
-                                shape="circle"
-                                className={`ai-chat__retry-button ${isUser ? 'ai-chat__retry-button--user' : ''}`}
-                                icon={<ReloadOutlined />}
-                                aria-label={t('Réessayer')}
-                                onClick={() =>
-                                    void retryLastUserMessage(conversationId, retryUserMessageId)
-                                }
-                            />
-                        </Tooltip>
-                    </div>
-                ) : null}
-            </SelectableMessageContent>
-        </motion.div>
-    );
-});
 
 const ChatMessageList = memo(function ChatMessageList({
     conversationId,
@@ -252,6 +33,7 @@ const ChatMessageList = memo(function ChatMessageList({
     loading,
     loadingOlder,
     hasMoreHistory,
+    runNotice,
     onLoadOlderMessages,
     onQuickStart,
 }: {
@@ -264,6 +46,7 @@ const ChatMessageList = memo(function ChatMessageList({
     loading: boolean;
     loadingOlder: boolean;
     hasMoreHistory: boolean;
+    runNotice: AiRunNotice | null;
     onLoadOlderMessages: () => Promise<void>;
     onQuickStart: (prompt: string) => void;
 }) {
@@ -361,25 +144,37 @@ const ChatMessageList = memo(function ChatMessageList({
     }, [loadingOlder, messages.length, scrollRef, updateTopFade]);
 
     const lastMessageId = messages[messages.length - 1]?.id ?? null;
+    const noticeInAnswer = hasVisibleAnswer(messages, runNotice);
     const renderedMessages = useMemo(
         () =>
             messages.map((msg, index) => {
-                let retryUserMessageId: string | null = null;
-                if (conversationId && !sending) {
-                    retryUserMessageId = resolveRetryUserMessageId(messages, index, lastMessageId);
-                }
-
+                const canRetry = conversationId && !sending && !runNotice;
                 return (
                     <MessageBubble
                         key={msg.id}
                         conversationId={conversationId}
                         message={msg}
                         isActive={msg.id === activeAssistantMessageId}
-                        retryUserMessageId={retryUserMessageId}
+                        retryUserMessageId={
+                            canRetry
+                                ? resolveRetryUserMessageId(messages, index, lastMessageId)
+                                : null
+                        }
+                        notice={
+                            noticeInAnswer && runNotice?.messageId === msg.id ? runNotice : null
+                        }
                     />
                 );
             }),
-        [activeAssistantMessageId, conversationId, lastMessageId, messages, sending],
+        [
+            activeAssistantMessageId,
+            conversationId,
+            lastMessageId,
+            messages,
+            noticeInAnswer,
+            runNotice,
+            sending,
+        ],
     );
 
     const handleScroll = useCallback((): void => {
@@ -417,6 +212,15 @@ const ChatMessageList = memo(function ChatMessageList({
                     ) : (
                         <AnimatePresence initial={false}>{renderedMessages}</AnimatePresence>
                     )}
+                    {runNotice && conversationId && !noticeInAnswer ? (
+                        <div className="ai-chat__notice-row">
+                            <ChatRunNotice
+                                conversationId={conversationId}
+                                notice={runNotice}
+                                answerHasText={false}
+                            />
+                        </div>
+                    ) : null}
                 </div>
             </div>
             <div

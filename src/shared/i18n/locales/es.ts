@@ -269,6 +269,36 @@ const es: Record<string, string> = {
     'Supprimer cette conversation ?': '¿Eliminar esta conversación?',
     'Supprimer toutes les conversations ?': '¿Eliminar todas las conversaciones?',
     "Vider l'historique": 'Vaciar historial',
+    "Recherche incomplète : la limite d'étapes a été atteinte.":
+        'Búsqueda incompleta: se alcanzó el límite de pasos.',
+    'Arrêté par vous.': 'Detenido por ti.',
+    "Le modèle n'a renvoyé aucun texte.": 'El modelo no devolvió ningún texto.',
+    "L'assistant n'est pas encore configuré.": 'El asistente aún no está configurado.',
+    'Clé API refusée. Vérifiez-la dans les paramètres.':
+        'Clave API rechazada. Revísala en los ajustes.',
+    'Modèle introuvable chez ce fournisseur. Choisissez-en un autre.':
+        'Modelo no encontrado en este proveedor. Elige otro.',
+    'Trop de demandes pour le moment. Patientez un peu, puis réessayez.':
+        'Demasiadas solicitudes por ahora. Espera un poco y vuelve a intentarlo.',
+    'Quota ou crédit épuisé chez le fournisseur.': 'Cuota o crédito agotado en el proveedor.',
+    'La conversation est trop longue pour ce modèle. Commencez une nouvelle conversation.':
+        'La conversación es demasiado larga para este modelo. Empieza una nueva conversación.',
+    'Le service IA est indisponible pour le moment.':
+        'El servicio de IA no está disponible por el momento.',
+    'Connexion perdue avec le service IA. Vérifiez votre réseau.':
+        'Se perdió la conexión con el servicio de IA. Revisa tu red.',
+    "Le service IA n'a pas répondu à temps.": 'El servicio de IA no respondió a tiempo.',
+    'Le service IA a refusé la demande.': 'El servicio de IA rechazó la solicitud.',
+    'Une erreur est survenue.': 'Se produjo un error.',
+    'Poursuivre la recherche': 'Continuar la búsqueda',
+    'Ouvrir les paramètres IA': 'Abrir los ajustes de IA',
+    "Continue ta réponse là où elle s'est arrêtée.": 'Continúa tu respuesta donde se detuvo.',
+    'Poursuis tes recherches, puis complète ta réponse.':
+        'Continúa tu búsqueda y luego completa tu respuesta.',
+    'Réponse en cours': 'Respuesta en curso',
+    Renvoyer: 'Reenviar',
+    'La suppression de la conversation a échoué.': 'No se pudo eliminar la conversación.',
+    "La suppression de l'historique a échoué.": 'No se pudo eliminar el historial.',
     'La relance de la réponse a échoué.': 'No se pudo reintentar la respuesta.',
     'La relance est disponible uniquement pour le dernier message utilisateur.':
         'Solo se puede reintentar el último mensaje del usuario.',

@@ -280,6 +280,35 @@ const en: Record<string, string> = {
     'Le chargement des anciennes conversations a échoué.': 'Loading older conversations failed.',
     'Le chargement des conversations a échoué.': 'Loading conversations failed.',
     'Le rafraîchissement des conversations a échoué.': 'Refreshing conversations failed.',
+    "Recherche incomplète : la limite d'étapes a été atteinte.":
+        'Research incomplete: the step limit was reached.',
+    'Arrêté par vous.': 'Stopped by you.',
+    "Le modèle n'a renvoyé aucun texte.": 'The model returned no text.',
+    "L'assistant n'est pas encore configuré.": 'The assistant is not set up yet.',
+    'Clé API refusée. Vérifiez-la dans les paramètres.':
+        'API key refused. Check it in the settings.',
+    'Modèle introuvable chez ce fournisseur. Choisissez-en un autre.':
+        'Model not found at this provider. Choose another one.',
+    'Trop de demandes pour le moment. Patientez un peu, puis réessayez.':
+        'Too many requests right now. Wait a moment, then try again.',
+    'Quota ou crédit épuisé chez le fournisseur.': 'Quota or credit used up at the provider.',
+    'La conversation est trop longue pour ce modèle. Commencez une nouvelle conversation.':
+        'The conversation is too long for this model. Start a new conversation.',
+    'Le service IA est indisponible pour le moment.': 'The AI service is unavailable right now.',
+    'Connexion perdue avec le service IA. Vérifiez votre réseau.':
+        'Connection to the AI service lost. Check your network.',
+    "Le service IA n'a pas répondu à temps.": 'The AI service did not answer in time.',
+    'Le service IA a refusé la demande.': 'The AI service refused the request.',
+    'Une erreur est survenue.': 'Something went wrong.',
+    'Poursuivre la recherche': 'Continue the research',
+    'Ouvrir les paramètres IA': 'Open AI settings',
+    "Continue ta réponse là où elle s'est arrêtée.": 'Continue your answer where it stopped.',
+    'Poursuis tes recherches, puis complète ta réponse.':
+        'Continue your research, then complete your answer.',
+    'Réponse en cours': 'Answer in progress',
+    Renvoyer: 'Send again',
+    'La suppression de la conversation a échoué.': 'Deleting the conversation failed.',
+    "La suppression de l'historique a échoué.": 'Deleting the history failed.',
     'La relance de la réponse a échoué.': 'Retrying the response failed.',
     'La relance est disponible uniquement pour le dernier message utilisateur.':
         'Retry is only available for the last user message.',

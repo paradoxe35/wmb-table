@@ -1,7 +1,6 @@
-import type { AiMessage, AiRunOutcome, AiToolEvent, AiToolResult } from '@shared/ai.types';
+import type { AiMessage, AiToolEvent, AiToolResult } from '@shared/ai.types';
 import { isToolErrorOutput } from '@shared/ai.types';
 import { AI_DATA_EVENT } from '@renderer/utils/events';
-import { createStore } from './create-store';
 
 const TOOL_TO_EVENT: Record<string, string> = {
     createNote: AI_DATA_EVENT.notesChanged,
@@ -61,14 +60,3 @@ export function withToolCallCompleted(
 export function dataEventForToolResult(result: AiToolResult): string | undefined {
     return result.isError ? undefined : TOOL_TO_EVENT[result.name];
 }
-
-interface AiRunOutcomeState {
-    byMessageId: Record<string, AiRunOutcome>;
-    record(messageId: string, outcome: AiRunOutcome): void;
-}
-
-export const useAiRunOutcomeStore = createStore<AiRunOutcomeState>()((set) => ({
-    byMessageId: {},
-    record: (messageId, outcome) =>
-        set((state) => ({ byMessageId: { ...state.byMessageId, [messageId]: outcome } })),
-}));

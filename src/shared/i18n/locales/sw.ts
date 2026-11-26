@@ -268,6 +268,35 @@ const sw: Record<string, string> = {
     'Supprimer cette conversation ?': 'Futa mazungumzo haya?',
     'Supprimer toutes les conversations ?': 'Futa mazungumzo yote?',
     "Vider l'historique": 'Futa historia',
+    "Recherche incomplète : la limite d'étapes a été atteinte.":
+        'Utafiti haujakamilika: kikomo cha hatua kimefikiwa.',
+    'Arrêté par vous.': 'Imesimamishwa na wewe.',
+    "Le modèle n'a renvoyé aucun texte.": 'Modeli haikurudisha maandishi yoyote.',
+    "L'assistant n'est pas encore configuré.": 'Msaidizi bado haujawekwa.',
+    'Clé API refusée. Vérifiez-la dans les paramètres.':
+        'Ufunguo wa API umekataliwa. Uangalie katika mipangilio.',
+    'Modèle introuvable chez ce fournisseur. Choisissez-en un autre.':
+        'Modeli haikupatikana kwa mtoa huduma huyu. Chagua nyingine.',
+    'Trop de demandes pour le moment. Patientez un peu, puis réessayez.':
+        'Maombi ni mengi kwa sasa. Subiri kidogo, kisha ujaribu tena.',
+    'Quota ou crédit épuisé chez le fournisseur.': 'Kiwango au salio limekwisha kwa mtoa huduma.',
+    'La conversation est trop longue pour ce modèle. Commencez une nouvelle conversation.':
+        'Mazungumzo ni marefu mno kwa modeli hii. Anzisha mazungumzo mapya.',
+    'Le service IA est indisponible pour le moment.': 'Huduma ya AI haipatikani kwa sasa.',
+    'Connexion perdue avec le service IA. Vérifiez votre réseau.':
+        'Muunganisho na huduma ya AI umepotea. Angalia mtandao wako.',
+    "Le service IA n'a pas répondu à temps.": 'Huduma ya AI haikujibu kwa wakati.',
+    'Le service IA a refusé la demande.': 'Huduma ya AI imekataa ombi.',
+    'Une erreur est survenue.': 'Hitilafu imetokea.',
+    'Poursuivre la recherche': 'Endelea na utafiti',
+    'Ouvrir les paramètres IA': 'Fungua mipangilio ya AI',
+    "Continue ta réponse là où elle s'est arrêtée.": 'Endelea na jibu lako pale liliposimama.',
+    'Poursuis tes recherches, puis complète ta réponse.':
+        'Endelea na utafiti wako, kisha ukamilishe jibu lako.',
+    'Réponse en cours': 'Jibu linaandikwa',
+    Renvoyer: 'Tuma tena',
+    'La suppression de la conversation a échoué.': 'Imeshindikana kufuta mazungumzo.',
+    "La suppression de l'historique a échoué.": 'Imeshindikana kufuta historia.',
     'La relance de la réponse a échoué.': 'Imeshindikana kujaribu tena jibu.',
     'La relance est disponible uniquement pour le dernier message utilisateur.':
         'Kujaribu tena kunapatikana tu kwa ujumbe wa mwisho wa mtumiaji.',

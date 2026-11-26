@@ -270,6 +270,36 @@ const pt: Record<string, string> = {
     'Supprimer cette conversation ?': 'Excluir esta conversa?',
     'Supprimer toutes les conversations ?': 'Excluir todas as conversas?',
     "Vider l'historique": 'Limpar histórico',
+    "Recherche incomplète : la limite d'étapes a été atteinte.":
+        'Pesquisa incompleta: o limite de etapas foi atingido.',
+    'Arrêté par vous.': 'Interrompido por você.',
+    "Le modèle n'a renvoyé aucun texte.": 'O modelo não retornou nenhum texto.',
+    "L'assistant n'est pas encore configuré.": 'O assistente ainda não está configurado.',
+    'Clé API refusée. Vérifiez-la dans les paramètres.':
+        'Chave de API recusada. Verifique-a nas configurações.',
+    'Modèle introuvable chez ce fournisseur. Choisissez-en un autre.':
+        'Modelo não encontrado neste provedor. Escolha outro.',
+    'Trop de demandes pour le moment. Patientez un peu, puis réessayez.':
+        'Muitas solicitações no momento. Aguarde um pouco e tente novamente.',
+    'Quota ou crédit épuisé chez le fournisseur.': 'Cota ou crédito esgotado no provedor.',
+    'La conversation est trop longue pour ce modèle. Commencez une nouvelle conversation.':
+        'A conversa é longa demais para este modelo. Comece uma nova conversa.',
+    'Le service IA est indisponible pour le moment.':
+        'O serviço de IA está indisponível no momento.',
+    'Connexion perdue avec le service IA. Vérifiez votre réseau.':
+        'Conexão com o serviço de IA perdida. Verifique sua rede.',
+    "Le service IA n'a pas répondu à temps.": 'O serviço de IA não respondeu a tempo.',
+    'Le service IA a refusé la demande.': 'O serviço de IA recusou a solicitação.',
+    'Une erreur est survenue.': 'Ocorreu um erro.',
+    'Poursuivre la recherche': 'Continuar a pesquisa',
+    'Ouvrir les paramètres IA': 'Abrir as configurações de IA',
+    "Continue ta réponse là où elle s'est arrêtée.": 'Continue sua resposta de onde parou.',
+    'Poursuis tes recherches, puis complète ta réponse.':
+        'Continue sua pesquisa e depois complete sua resposta.',
+    'Réponse en cours': 'Resposta em andamento',
+    Renvoyer: 'Reenviar',
+    'La suppression de la conversation a échoué.': 'Falha ao excluir a conversa.',
+    "La suppression de l'historique a échoué.": 'Falha ao excluir o histórico.',
     'La relance de la réponse a échoué.': 'Falha ao tentar novamente a resposta.',
     'La relance est disponible uniquement pour le dernier message utilisateur.':
         'A nova tentativa está disponível apenas para a última mensagem do usuário.',

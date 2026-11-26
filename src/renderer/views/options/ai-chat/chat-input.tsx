@@ -1,6 +1,6 @@
 import { memo, useEffect, useRef } from 'react';
 import { Button, Input, type InputRef } from 'antd';
-import { ArrowUpOutlined, CloseOutlined, StopOutlined } from '@ant-design/icons';
+import { ArrowUpOutlined, CloseOutlined, SendOutlined, StopOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
 const ChatInput = memo(function ChatInput({
@@ -15,6 +15,7 @@ const ChatInput = memo(function ChatInput({
     onSend,
     onStop,
     onRemoveQueuedMessage,
+    onResendQueue,
 }: {
     draft: string;
     sending: boolean;
@@ -27,6 +28,7 @@ const ChatInput = memo(function ChatInput({
     onSend: () => void;
     onStop: () => void;
     onRemoveQueuedMessage: (queuedMessageId: string) => void;
+    onResendQueue: () => void;
 }) {
     const { t } = useTranslation();
     const inputRef = useRef<InputRef>(null);
@@ -87,6 +89,17 @@ const ChatInput = memo(function ChatInput({
                                 ? t('Ils seront envoyés dès que cette réponse se termine.')
                                 : t("En attente d'envoi.")}
                         </span>
+                        {sending ? null : (
+                            <Button
+                                size="small"
+                                type="link"
+                                icon={<SendOutlined />}
+                                className="ai-chat__queue-resend"
+                                onClick={onResendQueue}
+                            >
+                                {t('Renvoyer')}
+                            </Button>
+                        )}
                     </div>
                     <div className="ai-chat__queue-list">
                         {queuedMessages.map((message, index) => (
@@ -146,6 +159,7 @@ const ChatInput = memo(function ChatInput({
                             onClick={onStop}
                             disabled={runStatus === 'stopping'}
                             title={t('Arrêter')}
+                            aria-label={t('Arrêter')}
                         />
                     ) : null}
                     <Button
@@ -160,6 +174,7 @@ const ChatInput = memo(function ChatInput({
                         onClick={onSend}
                         disabled={!draft.trim()}
                         title={sending ? t("Ajouter à la file d'attente") : t('Envoyer')}
+                        aria-label={sending ? t("Ajouter à la file d'attente") : t('Envoyer')}
                     />
                 </div>
             </div>
