@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createTestDb } from '../test-helpers';
+import { eq } from 'drizzle-orm';
 import * as aiRepo from '@main/database/repositories/ai.repository';
 import { getDb } from '@main/database';
-import { aiSettings } from '@main/database/schema';
+import { aiMessages, aiSettings } from '@main/database/schema';
 
 describe('ai.repository', () => {
     beforeEach(() => {
@@ -243,6 +244,56 @@ describe('ai.repository', () => {
             });
             const updated = aiRepo.updateMessage(msg.id, { content: 'new' });
             expect(updated.content).toBe('new');
+        });
+
+        it('appendAssistantContent says when the reply row is gone instead of throwing', () => {
+            const conv = aiRepo.createConversation('en');
+            const msg = aiRepo.createMessage({ conversationId: conv.id, role: 'assistant' });
+
+            expect(aiRepo.appendAssistantContent(msg.id, 'Bon')).toBe(true);
+            aiRepo.deleteMessage(msg.id);
+            expect(aiRepo.appendAssistantContent(msg.id, 'jour')).toBe(false);
+        });
+
+        it('deleteEmptyAssistantMessages removes only empty replies older than the cutoff', () => {
+            const conv = aiRepo.createConversation('en');
+            const user = aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'user',
+                content: '',
+            });
+            const empty = aiRepo.createMessage({ conversationId: conv.id, role: 'assistant' });
+            const blank = aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'assistant',
+                content: '  \n',
+            });
+            const text = aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'assistant',
+                content: 'Réponse',
+            });
+            const withTools = aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'assistant',
+                toolCalls: [{ id: 't1', name: 'searchContent', input: {} }],
+            });
+            const cutoff = new Date(Date.now() + 1_000).toISOString();
+            const live = aiRepo.createMessage({ conversationId: conv.id, role: 'assistant' });
+            getDb()
+                .update(aiMessages)
+                .set({ createdAt: new Date(Date.now() + 5_000).toISOString() })
+                .where(eq(aiMessages.id, live.id))
+                .run();
+
+            expect(aiRepo.deleteEmptyAssistantMessages(cutoff)).toBe(2);
+
+            const remaining = aiRepo.getMessages(conv.id).map((message) => message.id);
+            expect(remaining).toEqual(
+                expect.arrayContaining([user.id, text.id, withTools.id, live.id]),
+            );
+            expect(remaining).not.toContain(empty.id);
+            expect(remaining).not.toContain(blank.id);
         });
     });
 

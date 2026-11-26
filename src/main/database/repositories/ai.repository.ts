@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb, SQL_NORMALIZE_FUNCTION } from '../index';
 import { aiConversations, aiMessages, aiSettings } from '../schema';
@@ -469,23 +469,16 @@ export function updateMessage(
     return getMessage(messageId)!;
 }
 
-export function appendAssistantContent(messageId: string, delta: string): void {
-    const row = getDb()
-        .select({ conversationId: aiMessages.conversationId })
-        .from(aiMessages)
-        .where(eq(aiMessages.id, messageId))
-        .get();
-    if (!row) {
-        throw new Error(`AI message not found: ${messageId}`);
-    }
-
-    getDb()
+/** Returns false when the reply row is gone (deleted by sync or by the user mid-stream). */
+export function appendAssistantContent(messageId: string, delta: string): boolean {
+    const result = getDb()
         .update(aiMessages)
         .set({
             content: sql`${aiMessages.content} || ${delta}`,
         })
         .where(eq(aiMessages.id, messageId))
         .run();
+    return result.changes > 0;
 }
 
 export function setAssistantToolCalls(messageId: string, toolCalls: AiToolCall[]): AiMessage {
@@ -514,6 +507,25 @@ export function deleteMessage(messageId: string): void {
     touchConversation(current.conversationId);
     logChange('ai_messages', messageId, 'DELETE', { id: messageId });
     logConversationChange(current.conversationId);
+}
+
+/**
+ * Removes reply placeholders a crash or a forced quit left empty. They were never logged for
+ * sync (replies are logged only when finished), so they are deleted without a change log.
+ */
+export function deleteEmptyAssistantMessages(createdBefore: string): number {
+    return getDb()
+        .delete(aiMessages)
+        .where(
+            and(
+                eq(aiMessages.role, 'assistant'),
+                lt(aiMessages.createdAt, createdBefore),
+                sql`trim(${aiMessages.content}, char(32, 9, 10, 13)) = ''`,
+                sql`coalesce(${aiMessages.toolCalls}, '[]') = '[]'`,
+                sql`coalesce(${aiMessages.toolResults}, '[]') = '[]'`,
+            ),
+        )
+        .run().changes;
 }
 
 /**
