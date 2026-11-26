@@ -105,6 +105,8 @@ vi.mock('@main/lib/logger', () => ({
 }));
 
 const { AiService } = await import('@main/services/ai/ai.service');
+const { AI_TIMEOUT_MESSAGE } = await import('@main/services/ai/model-timeouts');
+const { default: en } = await import('@shared/i18n/locales/en');
 
 function flushAsync(): Promise<void> {
     return new Promise((resolve) => setImmediate(resolve));
@@ -372,10 +374,8 @@ describe('AiService', () => {
 
         const result = await service.testProvider({ providerId: 'openai', model: 'm' });
 
-        expect(result).toEqual({
-            valid: false,
-            error: 'The provider test timed out after 30 s.',
-        });
+        expect(result).toEqual({ valid: false, error: AI_TIMEOUT_MESSAGE });
+        expect(Object.keys(en)).toContain(result.error);
     });
 
     // An unresolvable window cannot be proven too small.

@@ -38,7 +38,11 @@ import { ChatRuns, unsavedReply, type ChatRun } from './chat-runs';
 import { scrubSecrets } from './ai-errors';
 import { resolveGenerationEnvironment, type GenerationEnvironment } from './generation-environment';
 import { buildGenerationPrompt, type GenerationPrompt } from './generation-prompt';
-import { isLocalProvider, resolveProviderTestTimeoutMs } from './model-timeouts';
+import {
+    AI_TIMEOUT_MESSAGE,
+    isLocalProvider,
+    resolveProviderTestTimeoutMs,
+} from './model-timeouts';
 
 interface RunGenerationOptions {
     run: ChatRun;
@@ -201,10 +205,7 @@ export class AiService {
             return { valid: true };
         } catch (error) {
             if (isAbortError(error)) {
-                return {
-                    valid: false,
-                    error: `The provider test timed out after ${timeoutMs / 1000} s.`,
-                };
+                return { valid: false, error: AI_TIMEOUT_MESSAGE };
             }
             const message = scrubSecrets(
                 error instanceof Error ? error.message : 'Validation du fournisseur impossible.',
