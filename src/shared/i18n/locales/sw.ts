@@ -118,7 +118,7 @@ const sw: Record<string, string> = {
     'Votre application d’IA lance Wmb Table elle-même, sans fenêtre : Wmb Table n’a pas besoin d’être ouvert.':
         'Programu yako ya AI inaanzisha Wmb Table yenyewe, bila dirisha: Wmb Table haihitaji kuwa wazi.',
     'Commande de développement : cette copie de Wmb Table n’est pas installée.':
-        'Amri ya usanidi: nakala hii ya Wmb Table haijasakinishwa.',
+        'Amri ya maendeleo: nakala hii ya Wmb Table haijasakinishwa.',
     'Wmb Table doit rester ouvert pendant que votre application d’IA l’utilise.':
         'Wmb Table lazima ibaki wazi wakati programu yako ya AI inaitumia.',
     'Démarrer le serveur': 'Anzisha seva',

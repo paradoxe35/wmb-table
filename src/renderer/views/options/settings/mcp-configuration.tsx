@@ -91,7 +91,9 @@ function HeadlessMode({ status }: { status: McpServerStatus }) {
                 code={buildHeadlessStartCommand(status.launch, port)}
                 label={startLabel}
             />
-            <ClientSnippets mode="headless" snippets={buildHttpSnippets(buildMcpUrl(port))} />
+            <div style={{ marginTop: 8 }}>
+                <ClientSnippets mode="headless" snippets={buildHttpSnippets(buildMcpUrl(port))} />
+            </div>
         </div>
     );
 }

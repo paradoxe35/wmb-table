@@ -24,7 +24,7 @@ function ServerAddress({ url }: { url: string }) {
     const port = Number(new URL(url).port);
 
     return (
-        <div>
+        <div data-testid="mcp-server-url">
             <Text strong>{t('Adresse du serveur')}</Text>
             <CopyableCode code={url} label={t('Adresse du serveur')} />
             {port !== DEFAULT_MCP_PORT ? (
