@@ -9,6 +9,7 @@ export default defineConfig({
         include: ['tests/**/*.test.{ts,tsx}'],
         exclude: ['node_modules', 'out', 'release'],
         passWithNoTests: true,
+        setupFiles: ['tests/setup/dom.ts'],
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html', 'lcov'],
