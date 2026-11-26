@@ -201,7 +201,7 @@ export class AssistantOnboarding {
         );
     }
 
-    private async chatWorks(label: string, knownBug?: string): Promise<void> {
+    private async chatWorks(label: string): Promise<void> {
         await this.ctx.chat.send(`Bonjour, l'amour de Dieu ? #scenario:echo`);
         const facts = await this.ctx.chat
             .waitForFacts(
@@ -216,7 +216,6 @@ export class AssistantOnboarding {
             label,
             facts.messages.some((m) => m.role === 'assistant' && m.text.includes(ECHO_REPLY)),
             facts.errorAlerts,
-            knownBug,
         );
     }
 
@@ -230,10 +229,7 @@ export class AssistantOnboarding {
             await this.ctx.cdp.evaluate(visible(CHAT_INPUT)),
         );
         await this.ctx.chat.startNewConversation();
-        await this.chatWorks(
-            'an old profile with enabled: false can chat',
-            'D: main still refuses when enabled is false (ai.service.ts gate)',
-        );
+        await this.chatWorks('an old profile with enabled: false can chat');
         await this.ctx.shot('old-profile-chat');
         await this.ctx.cdp.evaluate('window.api.ai.updateSettings({ enabled: true })');
     }
