@@ -8,6 +8,7 @@ import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio
 import { getTtsPlaybackErrorMessage } from '@renderer/lib/tts-error';
 import { debounce } from '@renderer/utils/functions';
 import { resyncBrowserGapTimer } from './use-tts';
+import { resetFinishedDocument } from '@renderer/views/document-view/hooks/finished-reading';
 import {
     DEFAULT_TTS_PROVIDER,
     SEGMENT_GAP_MS,
@@ -256,6 +257,7 @@ export function useTtsSetup(): void {
                     // Natural end: signal consumers AND clear resume position
                     // so the next play starts from the beginning with intro.
                     markCompletedNaturally();
+                    resetFinishedDocument(useTtsStore.getState().lastCompletedDocumentKey);
                 }
                 current.reset();
             } else {
