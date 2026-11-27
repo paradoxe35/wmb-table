@@ -13,6 +13,7 @@ import MenuBuilder from '@main/lib/menu';
 import { initializeLogger } from '@main/lib/logger';
 import { secureWindowNavigation } from '@main/lib/safe-external';
 import { initializeUpdater } from '@main/lib/updater';
+import { isShuttingDown, quitAfterStopping } from '@main/lib/app-quit';
 import { initializeDatabase, closeDatabase } from '@main/database';
 import { initializeTantivy, terminateWorker } from '@main/services/tantivy.service';
 import { refreshInstalledLanguageUpdates } from '@main/services/language-pack.service';
@@ -83,21 +84,13 @@ function bootstrapPrimaryInstance(): void {
         void startMcpServerIfEnabled();
 
         app.on('activate', () => {
-            if (BrowserWindow.getAllWindows().length === 0) {
+            if (!isShuttingDown() && BrowserWindow.getAllWindows().length === 0) {
                 createMainWindow();
             }
         });
     });
 
-    let servicesStopped = false;
-    app.on('will-quit', (event) => {
-        if (servicesStopped) return;
-        event.preventDefault();
-        void stopServicesBeforeQuit().finally(() => {
-            servicesStopped = true;
-            app.quit();
-        });
-    });
+    quitAfterStopping(stopServicesBeforeQuit);
 
     app.on('window-all-closed', () => {
         if (process.platform !== 'darwin') {
@@ -189,7 +182,7 @@ function focusMainWindow(createMainWindow: () => void): void {
     const mainWindow = getMainWindow();
 
     if (!mainWindow) {
-        if (app.isReady()) {
+        if (app.isReady() && !isShuttingDown()) {
             createMainWindow();
         }
         return;
