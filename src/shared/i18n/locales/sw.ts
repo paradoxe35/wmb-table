@@ -113,6 +113,25 @@ const sw: Record<string, string> = {
     'Wmb Table doit être ouvert.': 'Wmb Table lazima iwe wazi.',
     'Fonctionne même quand Wmb Table est fermé.': 'Inafanya kazi hata Wmb Table ikiwa imefungwa.',
     'Autre application': 'Programu nyingine',
+    'Le fichier de configuration de Claude Desktop n’est pas un JSON valide : Wmb Table ne l’a pas modifié. Corrigez-le, ou ajoutez la configuration ci-dessous à la main.':
+        'Faili la mipangilio la Claude Desktop si JSON sahihi: Wmb Table haikulibadilisha. Lirekebishe, au ongeza mipangilio iliyo hapa chini kwa mkono.',
+    'Wmb Table n’a pas le droit de modifier le fichier de configuration de Claude Desktop. Ajoutez la configuration ci-dessous à la main.':
+        'Wmb Table hairuhusiwi kubadilisha faili la mipangilio la Claude Desktop. Ongeza mipangilio iliyo hapa chini kwa mkono.',
+    'Le fichier de configuration de Claude Desktop n’a pas pu être lu ou enregistré. Ajoutez la configuration ci-dessous à la main.':
+        'Faili la mipangilio la Claude Desktop halikuweza kusomwa au kuhifadhiwa. Ongeza mipangilio iliyo hapa chini kwa mkono.',
+    'Claude Desktop n’est pas installé sur cet ordinateur.':
+        'Claude Desktop haijasakinishwa kwenye kompyuta hii.',
+    'Télécharger Claude Desktop': 'Pakua Claude Desktop',
+    'Après l’installation, revenez ici pour le configurer automatiquement, ou copiez la configuration ci-dessous.':
+        'Baada ya kuisakinisha, rudi hapa kuisanidi kiotomatiki, au nakili mipangilio iliyo hapa chini.',
+    'Déjà configuré': 'Tayari imesanidiwa',
+    'Wmb Table a été ajouté à Claude Desktop. Redémarrez Claude Desktop pour l’utiliser.':
+        'Wmb Table imeongezwa kwenye Claude Desktop. Anzisha upya Claude Desktop ili uitumie.',
+    'Configurer automatiquement': 'Sanidi kiotomatiki',
+    'La configuration enregistrée dans Claude Desktop ne correspond plus à cette copie de Wmb Table.':
+        'Mipangilio iliyohifadhiwa kwenye Claude Desktop hailingani tena na nakala hii ya Wmb Table.',
+    'Ajoute Wmb Table au fichier de configuration de Claude Desktop, après en avoir fait une copie de sauvegarde. Les autres serveurs restent inchangés.':
+        'Huongeza Wmb Table kwenye faili la mipangilio la Claude Desktop, baada ya kutengeneza nakala ya akiba. Seva nyingine hazibadiliki.',
     'Ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
         'Ongeza seva ya MCP ya «Streamable HTTP» yenye anwani hii.',
     'Ou laissez votre application lancer Wmb Table avec cette commande (stdio).':

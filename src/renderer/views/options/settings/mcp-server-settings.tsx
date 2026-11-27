@@ -3,6 +3,7 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_MCP_PORT, type McpServerError } from '@shared/mcp.types';
 import { Hint } from './ai-shared';
+import { ClaudeDesktopSetup } from './mcp-claude-desktop-setup';
 import { McpConfiguration } from './mcp-configuration';
 import { CopyableCode } from './mcp-copyable-code';
 import { useMcpServer, type McpServerState } from './use-mcp-server';
@@ -105,7 +106,14 @@ export function McpServerSection({ status, pending, saveFailed, update }: McpSer
                     />
                 ) : null}
                 {enabled && status.url ? <ServerAddress url={status.url} /> : null}
-                {enabled ? <McpConfiguration status={status} /> : null}
+                {enabled ? (
+                    <McpConfiguration
+                        status={status}
+                        renderClientAction={(clientId) =>
+                            clientId === 'claude-desktop' ? <ClaudeDesktopSetup /> : null
+                        }
+                    />
+                ) : null}
             </Space>
         </Card>
     );

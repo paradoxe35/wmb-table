@@ -112,6 +112,25 @@ const pt: Record<string, string> = {
     'Wmb Table doit être ouvert.': 'O Wmb Table deve estar aberto.',
     'Fonctionne même quand Wmb Table est fermé.': 'Funciona mesmo com o Wmb Table fechado.',
     'Autre application': 'Outro aplicativo',
+    'Le fichier de configuration de Claude Desktop n’est pas un JSON valide : Wmb Table ne l’a pas modifié. Corrigez-le, ou ajoutez la configuration ci-dessous à la main.':
+        'O arquivo de configuração do Claude Desktop não é um JSON válido: o Wmb Table não o alterou. Corrija-o ou adicione à mão a configuração abaixo.',
+    'Wmb Table n’a pas le droit de modifier le fichier de configuration de Claude Desktop. Ajoutez la configuration ci-dessous à la main.':
+        'O Wmb Table não tem permissão para alterar o arquivo de configuração do Claude Desktop. Adicione à mão a configuração abaixo.',
+    'Le fichier de configuration de Claude Desktop n’a pas pu être lu ou enregistré. Ajoutez la configuration ci-dessous à la main.':
+        'Não foi possível ler nem salvar o arquivo de configuração do Claude Desktop. Adicione à mão a configuração abaixo.',
+    'Claude Desktop n’est pas installé sur cet ordinateur.':
+        'O Claude Desktop não está instalado neste computador.',
+    'Télécharger Claude Desktop': 'Baixar o Claude Desktop',
+    'Après l’installation, revenez ici pour le configurer automatiquement, ou copiez la configuration ci-dessous.':
+        'Depois de instalá-lo, volte aqui para configurá-lo automaticamente, ou copie a configuração abaixo.',
+    'Déjà configuré': 'Já configurado',
+    'Wmb Table a été ajouté à Claude Desktop. Redémarrez Claude Desktop pour l’utiliser.':
+        'O Wmb Table foi adicionado ao Claude Desktop. Reinicie o Claude Desktop para usá-lo.',
+    'Configurer automatiquement': 'Configurar automaticamente',
+    'La configuration enregistrée dans Claude Desktop ne correspond plus à cette copie de Wmb Table.':
+        'A configuração salva no Claude Desktop não corresponde mais a esta cópia do Wmb Table.',
+    'Ajoute Wmb Table au fichier de configuration de Claude Desktop, après en avoir fait une copie de sauvegarde. Les autres serveurs restent inchangés.':
+        'Adiciona o Wmb Table ao arquivo de configuração do Claude Desktop, depois de fazer uma cópia de segurança. Os outros servidores não mudam.',
     'Ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
         'Adicione um servidor MCP «Streamable HTTP» com este endereço.',
     'Ou laissez votre application lancer Wmb Table avec cette commande (stdio).':

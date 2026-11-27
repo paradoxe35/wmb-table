@@ -110,6 +110,25 @@ const en: Record<string, string> = {
     'Wmb Table doit être ouvert.': 'Wmb Table must be open.',
     'Fonctionne même quand Wmb Table est fermé.': 'Works even when Wmb Table is closed.',
     'Autre application': 'Other app',
+    'Le fichier de configuration de Claude Desktop n’est pas un JSON valide : Wmb Table ne l’a pas modifié. Corrigez-le, ou ajoutez la configuration ci-dessous à la main.':
+        'Claude Desktop’s configuration file is not valid JSON: Wmb Table did not change it. Fix it, or add the configuration below by hand.',
+    'Wmb Table n’a pas le droit de modifier le fichier de configuration de Claude Desktop. Ajoutez la configuration ci-dessous à la main.':
+        'Wmb Table is not allowed to change Claude Desktop’s configuration file. Add the configuration below by hand.',
+    'Le fichier de configuration de Claude Desktop n’a pas pu être lu ou enregistré. Ajoutez la configuration ci-dessous à la main.':
+        'Claude Desktop’s configuration file could not be read or saved. Add the configuration below by hand.',
+    'Claude Desktop n’est pas installé sur cet ordinateur.':
+        'Claude Desktop is not installed on this computer.',
+    'Télécharger Claude Desktop': 'Download Claude Desktop',
+    'Après l’installation, revenez ici pour le configurer automatiquement, ou copiez la configuration ci-dessous.':
+        'After installing it, come back here to set it up automatically, or copy the configuration below.',
+    'Déjà configuré': 'Already set up',
+    'Wmb Table a été ajouté à Claude Desktop. Redémarrez Claude Desktop pour l’utiliser.':
+        'Wmb Table was added to Claude Desktop. Restart Claude Desktop to use it.',
+    'Configurer automatiquement': 'Set up automatically',
+    'La configuration enregistrée dans Claude Desktop ne correspond plus à cette copie de Wmb Table.':
+        'The configuration saved in Claude Desktop no longer matches this copy of Wmb Table.',
+    'Ajoute Wmb Table au fichier de configuration de Claude Desktop, après en avoir fait une copie de sauvegarde. Les autres serveurs restent inchangés.':
+        'Adds Wmb Table to Claude Desktop’s configuration file, after making a backup copy. The other servers stay unchanged.',
     'Ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
         'Add a “Streamable HTTP” MCP server with this address.',
     'Ou laissez votre application lancer Wmb Table avec cette commande (stdio).':
