@@ -1,6 +1,6 @@
 import { generateText } from 'ai';
 import { isAbortError } from '@ai-sdk/provider-utils';
-import { BrowserWindow } from 'electron';
+import type { BrowserWindow } from 'electron';
 import log from '@main/lib/logger';
 import { exportHtmlToPdf } from '@main/lib/pdf-export';
 import {
@@ -9,14 +9,8 @@ import {
 } from '@main/lib/ai-chat-export';
 import * as aiRepo from '@main/database/repositories/ai.repository';
 import * as configRepo from '@main/database/repositories/config.repository';
-import * as languagePackService from '@main/services/language-pack.service';
-import { PushChannels } from '@shared/ipc.types';
 import type { PdfExportResult } from '@shared/ipc.types';
-import {
-    BUILTIN_PROVIDER_IDS,
-    RECOMMENDED_MIN_CONTEXT_WINDOW,
-    resolveProviderBaseUrl,
-} from '@shared/ai.types';
+import { BUILTIN_PROVIDER_IDS, resolveProviderBaseUrl } from '@shared/ai.types';
 import type {
     AiConversation,
     AiConversationHistoryPage,
@@ -33,80 +27,36 @@ import type {
     AiModelLimits,
     AiRemoteModel,
 } from '@shared/ai.types';
-import type { InstalledLanguage } from '@shared/types';
-import { buildSystemPrompt } from './system-prompt';
+import { normalizeCustomProvider } from '@shared/ai-provider-input';
 import { buildAiTools } from './tools';
-import { sendToRenderer } from '@main/ipc/register';
-import { buildConversationContext } from './context-memory';
-import {
-    buildContextReminder,
-    shouldInjectContextReminder,
-    withContextReminder,
-} from './context-reminder';
-import { calculateRemoteTokenBudget, measurePromptTokens, measureToolTokens } from './token-budget';
-import { resolveActiveModel, resolveLanguageModel } from './provider-resolver';
+import { resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
 import { fetchProviderModels, getModelLimits } from './model-fetcher';
 import { GenerationRunnerImpl } from './runners';
-import { shouldGenerateTitle, generateConversationTitle } from './title-generator';
-import { resolveUiLanguage } from '@shared/constants';
-import * as bibleService from '@main/services/bible.service';
+import { ConversationTitles } from './conversation-titles';
+import { ChatRuns, unsavedReply, type ChatRun } from './chat-runs';
+import { scrubSecrets } from './ai-errors';
+import { resolveGenerationEnvironment, type GenerationEnvironment } from './generation-environment';
+import { buildGenerationPrompt, type GenerationPrompt } from './generation-prompt';
+import {
+    AI_TIMEOUT_MESSAGE,
+    isLocalProvider,
+    resolveProviderTestTimeoutMs,
+} from './model-timeouts';
 
 interface RunGenerationOptions {
+    run: ChatRun;
     runner: GenerationRunnerImpl;
-    browserWindow: BrowserWindow;
     conversation: AiConversation;
-    generationId: string;
     assistantMessage: AiMessage;
-    model: ReturnType<typeof resolveLanguageModel>;
-    systemPrompt: string;
-    history: ReturnType<typeof buildConversationContext>['recentMessages'];
+    environment: GenerationEnvironment;
+    prompt: GenerationPrompt;
     tools: ReturnType<typeof buildAiTools>;
-    abortController: AbortController;
-    contextWindow?: number;
-    maxOutputTokens?: number;
-    toolTokens: number;
-    systemPromptTokens: number;
-    contentLanguageCode: string;
-    uiLanguageCode: string;
-}
-
-interface GenerationEnvironment {
-    settings: AiSettings;
-    providerId: string;
-    modelId: string;
-    contentLanguageCode: string;
-    uiLanguageCode: string;
-    activeBibleVersion?: string;
-    contextWindow?: number;
-    maxOutputTokens?: number;
-    model: ReturnType<typeof resolveLanguageModel>;
-    installedLanguages: InstalledLanguage[];
-}
-
-interface ActiveRun {
-    browserWindow: BrowserWindow;
-    conversationId: string;
-    generationId: string;
-    assistantMessageId: string;
-    controller: AbortController;
-}
-
-interface BufferedAssistantText {
-    browserWindow: BrowserWindow;
-    conversationId: string;
-    generationId: string;
-    assistantMessageId: string;
-    buffer: string;
-    timer: ReturnType<typeof setTimeout> | null;
 }
 
 export class AiService {
-    private activeRuns = new Map<string, ActiveRun>();
-    private pendingTitleRuns = new Map<string, AbortController>();
-    private bufferedAssistantText = new Map<string, BufferedAssistantText>();
-    private static readonly TEXT_FLUSH_INTERVAL_MS = 40;
-    private static readonly TEXT_FLUSH_THRESHOLD_CHARS = 160;
+    private readonly runs = new ChatRuns();
+    private readonly titles = new ConversationTitles();
 
     // ── Settings & catalog ──
 
@@ -119,10 +69,14 @@ export class AiService {
     }
 
     updateSettings(partial: Partial<AiSettings>): AiSettings {
-        if (partial.customProviders) {
-            this.validateCustomProviders(partial.customProviders);
-        }
-        const settings = aiRepo.updateSettings(partial);
+        const settings = aiRepo.updateSettings(
+            partial.customProviders
+                ? {
+                      ...partial,
+                      customProviders: this.validateCustomProviders(partial.customProviders),
+                  }
+                : partial,
+        );
         aiRepo.trimConversationHistory(settings.maxHistoryConversations);
         return settings;
     }
@@ -162,7 +116,7 @@ export class AiService {
 
     deleteConversation(conversationId: string): void {
         this.stopGeneration(conversationId);
-        this.abortPendingTitle(conversationId);
+        this.titles.abort(conversationId);
         aiRepo.deleteConversation(conversationId);
     }
 
@@ -192,7 +146,7 @@ export class AiService {
     clearConversations(): void {
         for (const conversation of aiRepo.getConversations()) {
             this.stopGeneration(conversation.id);
-            this.abortPendingTitle(conversation.id);
+            this.titles.abort(conversation.id);
         }
         aiRepo.clearAllConversations();
     }
@@ -204,19 +158,19 @@ export class AiService {
     // ── Generation control ──
 
     stopGeneration(conversationId: string): void {
-        const activeRun = this.activeRuns.get(conversationId);
-        if (!activeRun) {
-            return;
-        }
+        this.runs.stop(conversationId);
+    }
 
-        this.flushAssistantText(activeRun.assistantMessageId);
-        activeRun.controller.abort();
-        this.activeRuns.delete(conversationId);
-        sendToRenderer(activeRun.browserWindow, PushChannels.aiStreamCancel, {
-            conversationId,
-            generationId: activeRun.generationId,
-            messageId: activeRun.assistantMessageId,
-        });
+    stopGenerationsForWindow(browserWindow: BrowserWindow): void {
+        this.runs.stopWindow(browserWindow);
+    }
+
+    /** Empty reply rows left by a crash; rows of a live run are newer than its start. */
+    removeAbandonedReplies(): void {
+        const removed = aiRepo.deleteEmptyAssistantMessages(this.runs.earliestStart());
+        if (removed > 0) {
+            log.info('Removed empty AI replies left by an earlier session', { removed });
+        }
     }
 
     // ── Provider testing ──
@@ -227,9 +181,16 @@ export class AiService {
         apiKey?: string;
         baseUrl?: string;
     }): Promise<AiProviderTestResult> {
+        const settings = this.getSettings();
+        const timeoutMs = resolveProviderTestTimeoutMs(
+            isLocalProvider(
+                input.providerId,
+                input.baseUrl ?? resolveProviderBaseUrl(settings, input.providerId),
+            ),
+        );
         try {
             const model = resolveLanguageModel({
-                settings: this.getSettings(),
+                settings,
                 providerId: input.providerId,
                 modelId: input.model,
                 apiKey: input.apiKey,
@@ -239,11 +200,16 @@ export class AiService {
                 model,
                 prompt: 'Reply with the single word OK.',
                 maxOutputTokens: 20,
+                timeout: { totalMs: timeoutMs },
             });
             return { valid: true };
         } catch (error) {
-            const message =
-                error instanceof Error ? error.message : 'Validation du fournisseur impossible.';
+            if (isAbortError(error)) {
+                return { valid: false, error: AI_TIMEOUT_MESSAGE };
+            }
+            const message = scrubSecrets(
+                error instanceof Error ? error.message : 'Validation du fournisseur impossible.',
+            );
 
             return {
                 valid: false,
@@ -285,117 +251,92 @@ export class AiService {
             throw new Error('Le message ne peut pas être vide.');
         }
 
-        const environment = await this.resolveGenerationEnvironment();
-        const conversation =
-            aiRepo.getConversation(request.conversationId) ?? this.createConversation();
+        const run = this.runs.begin(browserWindow, request.conversationId, request.generationId);
+        try {
+            const environment = await this.runs.untilStopped(
+                run,
+                resolveGenerationEnvironment(this.getSettings()),
+            );
+            const conversation =
+                aiRepo.getConversation(request.conversationId) ?? this.createConversation();
+            if (environment) this.runs.moveTo(run, conversation.id);
 
-        this.stopGeneration(conversation.id);
-        const userMessages = trimmedMessages.map((content) =>
-            aiRepo.createMessage({
-                conversationId: conversation.id,
-                role: 'user',
-                content,
-            }),
-        );
-        const assistantMessage = aiRepo.createMessage({
-            conversationId: conversation.id,
-            role: 'assistant',
-            content: '',
-        });
+            const userMessages = trimmedMessages.map((content) =>
+                aiRepo.createMessage({ conversationId: conversation.id, role: 'user', content }),
+            );
+            if (!conversation.title) {
+                aiRepo.updateConversation(conversation.id, {
+                    title: trimmedMessages[0].slice(0, 80),
+                });
+            }
 
-        if (!conversation.title) {
-            aiRepo.updateConversation(conversation.id, {
-                title: trimmedMessages[0].slice(0, 80),
-            });
+            const assistantMessage = environment
+                ? this.startConversationGeneration(run, conversation, environment)
+                : unsavedReply(conversation.id);
+
+            return {
+                generationId: request.generationId,
+                conversation: aiRepo.getConversation(conversation.id)!,
+                userMessages,
+                assistantMessage,
+            };
+        } catch (error) {
+            this.runs.release(run);
+            throw error;
         }
-
-        this.startConversationGeneration(
-            browserWindow,
-            conversation,
-            request.generationId,
-            assistantMessage,
-            environment,
-        );
-
-        return {
-            generationId: request.generationId,
-            conversation: aiRepo.getConversation(conversation.id)!,
-            userMessages,
-            assistantMessage,
-        };
     }
 
     async retryMessage(
         browserWindow: BrowserWindow,
         request: AiRetryMessageRequest,
     ): Promise<AiRetryMessageResult> {
-        const environment = await this.resolveGenerationEnvironment();
         const conversation = aiRepo.getConversation(request.conversationId);
         if (!conversation) {
             throw new Error('Conversation introuvable.');
         }
-
-        const messages = aiRepo.getMessages(conversation.id);
-        const userMessageIndex = messages.findIndex(
-            (message) => message.id === request.lastUserMessageId,
-        );
-        const userMessage = messages[userMessageIndex];
-        const trailingMessages = messages.slice(userMessageIndex + 1);
-        const canRetry =
-            userMessage?.role === 'user' &&
-            trailingMessages.every(
-                (message) => message.role === 'assistant' && !message.content.trim(),
-            );
-
-        if (!canRetry) {
-            throw new Error(
-                'La relance est disponible uniquement pour le dernier message utilisateur.',
-            );
-        }
-
-        this.stopGeneration(conversation.id);
-        for (const message of trailingMessages) {
-            aiRepo.deleteMessage(message.id);
-        }
-
-        const assistantMessage = aiRepo.createMessage({
-            conversationId: conversation.id,
-            role: 'assistant',
-            content: '',
-        });
-
-        this.startConversationGeneration(
-            browserWindow,
-            conversation,
-            request.generationId,
-            assistantMessage,
-            environment,
+        const trailingMessages = this.findRetryableTrail(
+            conversation.id,
+            request.lastUserMessageId,
         );
 
-        return {
-            generationId: request.generationId,
-            conversation: aiRepo.getConversation(conversation.id)!,
-            assistantMessage,
-        };
+        const run = this.runs.begin(browserWindow, conversation.id, request.generationId);
+        try {
+            const environment = await this.runs.untilStopped(
+                run,
+                resolveGenerationEnvironment(this.getSettings()),
+            );
+            if (environment) {
+                for (const message of trailingMessages) {
+                    aiRepo.deleteMessage(message.id);
+                }
+            }
+
+            return {
+                generationId: request.generationId,
+                conversation: aiRepo.getConversation(conversation.id)!,
+                assistantMessage: environment
+                    ? this.startConversationGeneration(run, conversation, environment)
+                    : unsavedReply(conversation.id),
+            };
+        } catch (error) {
+            this.runs.release(run);
+            throw error;
+        }
     }
 
     // ── Lifecycle ──
 
+    /** Saves every partial reply, so the database can close right after. */
     dispose(): void {
-        for (const conversationId of this.activeRuns.keys()) {
-            this.stopGeneration(conversationId);
-        }
-        for (const conversationId of this.pendingTitleRuns.keys()) {
-            this.abortPendingTitle(conversationId);
-        }
-        for (const messageId of this.bufferedAssistantText.keys()) {
-            this.clearAssistantTextTimer(messageId);
-        }
+        this.runs.stopAll();
+        this.titles.abortAll();
     }
 
     // ── Private ──
 
-    private validateCustomProviders(providers: AiSettings['customProviders']): void {
+    private validateCustomProviders(
+        providers: AiSettings['customProviders'],
+    ): AiSettings['customProviders'] {
         const reservedIds = new Set<string>(BUILTIN_PROVIDER_IDS as readonly string[]);
         const seen = new Set<string>();
         for (const provider of providers) {
@@ -414,474 +355,113 @@ export class AiService {
             }
             seen.add(provider.id);
         }
+        return providers.map(normalizeCustomProvider);
     }
 
-    private async resolveGenerationEnvironment(): Promise<GenerationEnvironment> {
-        const settings = this.getSettings();
-        if (!settings.enabled) {
-            throw new Error("L'assistant IA est désactivé dans les paramètres.");
-        }
+    private findRetryableTrail(conversationId: string, lastUserMessageId: string): AiMessage[] {
+        const messages = aiRepo.getMessages(conversationId);
+        const userMessageIndex = messages.findIndex((message) => message.id === lastUserMessageId);
+        const trailingMessages = messages.slice(userMessageIndex + 1);
+        const canRetry =
+            messages[userMessageIndex]?.role === 'user' &&
+            trailingMessages.every(
+                (message) => message.role === 'assistant' && !message.content.trim(),
+            );
 
-        const providerId = settings.activeProvider;
-        if (!providerId) {
+        if (!canRetry) {
             throw new Error(
-                'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.',
+                'La relance est disponible uniquement pour le dernier message utilisateur.',
             );
         }
-
-        const modelId = resolveActiveModel(settings);
-        if (!modelId) {
-            throw new Error(
-                'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.',
-            );
-        }
-
-        const contentLanguageCode = configRepo.getContentLanguage();
-        if (!contentLanguageCode) {
-            throw new Error(
-                'Aucune langue sélectionnée. Veuillez choisir une langue dans les paramètres.',
-            );
-        }
-
-        const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
-
-        const resolvedBibleVersion = bibleService.getResolvedBibleVersionForLanguage(
-            contentLanguageCode,
-            configRepo.getActiveBibleVersionAbbreviation(),
-        );
-
-        const providerBaseUrl = resolveProviderBaseUrl(settings, providerId);
-
-        const modelLimits = await getModelLimits(providerId, modelId, providerBaseUrl);
-        const contextWindow = modelLimits.contextWindow;
-
-        // An unknown window stays allowed: it cannot be proven too small, and refusing would
-        // block custom providers the registries do not list.
-        if (contextWindow != null && contextWindow < RECOMMENDED_MIN_CONTEXT_WINDOW) {
-            log.warn('Model rejected: context window below the supported minimum', {
-                providerId,
-                modelId,
-                contextWindow,
-                minRequired: RECOMMENDED_MIN_CONTEXT_WINDOW,
-            });
-            throw new Error(
-                "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre dans les paramètres.",
-            );
-        }
-
-        if (contextWindow == null) {
-            log.warn('Unknown context window — proceeding without a verified limit', {
-                providerId,
-                modelId,
-            });
-        }
-
-        const model = resolveLanguageModel({
-            settings,
-            providerId,
-            modelId,
-            baseUrl: providerBaseUrl,
-        });
-        const installedLanguages = await languagePackService.getInstalledLanguages();
-
-        return {
-            settings,
-            providerId,
-            modelId,
-            contentLanguageCode,
-            uiLanguageCode,
-            activeBibleVersion: resolvedBibleVersion?.abbreviation,
-            contextWindow,
-            maxOutputTokens: modelLimits.maxOutputTokens,
-            model,
-            installedLanguages,
-        };
+        return trailingMessages;
     }
 
     private startConversationGeneration(
-        browserWindow: BrowserWindow,
+        run: ChatRun,
         conversation: AiConversation,
-        generationId: string,
-        assistantMessage: AiMessage,
         environment: GenerationEnvironment,
-    ): void {
-        const controller = new AbortController();
+    ): AiMessage {
+        const assistantMessage = aiRepo.createMessage({
+            conversationId: conversation.id,
+            role: 'assistant',
+            content: '',
+        });
+        this.runs.attachReply(run, assistantMessage.id);
+
         const tools = buildAiTools(environment.contentLanguageCode, {
             model: environment.model,
             uiLanguage: environment.uiLanguageCode,
             activeBibleVersion: environment.activeBibleVersion,
-            maxOutputTokens: environment.maxOutputTokens,
-            abortSignal: controller.signal,
-            browserWindow,
+            contextWindow: environment.modelLimits.contextWindow,
+            maxOutputTokens: environment.modelLimits.maxOutputTokens,
+            timeouts: environment.timeouts,
+            reasoningControl: environment.reasoningControl,
+            abortSignal: run.controller.signal,
+            browserWindow: run.browserWindow,
             conversationId: conversation.id,
-            generationId,
+            generationId: run.generationId,
             assistantMessageId: assistantMessage.id,
         });
-
-        const system = buildSystemPrompt({
-            contentLanguageCode: environment.contentLanguageCode,
-            uiLanguageCode: environment.uiLanguageCode,
-            installedLanguages: environment.installedLanguages,
-            languagePreference: environment.settings.languagePreference,
-            activeBibleVersion: environment.activeBibleVersion,
-        });
-        const toolTokens = measureToolTokens(tools);
-        const baseSystemPromptTokens = measurePromptTokens(system);
-        // Reserved even when not injected, so it can never push the request over.
-        const reminder = buildContextReminder();
-        const historyTokenBudget = calculateRemoteTokenBudget({
-            modelLimits: {
-                contextWindow: environment.contextWindow,
-                maxOutputTokens: environment.maxOutputTokens,
-            },
-            prompt: {
-                toolTokens,
-                systemPromptTokens: baseSystemPromptTokens + measurePromptTokens(reminder),
-            },
-        });
-        const { recentMessages, historyTokenCount, recentTokenCount, summary } =
-            buildConversationContext(conversation.id, historyTokenBudget);
-        const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
-        const systemPromptTokens = measurePromptTokens(systemPrompt);
-        const promptTokens = systemPromptTokens + toolTokens + recentTokenCount;
-        const needsReminder = shouldInjectContextReminder({
-            compacted: summary != null,
-            promptTokens,
-            contextWindow: environment.contextWindow,
-        });
-        const history = needsReminder
-            ? withContextReminder(recentMessages, reminder)
-            : recentMessages;
-        const runner = new GenerationRunnerImpl();
-
-        this.activeRuns.set(conversation.id, {
-            browserWindow,
-            conversationId: conversation.id,
-            generationId,
-            assistantMessageId: assistantMessage.id,
-            controller,
-        });
+        const prompt = buildGenerationPrompt(conversation.id, environment, tools);
 
         log.info('AI generation starting', {
             providerId: environment.providerId,
             modelId: environment.modelId,
             conversationId: conversation.id,
-            modelContextWindow: environment.contextWindow ?? 'unknown',
-            modelMaxOutputTokens: environment.maxOutputTokens ?? 'unknown',
-            historyTokenBudget,
-            historyTokenCount,
-            promptTokens,
-            toolTokens,
-            systemPromptTokens,
-            contextReminder: needsReminder,
+            modelContextWindow: environment.modelLimits.contextWindow ?? 'unknown',
+            modelMaxOutputTokens: environment.modelLimits.maxOutputTokens ?? 'unknown',
+            historyTokenBudget: prompt.budget.historyBudget,
+            answerTokens: prompt.budget.answerTokens,
+            promptLimit: prompt.budget.promptLimit,
+            ...prompt.stats,
         });
 
         void this.runGeneration({
-            runner,
-            browserWindow,
+            run,
+            runner: new GenerationRunnerImpl(),
             conversation,
-            generationId,
             assistantMessage,
-            model: environment.model,
-            systemPrompt,
-            history,
+            environment,
+            prompt,
             tools,
-            abortController: controller,
-            contextWindow: environment.contextWindow,
-            maxOutputTokens: environment.maxOutputTokens,
-            toolTokens,
-            systemPromptTokens,
-            contentLanguageCode: environment.contentLanguageCode,
-            uiLanguageCode: environment.uiLanguageCode,
         });
+        return assistantMessage;
     }
 
     private async runGeneration(opts: RunGenerationOptions): Promise<void> {
-        const {
-            runner,
-            browserWindow,
-            conversation,
-            generationId,
-            assistantMessage,
-            model,
-            systemPrompt,
-            history,
-            tools,
-            abortController,
-            contextWindow,
-            maxOutputTokens,
-            toolTokens,
-            systemPromptTokens,
-            contentLanguageCode,
-            uiLanguageCode,
-        } = opts;
-        const abortSignal = abortController.signal;
-        const isCurrentRun = () =>
-            this.isCurrentRun(conversation.id, generationId, assistantMessage.id);
+        const { run, runner, conversation, assistantMessage, environment, prompt, tools } = opts;
 
         try {
-            await runner.run({
-                browserWindow,
+            const outcome = await runner.run({
+                browserWindow: run.browserWindow,
                 conversationId: conversation.id,
-                generationId,
+                generationId: run.generationId,
                 assistantMessageId: assistantMessage.id,
-                model,
-                systemPrompt,
-                history,
+                model: environment.model,
+                systemPrompt: prompt.systemPrompt,
+                history: prompt.history,
                 tools,
-                abortSignal,
-                isCurrentRun: (_generationId, assistantMessageId) => {
-                    return this.isCurrentRun(conversation.id, generationId, assistantMessageId);
-                },
-                dispatchTextDelta: (delta) => {
-                    return this.queueAssistantText(
-                        browserWindow,
-                        conversation.id,
-                        generationId,
-                        assistantMessage.id,
-                        delta,
-                    );
-                },
-                contextWindow,
-                maxOutputTokens,
-                toolTokens,
-                systemPromptTokens,
+                abortSignal: run.controller.signal,
+                isCurrentRun: (generationId, assistantMessageId) =>
+                    this.runs.isCurrentReply(conversation.id, generationId, assistantMessageId),
+                dispatchTextDelta: (delta) => this.runs.queueText(run, delta),
+                budget: prompt.budget,
+                fixedPromptTokens: prompt.fixedPromptTokens,
+                reasoningControl: environment.reasoningControl,
+                timeouts: environment.timeouts,
             });
-
-            this.flushAssistantText(assistantMessage.id);
-            if (!isCurrentRun()) {
-                return;
-            }
-
-            // Orders the conversation list by when its last reply finished, not when it started.
-            aiRepo.touchConversation(conversation.id);
-            this.releaseRun(conversation.id, generationId);
-            sendToRenderer(browserWindow, PushChannels.aiStreamComplete, {
-                conversationId: conversation.id,
-                generationId,
-                messageId: assistantMessage.id,
-            });
-
-            const current = aiRepo.getConversation(conversation.id);
-
-            const MAX_TITLE_INPUT_MESSAGES = 20;
-            const titleMessages = aiRepo.getRecentMessages(
-                conversation.id,
-                MAX_TITLE_INPUT_MESSAGES,
-            );
-            if (current && shouldGenerateTitle(titleMessages.length, current.aiTitle)) {
-                await this.runTitleGeneration({
-                    browserWindow,
-                    conversationId: conversation.id,
-                    abortController,
-                    model,
-                    uiLanguageCode,
-                    contentLanguageCode,
-                    messages: titleMessages.map((message) => ({
-                        role: message.role,
-                        content: message.content,
-                    })),
-                });
-            }
+            if (!this.runs.complete(run, outcome)) return;
         } catch (error) {
-            this.flushAssistantText(assistantMessage.id);
-            const message = error instanceof Error ? error.message : 'AI generation failed.';
-            const wasAborted = abortSignal.aborted || isAbortError(error);
-            if (wasAborted || !isCurrentRun()) {
-                return;
-            }
-
-            this.releaseRun(conversation.id, generationId);
-            log.error('AI generation failed', {
-                conversationId: conversation.id,
-                message,
-            });
-            sendToRenderer(browserWindow, PushChannels.aiStreamError, {
-                conversationId: conversation.id,
-                generationId,
-                messageId: assistantMessage.id,
-                error: message,
-            });
-        } finally {
-            try {
-                this.flushAssistantText(assistantMessage.id);
-                this.finalizeAssistantMessage(assistantMessage.id, {
-                    removeIfEmpty: true,
-                });
-            } catch {
-                // DB may already be closed during app shutdown
-            }
-            this.releaseRun(conversation.id, generationId);
-        }
-    }
-
-    private isCurrentRun(
-        conversationId: string,
-        generationId: string,
-        assistantMessageId: string,
-    ): boolean {
-        const activeRun = this.activeRuns.get(conversationId);
-        return (
-            activeRun?.generationId === generationId &&
-            activeRun.assistantMessageId === assistantMessageId
-        );
-    }
-
-    private releaseRun(conversationId: string, generationId: string): void {
-        const activeRun = this.activeRuns.get(conversationId);
-        if (activeRun?.generationId === generationId) {
-            this.activeRuns.delete(conversationId);
-        }
-    }
-
-    private abortPendingTitle(conversationId: string): void {
-        this.pendingTitleRuns.get(conversationId)?.abort();
-        this.pendingTitleRuns.delete(conversationId);
-    }
-
-    /** Tracked separately so it stays cancellable once the generation itself is released. */
-    private async runTitleGeneration(opts: {
-        browserWindow: BrowserWindow;
-        conversationId: string;
-        abortController: AbortController;
-        model: ReturnType<typeof resolveLanguageModel>;
-        uiLanguageCode: string;
-        contentLanguageCode: string;
-        messages: { role: string; content: string }[];
-    }): Promise<void> {
-        const { conversationId, abortController } = opts;
-        this.pendingTitleRuns.set(conversationId, abortController);
-
-        try {
-            const title = await generateConversationTitle(
-                opts.model,
-                opts.uiLanguageCode,
-                opts.contentLanguageCode,
-                opts.messages,
-                abortController.signal,
-            );
-
-            if (
-                !title ||
-                abortController.signal.aborted ||
-                !aiRepo.getConversation(conversationId)
-            ) {
-                return;
-            }
-
-            sendToRenderer(opts.browserWindow, PushChannels.aiConversationUpdated, {
-                conversation: aiRepo.updateConversation(conversationId, { title, aiTitle: true }),
-            });
-        } finally {
-            if (this.pendingTitleRuns.get(conversationId) === abortController) {
-                this.pendingTitleRuns.delete(conversationId);
-            }
-        }
-    }
-
-    private finalizeAssistantMessage(
-        messageId: string,
-        options?: { removeIfEmpty?: boolean },
-    ): void {
-        const message = aiRepo.getMessage(messageId);
-        if (!message) {
+            this.runs.fail(run, error);
             return;
         }
 
-        const isEmpty =
-            !message.content.trim() &&
-            message.toolCalls.length === 0 &&
-            message.toolResults.length === 0;
-
-        if (options?.removeIfEmpty && isEmpty) {
-            aiRepo.deleteMessage(messageId);
-            return;
-        }
-
-        aiRepo.syncMessage(messageId);
-    }
-
-    private queueAssistantText(
-        browserWindow: BrowserWindow,
-        conversationId: string,
-        generationId: string,
-        assistantMessageId: string,
-        delta: string,
-    ): void {
-        if (!delta) {
-            return;
-        }
-
-        const current =
-            this.bufferedAssistantText.get(assistantMessageId) ??
-            ({
-                browserWindow,
-                conversationId,
-                generationId,
-                assistantMessageId,
-                buffer: '',
-                timer: null,
-            } satisfies BufferedAssistantText);
-
-        current.buffer += delta;
-        this.bufferedAssistantText.set(assistantMessageId, current);
-
-        if (current.buffer.length >= AiService.TEXT_FLUSH_THRESHOLD_CHARS) {
-            this.flushAssistantText(assistantMessageId);
-            return;
-        }
-
-        if (current.timer) {
-            return;
-        }
-
-        current.timer = setTimeout(() => {
-            this.flushAssistantText(assistantMessageId);
-        }, AiService.TEXT_FLUSH_INTERVAL_MS);
-    }
-
-    private flushAssistantText(assistantMessageId: string): void {
-        const current = this.bufferedAssistantText.get(assistantMessageId);
-        if (!current) {
-            return;
-        }
-
-        this.clearAssistantTextTimer(assistantMessageId);
-
-        if (!current.buffer) {
-            this.bufferedAssistantText.delete(assistantMessageId);
-            return;
-        }
-
-        if (
-            !this.isCurrentRun(
-                current.conversationId,
-                current.generationId,
-                current.assistantMessageId,
-            )
-        ) {
-            this.bufferedAssistantText.delete(assistantMessageId);
-            return;
-        }
-
-        const delta = current.buffer;
-        this.bufferedAssistantText.delete(assistantMessageId);
-        aiRepo.appendAssistantContent(assistantMessageId, delta);
-        sendToRenderer(current.browserWindow, PushChannels.aiStreamChunk, {
-            conversationId: current.conversationId,
-            generationId: current.generationId,
-            messageId: current.assistantMessageId,
-            delta,
+        this.titles.schedule({
+            browserWindow: run.browserWindow,
+            conversationId: conversation.id,
+            model: environment.model,
+            uiLanguageCode: environment.uiLanguageCode,
+            contentLanguageCode: environment.contentLanguageCode,
         });
-    }
-
-    private clearAssistantTextTimer(assistantMessageId: string): void {
-        const current = this.bufferedAssistantText.get(assistantMessageId);
-        if (!current?.timer) {
-            return;
-        }
-
-        clearTimeout(current.timer);
-        current.timer = null;
     }
 }

@@ -87,7 +87,7 @@ These downloads involve connections to the relevant hosts, which may include Git
 
 ### 2.4 AI assistant
 
-The AI assistant stays disabled until you turn it on in settings.
+The AI assistant sends nothing until you set up an AI service in settings.
 
 If you choose a remote provider such as OpenAI, OpenRouter, Gemini, Claude, or a compatible custom provider, Wmb Table may send the selected provider:
 
@@ -236,7 +236,7 @@ You are responsible for protecting:
 You can limit external processing in several ways:
 
 - do not enable Google Drive sync
-- do not enable the AI assistant
+- do not set up the AI assistant
 - choose local AI mode instead of a remote provider
 - choose a local TTS voice instead of a remote provider
 - do not use the website contact form

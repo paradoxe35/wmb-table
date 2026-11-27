@@ -17,6 +17,31 @@ vi.mock('tokenx', () => ({
 
 const LARGE_BUDGET = 1_000_000;
 
+const CUT_PASSAGE_RESULT: AiMessage['toolResults'][number] = {
+    toolCallId: 'passage-1',
+    name: 'getBiblePassage',
+    output: {
+        bookCode: 'GEN',
+        bookName: 'Genèse',
+        chapter: '3',
+        fromVerse: '1',
+        toVerse: '24',
+        bibleVersionAbbreviation: 'lsg',
+        verseCount: 2,
+        hasMore: true,
+        nextFromVerse: '3',
+        nextToVerse: '24',
+        verses: ['1', '2'].map((verse) => ({
+            bookCode: 'GEN',
+            bookName: 'Genèse',
+            chapter: '3',
+            verse,
+            content:
+                "Le serpent était le plus rusé de tous les animaux des champs, que l'Éternel Dieu avait faits.",
+        })),
+    },
+};
+
 function textMessage(
     id: string,
     conversationId: string,
@@ -225,6 +250,51 @@ describe('context-memory', () => {
 
             expect(summary).toContain('Created subject: subject-2');
         });
+
+        it('names the real paragraph numbers a sermon read returned, gaps included', async () => {
+            const summary = await summaryFor({
+                toolCallId: 'read-1',
+                name: 'getSermonContent',
+                output: {
+                    meta: { sermonId: '65-0429B', title: 'The Rapture' },
+                    paragraphs: [12, 13, 15].map((paragraphNumber) => ({
+                        paragraphNumber,
+                        content: 'Texte',
+                    })),
+                    totalParagraphs: 120,
+                    startParagraph: 12,
+                    hasMore: true,
+                    nextStartParagraph: 16,
+                },
+            });
+
+            expect(summary).toContain(
+                'The Rapture: 3/120 paragraph(s) §12–15, more from paragraph 16',
+            );
+        });
+
+        it('tells where a cut Bible passage continues', async () => {
+            const summary = await summaryFor(CUT_PASSAGE_RESULT);
+
+            expect(summary).toContain('Genèse 3:1-3:2 (2 verse(s), more from verse 3 to 24)');
+        });
+    });
+
+    it('keeps the continuation fields of a cut Bible passage in recent history', async () => {
+        getRecentMessagesMock.mockReturnValue([
+            {
+                ...textMessage('assistant-bible', 'conv-bible', 'assistant', 'Passage'),
+                toolResults: [CUT_PASSAGE_RESULT],
+            },
+        ]);
+
+        const { buildConversationContext } = await import('@main/services/ai/context-memory');
+        const recent = buildConversationContext('conv-bible', LARGE_BUDGET).recentMessages[0]
+            ?.content;
+
+        expect(recent).toContain('"hasMore":true');
+        expect(recent).toContain('"nextFromVerse":"3"');
+        expect(recent).toContain('"nextToVerse":"24"');
     });
 
     it('does not invent an empty field on subject references it passes through', async () => {

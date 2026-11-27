@@ -1,5 +1,5 @@
 import { tool } from 'ai';
-import type { LanguageModel } from 'ai';
+import type { LanguageModel, ToolSet } from 'ai';
 import type { BrowserWindow } from 'electron';
 import { buildBibleTools } from './bible.tools';
 import { buildDocumentTools } from './document.tools';
@@ -8,12 +8,16 @@ import { buildNoteTools } from './note.tools';
 import { buildSermonTools } from './sermon.tools';
 import { buildSubjectTools } from './subject.tools';
 import { buildAgentTools } from '../agents';
+import type { ChatTimeouts } from '../model-timeouts';
 
 export interface BuildAiToolsOptions {
     model?: LanguageModel;
     uiLanguage?: string;
     activeBibleVersion?: string;
+    contextWindow?: number;
     maxOutputTokens?: number;
+    timeouts?: ChatTimeouts;
+    reasoningControl?: boolean;
     abortSignal?: AbortSignal;
     /** Required for subagent progress dispatch to the renderer. */
     browserWindow?: BrowserWindow;
@@ -36,7 +40,10 @@ export function buildToolExecutors(
     };
 }
 
-export function buildAiTools(defaultContentLanguage: string, options?: BuildAiToolsOptions) {
+export function buildAiTools(
+    defaultContentLanguage: string,
+    options?: BuildAiToolsOptions,
+): ToolSet {
     const executors = buildToolExecutors(defaultContentLanguage, options?.activeBibleVersion);
 
     const dispatch =
@@ -58,7 +65,10 @@ export function buildAiTools(defaultContentLanguage: string, options?: BuildAiTo
               contentLanguage: defaultContentLanguage,
               uiLanguage: options.uiLanguage ?? defaultContentLanguage,
               activeBibleVersion: options.activeBibleVersion,
+              contextWindow: options.contextWindow,
               maxOutputTokens: options.maxOutputTokens,
+              timeouts: options.timeouts,
+              reasoningControl: options.reasoningControl,
               abortSignal: options.abortSignal,
               dispatch,
           })

@@ -5,7 +5,7 @@ const registerHandlerMock = vi.fn();
 const sendToRendererMock = vi.fn();
 const downloadLanguagePackMock = vi.fn();
 
-vi.mock('@main/ipc/register', () => ({
+vi.mock('@main/ipc/ipc-bridge', () => ({
     registerHandler: registerHandlerMock,
     sendToRenderer: sendToRendererMock,
 }));

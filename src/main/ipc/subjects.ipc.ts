@@ -1,5 +1,5 @@
 import { SubjectChannels } from '@shared/ipc.types';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import * as subjectsRepo from '@main/database/repositories/subjects.repository';
 import { exportHtmlToPdf } from '@main/lib/pdf-export';
 import { buildSubjectExportHtml } from '@main/lib/subjects-export';

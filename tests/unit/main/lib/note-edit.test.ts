@@ -144,6 +144,15 @@ describe('applyNoteEdits', () => {
         });
     });
 
+    it('points to a way out that works, since updateNoteContent refuses formatted notes too', async () => {
+        const html = '<p>Avant</p><table><tbody><tr><td>Cellule</td></tr></tbody></table>';
+        const outcome = await edit(html, [{ oldText: 'Cellule', newText: 'Autre' }]);
+        const { error } = outcome as { error: string };
+
+        expect(error).not.toContain('updateNoteContent');
+        expect(error).toContain('note editor');
+    });
+
     it('keeps an untouched table intact while editing around it', async () => {
         const html =
             '<p>Avant</p><table><tbody><tr><td>Cellule</td></tr></tbody></table><p>Apres</p>';

@@ -61,7 +61,6 @@ Esta sección sirve para la función de chat con IA.
 
 Permite:
 
-- activar o desactivar el asistente
 - elegir el proveedor IA
 - configurar un modelo local o un servicio en línea
 - controlar el comportamiento del idioma
@@ -106,7 +105,7 @@ Si quiere…
 - hacer una revisión rápida: abra `General`
 - gestionar pestañas o reanudar lecturas: abra `Vista de lectura`
 - cambiar el idioma de su biblioteca: abra `Biblioteca`
-- usar o activar el chat con IA: abra `Assistant`
+- configurar el chat con IA: abra `Assistant`
 - escuchar una predicación o un capítulo bíblico: abra `Lectura en audio`
 - proteger su trabajo: abra `Copia de seguridad`
 - instalar la última versión: abra `Actualización`

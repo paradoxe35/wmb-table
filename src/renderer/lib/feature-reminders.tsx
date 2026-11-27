@@ -10,9 +10,9 @@ import {
 import type { BackupStatus } from '@shared/types';
 import type { TtsProviderInfo, TtsSettings } from '@shared/tts.types';
 import {
-    BUILTIN_PROVIDER_IDS,
+    BUILTIN_PROVIDER_REQUIRES_API_KEY,
+    isBuiltinProviderId,
     resolveActiveModel,
-    type AiBuiltinProviderId,
     type AiSettings,
 } from '@shared/ai.types';
 
@@ -45,6 +45,8 @@ export interface FeatureReminderVisibilityInput {
     loaded: boolean;
     syncing: boolean;
     readingMode: boolean;
+    /** A reminder must not cover the assistant while it answers or while its chat is open. */
+    aiChatInUse: boolean;
     hasInteracted: boolean;
     sessionDelayElapsed: boolean;
     sessionHiddenUntil: number | null;
@@ -85,7 +87,7 @@ const FEATURE_REMINDER_DEFINITION_INPUT = [
         titleKey:
             'Le saviez-vous ? <u>{{feature}}</u> peut vous aider à explorer un sujet et comprendre plus vite ce que vous cherchez.',
         descriptionKey:
-            'Activez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.',
+            'Configurez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.',
         actionLabelKey: "Ouvrir les réglages de l'assistant",
         renderIcon: () => <CommentOutlined />,
     },
@@ -147,6 +149,7 @@ export function canDisplayFeatureReminders({
     loaded,
     syncing,
     readingMode,
+    aiChatInUse,
     hasInteracted,
     sessionDelayElapsed,
     sessionHiddenUntil,
@@ -160,6 +163,7 @@ export function canDisplayFeatureReminders({
         loaded &&
         !syncing &&
         !readingMode &&
+        !aiChatInUse &&
         hasInteracted &&
         sessionDelayElapsed &&
         (!sessionHiddenUntil || sessionHiddenUntil <= now)
@@ -171,28 +175,19 @@ export function markFeatureReminderUsed(key: FeatureReminderKey): void {
 }
 
 export function isAiConfigured(settings: AiSettings | null): boolean {
-    if (!settings?.enabled || !settings.activeProvider) {
+    const providerId = settings?.activeProvider;
+    if (!settings || !providerId || !resolveActiveModel(settings)) {
         return false;
     }
 
-    const modelId = resolveActiveModel(settings);
-    if (!modelId) {
-        return false;
+    if (isBuiltinProviderId(providerId)) {
+        return (
+            !BUILTIN_PROVIDER_REQUIRES_API_KEY[providerId] ||
+            Boolean(settings.providers[providerId]?.apiKey?.trim())
+        );
     }
 
-    if ((BUILTIN_PROVIDER_IDS as readonly string[]).includes(settings.activeProvider)) {
-        const providerId = settings.activeProvider as AiBuiltinProviderId;
-        const providerConfig = settings.providers[providerId];
-        if (!providerConfig?.enabled) {
-            return false;
-        }
-        return Boolean(providerConfig.apiKey?.trim());
-    }
-
-    const customProvider = settings.customProviders.find((p) => p.id === settings.activeProvider);
-    return Boolean(
-        customProvider?.baseUrl && (customProvider.model || customProvider.defaultModel),
-    );
+    return Boolean(settings.customProviders.find((p) => p.id === providerId)?.baseUrl);
 }
 
 export function isTtsConfigured(

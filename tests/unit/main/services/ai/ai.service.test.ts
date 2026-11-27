@@ -12,9 +12,6 @@ const resolveActiveModelMock = vi.fn();
 const resolveLanguageModelMock = vi.fn();
 const getModelLimitsMock = vi.fn();
 const resolveUiLanguageMock = vi.fn();
-const calculateRemoteTokenBudgetMock = vi.fn();
-const measurePromptTokensMock = vi.fn();
-const measureToolTokensMock = vi.fn();
 const getConversationMock = vi.fn();
 const getRecentMessagesMock = vi.fn();
 const createMessageMock = vi.fn();
@@ -23,7 +20,8 @@ const touchConversationMock = vi.fn();
 const shouldGenerateTitleMock = vi.fn();
 const generateConversationTitleMock = vi.fn();
 
-vi.mock('ai', () => ({
+vi.mock('ai', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('ai')>()),
     generateText: generateTextMock,
 }));
 
@@ -37,6 +35,8 @@ vi.mock('@main/database/repositories/ai.repository', () => ({
     updateConversation: updateConversationMock,
     touchConversation: touchConversationMock,
     syncMessage: vi.fn(),
+    getMessage: vi.fn().mockReturnValue(null),
+    deleteMessage: vi.fn(),
     getMessages: vi.fn().mockReturnValue([]),
     deleteConversation: vi.fn(),
     getConversations: vi.fn().mockReturnValue([]),
@@ -52,8 +52,9 @@ vi.mock('@main/services/language-pack.service', () => ({
     getInstalledLanguages: getInstalledLanguagesMock,
 }));
 
-vi.mock('@main/ipc/register', () => ({
-    sendToRenderer: vi.fn(),
+const sendToRendererMock = vi.fn();
+vi.mock('@main/ipc/ipc-bridge', () => ({
+    sendToRenderer: sendToRendererMock,
 }));
 
 vi.mock('@main/services/bible.service', () => ({
@@ -68,12 +69,6 @@ vi.mock('@main/services/ai/context-memory', () => ({
     buildConversationContext: buildConversationContextMock,
 }));
 
-vi.mock('@main/services/ai/token-budget', () => ({
-    calculateRemoteTokenBudget: calculateRemoteTokenBudgetMock,
-    measurePromptTokens: measurePromptTokensMock,
-    measureToolTokens: measureToolTokensMock,
-}));
-
 vi.mock('@main/services/ai/provider-resolver', () => ({
     resolveActiveModel: resolveActiveModelMock,
     resolveLanguageModel: resolveLanguageModelMock,
@@ -86,6 +81,7 @@ vi.mock('@main/services/ai/provider-catalog', () => ({
 vi.mock('@main/services/ai/model-fetcher', () => ({
     fetchProviderModels: vi.fn(),
     getModelLimits: getModelLimitsMock,
+    getModelReasoningSupport: vi.fn(async () => undefined),
 }));
 
 const runnerRunMock = vi.fn();
@@ -109,6 +105,8 @@ vi.mock('@main/lib/logger', () => ({
 }));
 
 const { AiService } = await import('@main/services/ai/ai.service');
+const { AI_TIMEOUT_MESSAGE } = await import('@main/services/ai/model-timeouts');
+const { default: en } = await import('@shared/i18n/locales/en');
 
 function flushAsync(): Promise<void> {
     return new Promise((resolve) => setImmediate(resolve));
@@ -145,9 +143,6 @@ describe('AiService', () => {
         buildAiToolsMock.mockReturnValue({
             searchContent: { description: 'search', inputSchema: { type: 'object' } },
         });
-        measureToolTokensMock.mockReturnValue(321);
-        measurePromptTokensMock.mockReturnValue(654);
-        calculateRemoteTokenBudgetMock.mockReturnValue(4_000);
         buildConversationContextMock.mockReturnValue({
             recentMessages: [],
             summary: null,
@@ -243,6 +238,144 @@ describe('AiService', () => {
                 generationId: 'gen-1',
             }),
         ).rejects.toThrow('trop limité');
+    });
+
+    it('runs with a configured provider even when the old enabled flag is off', async () => {
+        ensureSettingsMock.mockReturnValue({ ...ensureSettingsMock(), enabled: false });
+        const service = new AiService();
+
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+
+        expect(runnerRunMock).toHaveBeenCalled();
+    });
+
+    it('still refuses to run without a provider', async () => {
+        ensureSettingsMock.mockReturnValue({ ...ensureSettingsMock(), activeProvider: null });
+        const service = new AiService();
+
+        await expect(
+            service.sendMessage({} as never, {
+                conversationId: 'conv-1',
+                messages: ['hello world'],
+                generationId: 'gen-1',
+            }),
+        ).rejects.toThrow('Aucun fournisseur IA configuré');
+    });
+
+    it('gives the runner one budget computed from the model limits', async () => {
+        getModelLimitsMock.mockResolvedValue({ contextWindow: 128_000, maxOutputTokens: 64_000 });
+        const service = new AiService();
+
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+
+        const runArgs = runnerRunMock.mock.calls[0]?.[0];
+        expect(runArgs.budget).toMatchObject({ contextWindow: 128_000, answerTokens: 32_000 });
+        expect(buildConversationContextMock).toHaveBeenCalledWith(
+            'conv-1',
+            runArgs.budget.historyBudget,
+        );
+        expect(runArgs.reasoningControl).toBe(true);
+        expect(runArgs.timeouts.firstChunkMs).toBe(3 * 60_000);
+    });
+
+    it('keeps the Claude reasoning default and gives local models more time', async () => {
+        const settings = ensureSettingsMock();
+        const service = new AiService();
+
+        ensureSettingsMock.mockReturnValue({ ...settings, activeProvider: 'claude' });
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+        ensureSettingsMock.mockReturnValue({ ...settings, activeProvider: 'ollama' });
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-2',
+            messages: ['hello world'],
+            generationId: 'gen-2',
+        });
+
+        expect(runnerRunMock.mock.calls[0]?.[0].reasoningControl).toBe(false);
+        expect(runnerRunMock.mock.calls[1]?.[0].reasoningControl).toBe(false);
+        expect(runnerRunMock.mock.calls[1]?.[0].timeouts.firstChunkMs).toBe(15 * 60_000);
+    });
+
+    it('sends the run outcome with the completion event', async () => {
+        const outcome = {
+            finishReason: 'length',
+            stoppedBy: 'model',
+            truncated: true,
+            stepLimitReached: false,
+            steps: 3,
+            continuations: 2,
+        };
+        runnerRunMock.mockResolvedValue(outcome);
+        const service = new AiService();
+
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+        await flushAsync();
+
+        expect(sendToRendererMock).toHaveBeenCalledWith(
+            expect.anything(),
+            'push:aiStreamComplete',
+            expect.objectContaining({ generationId: 'gen-1', outcome }),
+        );
+    });
+
+    it('reports a model timeout as an error code instead of a silent stop', async () => {
+        const { AiTimeoutError } = await import('@main/services/ai/model-timeouts');
+        runnerRunMock.mockRejectedValue(new AiTimeoutError('first-chunk'));
+        const service = new AiService();
+
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+        await flushAsync();
+
+        expect(sendToRendererMock).toHaveBeenCalledWith(
+            expect.anything(),
+            'push:aiStreamError',
+            expect.objectContaining({ code: 'timeout', retryable: true }),
+        );
+    });
+
+    it.each([
+        ['openai', 30_000],
+        ['ollama', 180_000],
+    ])('limits the %s provider test to %i ms', async (providerId, totalMs) => {
+        const service = new AiService();
+
+        await service.testProvider({ providerId, model: 'm' });
+
+        expect(generateTextMock).toHaveBeenCalledWith(
+            expect.objectContaining({ timeout: { totalMs } }),
+        );
+    });
+
+    it('says when the provider test timed out', async () => {
+        generateTextMock.mockRejectedValue(
+            new DOMException('The operation was aborted due to timeout', 'TimeoutError'),
+        );
+        const service = new AiService();
+
+        const result = await service.testProvider({ providerId: 'openai', model: 'm' });
+
+        expect(result).toEqual({ valid: false, error: AI_TIMEOUT_MESSAGE });
+        expect(Object.keys(en)).toContain(result.error);
     });
 
     // An unresolvable window cannot be proven too small.
@@ -584,5 +717,59 @@ describe('AiService', () => {
             expect.arrayContaining([{ role: 'user', content: 'message 1' }]),
             expect.any(AbortSignal),
         );
+    });
+
+    describe('updateSettings custom provider checks', () => {
+        const lm = {
+            id: 'lm',
+            name: ' LM Studio ',
+            baseUrl: ' http://127.0.0.1:1234/v1/ ',
+            apiKey: ' key\n',
+            defaultModel: ' qwen ',
+        };
+
+        it('saves custom providers trimmed and with a normalized base URL', async () => {
+            const { updateSettings } = await import('@main/database/repositories/ai.repository');
+            vi.mocked(updateSettings).mockReturnValue(ensureSettingsMock());
+
+            new AiService().updateSettings({ customProviders: [lm], activeProvider: 'lm' });
+
+            expect(updateSettings).toHaveBeenCalledWith({
+                activeProvider: 'lm',
+                customProviders: [
+                    {
+                        id: 'lm',
+                        name: 'LM Studio',
+                        baseUrl: 'http://127.0.0.1:1234/v1',
+                        apiKey: 'key',
+                        defaultModel: 'qwen',
+                        model: undefined,
+                    },
+                ],
+            });
+        });
+
+        it.each(['localhost:1234', 'ftp://host/v1', '', 'http://exa mple'])(
+            'refuses the base URL %j',
+            async (baseUrl) => {
+                const { updateSettings } =
+                    await import('@main/database/repositories/ai.repository');
+
+                expect(() =>
+                    new AiService().updateSettings({ customProviders: [{ ...lm, baseUrl }] }),
+                ).toThrow(/Invalid base URL/);
+                expect(updateSettings).not.toHaveBeenCalled();
+            },
+        );
+
+        it('still refuses builtin and duplicate ids', () => {
+            const service = new AiService();
+            expect(() =>
+                service.updateSettings({ customProviders: [{ ...lm, id: 'openai' }] }),
+            ).toThrow(/builtin/);
+            expect(() => service.updateSettings({ customProviders: [lm, lm] })).toThrow(
+                /Duplicate/,
+            );
+        });
     });
 });

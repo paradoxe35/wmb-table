@@ -1,7 +1,7 @@
-import { app, shell } from 'electron';
+import { app } from 'electron';
 import { AppChannels } from '@shared/ipc.types';
 import { applyResolvedTheme, getThemeState } from '@main/lib/native-theme';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import * as configRepo from '@main/database/repositories/config.repository';
 import * as customDocsRepo from '@main/database/repositories/custom-documents.repository';
 import * as historyRepo from '@main/database/repositories/history.repository';
@@ -18,6 +18,7 @@ import {
 import i18n from '@main/lib/i18n';
 import MenuBuilder from '@main/lib/menu';
 import { getMainWindow } from '@main/lib/window';
+import { openExternalSafely } from '@main/lib/safe-external';
 import { resolveUiLanguage } from '@shared/constants';
 
 const langToLocale: Record<string, string> = {
@@ -68,12 +69,12 @@ export function registerAppHandlers(): void {
     });
 
     registerHandler(AppChannels.openExternal, async (_event, url) => {
-        await shell.openExternal(url);
+        await openExternalSafely(url, 'ipc');
     });
 
     registerHandler(AppChannels.restart, async () => {
         app.relaunch();
-        app.exit(0);
+        app.quit();
     });
 
     registerHandler(AppChannels.getUpdateStatus, async () => {

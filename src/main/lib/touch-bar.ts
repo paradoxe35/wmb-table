@@ -1,6 +1,6 @@
 import { TouchBar, nativeImage, type BrowserWindow, ipcMain } from 'electron';
 import { PushChannels } from '@shared/ipc.types';
-import { sendToRenderer } from '@main/ipc/register';
+import { sendToRenderer } from '@main/ipc/ipc-bridge';
 import type { ViewMenuValue } from '@shared/types';
 import { join } from 'node:path';
 

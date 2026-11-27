@@ -1,257 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type {
-    AiConversation,
-    AiConversationHistoryPage,
-    AiMessageHistoryPage,
-    AiMessageHistoryPageRequest,
-    AiMessage,
-    AiSendMessageRequest,
-    AiSendMessageResult,
-    AiSettings,
-} from '@shared/ai.types';
-import { AI_MESSAGE_HISTORY_PAGE_SIZE, createDefaultAiSettings } from '@shared/ai.types';
-import type { PushEventMap } from '@shared/ipc.types';
-import { PushChannels } from '@shared/ipc.types';
+import type { AiMessageHistoryPage, AiSendMessageResult } from '@shared/ai.types';
+import { AI_MESSAGE_HISTORY_PAGE_SIZE } from '@shared/ai.types';
+import {
+    createConversation,
+    createConversationHistoryPage,
+    createDeferred,
+    createHarness,
+    createHistoryPage,
+    createMessage,
+    createSendResult,
+    flushAsync,
+} from './ai-chat-store-harness';
 
-const markFeatureReminderUsedMock = vi.fn();
-
-vi.mock('@renderer/lib/feature-reminders', () => ({
-    markFeatureReminderUsed: markFeatureReminderUsedMock,
-}));
-
-type Listener<K extends keyof PushEventMap> = (payload: PushEventMap[K]) => void;
-
-interface ListenerMap {
-    aiStreamChunk?: Listener<typeof PushChannels.aiStreamChunk>;
-    aiReasoningDelta?: Listener<typeof PushChannels.aiReasoningDelta>;
-    aiToolCallStart?: Listener<typeof PushChannels.aiToolCallStart>;
-    aiToolCallComplete?: Listener<typeof PushChannels.aiToolCallComplete>;
-    aiStreamComplete?: Listener<typeof PushChannels.aiStreamComplete>;
-    aiStreamCancel?: Listener<typeof PushChannels.aiStreamCancel>;
-    aiStreamError?: Listener<typeof PushChannels.aiStreamError>;
-    aiConversationUpdated?: Listener<typeof PushChannels.aiConversationUpdated>;
-}
-
-interface StoreHarness {
-    store: typeof import('@renderer/stores/ai-chat.store').useAiChatStore;
-    listeners: ListenerMap;
-    getMessagesPageMock: ReturnType<
-        typeof vi.fn<[AiMessageHistoryPageRequest], Promise<AiMessageHistoryPage>>
-    >;
-    getConversationsPageMock: ReturnType<typeof vi.fn<[], Promise<AiConversationHistoryPage>>>;
-    sendMessageMock: ReturnType<typeof vi.fn<[AiSendMessageRequest], Promise<AiSendMessageResult>>>;
-}
-
-function createSettings(): AiSettings {
-    const settings = createDefaultAiSettings();
-    settings.enabled = true;
-    settings.activeProvider = 'openai';
-    settings.providers.openai = {
-        enabled: true,
-        model: 'gpt-5-mini',
-        apiKey: 'test-key',
-    };
-    return settings;
-}
-
-function createConversation(partial?: Partial<AiConversation>): AiConversation {
-    return {
-        id: 'conv-1',
-        title: 'Conversation',
-        summary: null,
-        aiTitle: false,
-        createdAt: '2026-04-08T10:00:00.000Z',
-        updatedAt: '2026-04-08T10:00:00.000Z',
-        ...partial,
-    };
-}
-
-function createMessage(
-    partial: Partial<AiMessage> & Pick<AiMessage, 'id' | 'conversationId' | 'role'>,
-): AiMessage {
-    return {
-        id: partial.id,
-        conversationId: partial.conversationId,
-        role: partial.role,
-        content: partial.content ?? '',
-        toolCalls: partial.toolCalls ?? [],
-        toolResults: partial.toolResults ?? [],
-        createdAt: partial.createdAt ?? '2026-04-08T10:00:00.000Z',
-    };
-}
-
-function createSendResult(
-    request: AiSendMessageRequest,
-    index: number,
-    conversation = createConversation(),
-): AiSendMessageResult {
-    return {
-        generationId: request.generationId,
-        conversation,
-        userMessages: request.messages.map((content, messageIndex) =>
-            createMessage({
-                id: `user-${index}-${messageIndex + 1}`,
-                conversationId: conversation.id,
-                role: 'user',
-                content,
-            }),
-        ),
-        assistantMessage: createMessage({
-            id: `assistant-${index}`,
-            conversationId: conversation.id,
-            role: 'assistant',
-            content: '',
-        }),
-    };
-}
-
-function createDeferred<T>() {
-    let resolve!: (value: T) => void;
-    let reject!: (error?: unknown) => void;
-    const promise = new Promise<T>((res, rej) => {
-        resolve = res;
-        reject = rej;
-    });
-    return { promise, resolve, reject };
-}
-
-function createHistoryPage(
-    messages: AiMessage[],
-    partial?: Partial<Pick<AiMessageHistoryPage, 'loadedCount' | 'totalCount' | 'hasMore'>>,
-): AiMessageHistoryPage {
-    return {
-        messages,
-        loadedCount: partial?.loadedCount ?? messages.length,
-        totalCount: partial?.totalCount ?? messages.length,
-        hasMore: partial?.hasMore ?? false,
-    };
-}
-
-function createConversationHistoryPage(
-    conversations: AiConversation[],
-    partial?: Partial<Pick<AiConversationHistoryPage, 'loadedCount' | 'totalCount' | 'hasMore'>>,
-): AiConversationHistoryPage {
-    return {
-        conversations,
-        loadedCount: partial?.loadedCount ?? conversations.length,
-        totalCount: partial?.totalCount ?? conversations.length,
-        hasMore: partial?.hasMore ?? false,
-    };
-}
-
-async function flushAsync(): Promise<void> {
-    await Promise.resolve();
-    await Promise.resolve();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-}
-
-async function createHarness(options?: {
-    sendMessageImpl?: (
-        request: AiSendMessageRequest,
-        index: number,
-    ) => Promise<AiSendMessageResult>;
-    getMessagesPageImpl?: (request: AiMessageHistoryPageRequest) => Promise<AiMessageHistoryPage>;
-}): Promise<StoreHarness> {
-    vi.resetModules();
-    markFeatureReminderUsedMock.mockReset();
-
-    const listeners: ListenerMap = {};
-    const conversation = createConversation();
-    let sendCount = 0;
-
-    const sendMessageMock = vi.fn<[AiSendMessageRequest], Promise<AiSendMessageResult>>(
-        async (request) => {
-            sendCount += 1;
-            if (options?.sendMessageImpl) {
-                return options.sendMessageImpl(request, sendCount);
-            }
-            return createSendResult(request, sendCount, conversation);
-        },
-    );
-
-    const getMessagesPageMock = vi.fn<[AiMessageHistoryPageRequest], Promise<AiMessageHistoryPage>>(
-        async (request) =>
-            options?.getMessagesPageImpl?.(request) ?? createHistoryPage([], { totalCount: 0 }),
-    );
-    const getConversationsPageMock = vi.fn(async () =>
-        createConversationHistoryPage([conversation]),
-    );
-
-    vi.stubGlobal('window', {
-        api: {
-            ai: {
-                getSettings: vi.fn().mockResolvedValue(createSettings()),
-                getProviderCatalog: vi.fn().mockResolvedValue([]),
-                updateSettings: vi.fn(),
-                getConversationsPage: getConversationsPageMock,
-                createConversation: vi.fn().mockResolvedValue(conversation),
-                deleteConversation: vi.fn().mockResolvedValue(undefined),
-                clearConversations: vi.fn().mockResolvedValue(undefined),
-                getMessagesPage: getMessagesPageMock,
-                sendMessage: sendMessageMock,
-                stopGeneration: vi.fn().mockResolvedValue(undefined),
-                scanLocalModels: vi
-                    .fn()
-                    .mockResolvedValue({ models: [], supportedModels: [], scannedPath: '' }),
-                testProvider: vi.fn(),
-                downloadModel: vi.fn(),
-            },
-            on: {
-                aiStreamChunk: vi.fn((cb) => {
-                    listeners.aiStreamChunk = cb;
-                    return () => {};
-                }),
-                aiReasoningDelta: vi.fn((cb) => {
-                    listeners.aiReasoningDelta = cb;
-                    return () => {};
-                }),
-                aiToolCallStart: vi.fn((cb) => {
-                    listeners.aiToolCallStart = cb;
-                    return () => {};
-                }),
-                aiToolCallComplete: vi.fn((cb) => {
-                    listeners.aiToolCallComplete = cb;
-                    return () => {};
-                }),
-                aiStreamComplete: vi.fn((cb) => {
-                    listeners.aiStreamComplete = cb;
-                    return () => {};
-                }),
-                aiStreamCancel: vi.fn((cb) => {
-                    listeners.aiStreamCancel = cb;
-                    return () => {};
-                }),
-                aiStreamError: vi.fn((cb) => {
-                    listeners.aiStreamError = cb;
-                    return () => {};
-                }),
-                aiConversationUpdated: vi.fn((cb) => {
-                    listeners.aiConversationUpdated = cb;
-                    return () => {};
-                }),
-            },
-        },
-        dispatchEvent: vi.fn(),
-        requestAnimationFrame: vi.fn((cb: FrameRequestCallback) => {
-            cb(0);
-            return 1;
-        }),
-        cancelAnimationFrame: vi.fn(),
-    });
-
-    const module = await import('@renderer/stores/ai-chat.store');
-    const store = module.useAiChatStore;
-
-    await store.getState().initialize();
-    store.setState({
-        conversations: [conversation],
-        activeConversationId: conversation.id,
-        messagesByConversation: { [conversation.id]: [] },
-        error: null,
-    });
-
-    return { store, listeners, getMessagesPageMock, getConversationsPageMock, sendMessageMock };
-}
+vi.mock('@renderer/lib/feature-reminders', () => ({ markFeatureReminderUsed: vi.fn() }));
 
 describe('ai-chat.store queue behavior', () => {
     beforeEach(() => {
@@ -499,7 +260,7 @@ describe('ai-chat.store queue behavior', () => {
     it('keeps the local assistant placeholder when conversation history finishes loading after send', async () => {
         const deferredPage = createDeferred<AiMessageHistoryPage>();
         const conversation = createConversation({ id: 'conv-2', title: 'Second' });
-        const { store, sendMessageMock } = await createHarness({
+        const { store, sendMessageMock, getMessagesPageMock } = await createHarness({
             getMessagesPageImpl: async (request) =>
                 request.conversationId === 'conv-2'
                     ? deferredPage.promise
@@ -511,14 +272,13 @@ describe('ai-chat.store queue behavior', () => {
         store.setState((state) => ({
             conversations: [conversation, ...state.conversations],
             activeConversationId: 'conv-1',
-            messagesByConversation: {
-                ...state.messagesByConversation,
-                'conv-2': [],
-            },
         }));
 
         const selectPromise = store.getState().selectConversation('conv-2');
         await flushAsync();
+        expect(getMessagesPageMock).toHaveBeenCalledWith(
+            expect.objectContaining({ conversationId: 'conv-2' }),
+        );
 
         const sendAccepted = await store.getState().sendMessage('question on second conversation');
         expect(sendAccepted).toBe(true);
@@ -715,5 +475,97 @@ describe('ai-chat.store queue behavior', () => {
         );
 
         await Promise.all([firstLoad, secondLoad]);
+    });
+});
+
+describe('ai-chat.store run events', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.clearAllMocks();
+    });
+
+    async function startRun() {
+        const harness = await createHarness();
+        await harness.store.getState().sendMessage('Qui t’a dit que tu étais nu ?');
+        await flushAsync();
+        const generationId = harness.sendMessageMock.mock.calls[0][0].generationId;
+        const event = { conversationId: 'conv-1', generationId, messageId: 'assistant-1' };
+        const toolResults = () =>
+            harness.store
+                .getState()
+                .messagesByConversation['conv-1'].find((m) => m.id === 'assistant-1')
+                ?.toolResults ?? [];
+        return { ...harness, event, toolResults };
+    }
+
+    it('keeps a tool that returned { error } as failed and does not reload notes', async () => {
+        const { listeners, event, toolResults } = await startRun();
+
+        listeners.aiToolCallComplete?.({
+            ...event,
+            toolName: 'editNote',
+            toolCallId: 'call-1',
+            payload: { error: 'anchor not found' },
+            isError: true,
+        });
+
+        expect(toolResults()).toEqual([
+            {
+                toolCallId: 'call-1',
+                name: 'editNote',
+                output: { error: 'anchor not found' },
+                isError: true,
+            },
+        ]);
+        expect(window.dispatchEvent).not.toHaveBeenCalled();
+    });
+
+    it('treats a failed sub-agent step as failed even without the flag', async () => {
+        const { listeners, event, toolResults } = await startRun();
+
+        listeners.aiToolCallComplete?.({
+            ...event,
+            toolName: 'researchTopic:searchSermons',
+            toolCallId: 'call-2',
+            payload: { error: 'Language "fr" is not installed.' },
+        });
+
+        expect(toolResults()[0]?.isError).toBe(true);
+    });
+
+    it('reloads notes after a successful note edit', async () => {
+        const { listeners, event, toolResults } = await startRun();
+
+        listeners.aiToolCallComplete?.({
+            ...event,
+            toolName: 'editNote',
+            toolCallId: 'call-3',
+            payload: { noteId: 'n1', replacements: 1 },
+            isError: false,
+        });
+
+        expect(toolResults()[0]?.isError).toBe(false);
+        expect(window.dispatchEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores the outcome of a stale run', async () => {
+        const { store, listeners, event } = await startRun();
+
+        listeners.aiStreamComplete?.({
+            ...event,
+            generationId: 'old-generation',
+            messageId: 'assistant-old',
+            outcome: {
+                finishReason: 'length',
+                stoppedBy: 'model',
+                truncated: true,
+                stepLimitReached: false,
+                steps: 1,
+                continuations: 2,
+            },
+        });
+
+        expect(store.getState().runNoticeByConversation['conv-1']).toBeUndefined();
+        expect(store.getState().conversationRuns['conv-1']).toBeDefined();
     });
 });

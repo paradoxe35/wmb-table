@@ -52,9 +52,6 @@ const sw: Record<string, string> = {
     'Gérez les préférences de votre application.': 'Dhibiti mapendeleo ya programu yako.',
     Assistant: 'Msaidizi',
     'Assistant IA': 'Msaidizi wa AI',
-    "Activer l'assistant IA": 'Washa msaidizi wa AI',
-    "Une fois activé, l'assistant apparaît dans la barre latérale.":
-        'Baada ya kuwashwa, msaidizi huonekana kwenye upau wa pembeni.',
     'Clé API': 'Ufunguo wa API',
     'URL de base': 'URL ya msingi',
     Modèle: 'Mfano',
@@ -71,6 +68,12 @@ const sw: Record<string, string> = {
     'Choisissez le service à utiliser pour le chat IA.':
         'Chagua huduma ya kutumia kwa mazungumzo ya AI.',
     'Choisir un fournisseur': 'Chagua mtoa huduma',
+    "Choisissez un fournisseur pour utiliser l'assistant.":
+        'Chagua mtoa huduma ili kutumia msaidizi.',
+    'Ajoutez une clé API pour utiliser ce fournisseur.':
+        'Ongeza ufunguo wa API ili kutumia mtoa huduma huyu.',
+    "Les paramètres de l'assistant n'ont pas pu être enregistrés.":
+        'Mipangilio ya msaidizi haikuweza kuhifadhiwa.',
     Personnalisé: 'Maalum',
     'Comportement des langues': 'Tabia ya lugha',
     "L'assistant suit la langue active, sauf si vous demandez explicitement une autre langue.":
@@ -79,6 +82,78 @@ const sw: Record<string, string> = {
     'Changer uniquement sur demande': 'Badilisha tu unapoombwa',
     "Utilisez l'identifiant exact du modèle fourni par ce service.":
         'Tumia kitambulisho halisi cha mfano kilichotolewa na huduma hii.',
+
+    // ── MCP server ──
+    'Serveur MCP': 'Seva ya MCP',
+    'Permet à votre propre application d’IA (Claude Desktop, Codex…) d’utiliser votre bibliothèque Wmb Table.':
+        'Inaruhusu programu yako mwenyewe ya AI (Claude Desktop, Codex…) kutumia maktaba yako ya Wmb Table.',
+    'Autoriser les modifications (notes et sujets)': 'Ruhusu mabadiliko (maelezo na mada)',
+    'Votre application d’IA peut créer et modifier vos notes et vos sujets.':
+        'Programu yako ya AI inaweza kuunda na kubadilisha maelezo na mada zako.',
+    'Votre application d’IA peut seulement lire votre bibliothèque.':
+        'Programu yako ya AI inaweza kusoma maktaba yako tu.',
+    'Adresse du serveur': 'Anwani ya seva',
+    'Le port habituel {{defaultPort}} était occupé : Wmb Table utilise le port {{port}}.':
+        'Mlango wa kawaida {{defaultPort}} ulikuwa unatumika: Wmb Table inatumia mlango {{port}}.',
+    'Ajoutez ces lignes au fichier ~/.codex/config.toml.':
+        'Ongeza mistari hii kwenye faili ~/.codex/config.toml.',
+    'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop. Node.js doit être installé.':
+        'Ongeza hii kwenye faili claude_desktop_config.json (Settings, Developer, Edit Config), kisha anzisha upya Claude Desktop. Node.js lazima iwe imesakinishwa.',
+    'Copier {{label}}': 'Nakili {{label}}',
+    Copié: 'Imenakiliwa',
+    'Le serveur MCP n’a pas pu démarrer : les ports {{firstPort}} à {{lastPort}} sont déjà utilisés. Fermez l’application qui les occupe, puis réactivez le serveur.':
+        'Seva ya MCP haikuweza kuanza: milango {{firstPort}} hadi {{lastPort}} tayari inatumika. Funga programu inayoitumia, kisha washa seva tena.',
+    'Le serveur MCP n’a pas pu démarrer. Réessayez ou redémarrez Wmb Table.':
+        'Seva ya MCP haikuweza kuanza. Jaribu tena au anzisha upya Wmb Table.',
+    'Le réglage du serveur MCP n’a pas pu être enregistré.':
+        'Mpangilio wa seva ya MCP haukuweza kuhifadhiwa.',
+    Commande: 'Amri',
+    '{{method}} (recommandé)': '{{method}} (inapendekezwa)',
+    'Autre méthode : {{method}}': 'Njia nyingine: {{method}}',
+    'Wmb Table doit être ouvert.': 'Wmb Table lazima iwe wazi.',
+    'Fonctionne même quand Wmb Table est fermé.': 'Inafanya kazi hata Wmb Table ikiwa imefungwa.',
+    'Autre application': 'Programu nyingine',
+    'Le fichier de configuration de Claude Desktop n’est pas un JSON valide : Wmb Table ne l’a pas modifié. Corrigez-le, ou ajoutez la configuration ci-dessous à la main.':
+        'Faili la mipangilio la Claude Desktop si JSON sahihi: Wmb Table haikulibadilisha. Lirekebishe, au ongeza mipangilio iliyo hapa chini kwa mkono.',
+    'Wmb Table n’a pas le droit de modifier le fichier de configuration de Claude Desktop. Ajoutez la configuration ci-dessous à la main.':
+        'Wmb Table hairuhusiwi kubadilisha faili la mipangilio la Claude Desktop. Ongeza mipangilio iliyo hapa chini kwa mkono.',
+    'Le fichier de configuration de Claude Desktop n’a pas pu être lu ou enregistré. Ajoutez la configuration ci-dessous à la main.':
+        'Faili la mipangilio la Claude Desktop halikuweza kusomwa au kuhifadhiwa. Ongeza mipangilio iliyo hapa chini kwa mkono.',
+    'Claude Desktop n’est pas installé sur cet ordinateur.':
+        'Claude Desktop haijasakinishwa kwenye kompyuta hii.',
+    'Télécharger Claude Desktop': 'Pakua Claude Desktop',
+    'Après l’installation, revenez ici pour le configurer automatiquement, ou copiez la configuration ci-dessous.':
+        'Baada ya kuisakinisha, rudi hapa kuisanidi kiotomatiki, au nakili mipangilio iliyo hapa chini.',
+    'Déjà configuré': 'Tayari imesanidiwa',
+    'Wmb Table a été ajouté à Claude Desktop. Redémarrez Claude Desktop pour l’utiliser.':
+        'Wmb Table imeongezwa kwenye Claude Desktop. Anzisha upya Claude Desktop ili uitumie.',
+    'Configurer automatiquement': 'Sanidi kiotomatiki',
+    'La configuration enregistrée dans Claude Desktop ne correspond plus à cette copie de Wmb Table.':
+        'Mipangilio iliyohifadhiwa kwenye Claude Desktop hailingani tena na nakala hii ya Wmb Table.',
+    'Ajoute Wmb Table au fichier de configuration de Claude Desktop, après en avoir fait une copie de sauvegarde. Les autres serveurs restent inchangés.':
+        'Huongeza Wmb Table kwenye faili la mipangilio la Claude Desktop, baada ya kutengeneza nakala ya akiba. Seva nyingine hazibadiliki.',
+    'Ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
+        'Ongeza seva ya MCP ya «Streamable HTTP» yenye anwani hii.',
+    'Ou laissez votre application lancer Wmb Table avec cette commande (stdio).':
+        'Au acha programu yako ianzishe Wmb Table kwa amri hii (stdio).',
+    'Serveur HTTP sans fenêtre': 'Seva ya HTTP bila dirisha',
+    Avancé: 'Ya kina',
+    'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop.':
+        'Ongeza hii kwenye faili claude_desktop_config.json (Mipangilio, Msanidi, Hariri usanidi), kisha uanzishe upya Claude Desktop.',
+    Configuration: 'Usanidi',
+    'Commande de développement : cette copie de Wmb Table n’est pas installée.':
+        'Amri ya maendeleo: nakala hii ya Wmb Table haijasakinishwa.',
+    'Lancez cette commande dans un terminal et laissez-le ouvert ; Ctrl+C arrête le serveur. Fermez d’abord Wmb Table s’il est ouvert : il utilise déjà ce port.':
+        'Endesha amri hii kwenye terminal na uiache wazi; Ctrl+C inasimamisha seva. Funga Wmb Table kwanza ikiwa iko wazi: tayari inatumia mlango huu.',
+    'Le serveur MCP est désactivé. Activez « Serveur MCP » dans Wmb Table → Paramètres → Assistant.':
+        'Seva ya MCP imezimwa. Washa «Seva ya MCP» katika Wmb Table → Mipangilio → Msaidizi.',
+    'La langue « {{language}} » n’est pas installée dans Wmb Table. Installées : {{installed}}.':
+        'Lugha «{{language}}» haijasakinishwa katika Wmb Table. Zilizosakinishwa: {{installed}}.',
+    'Serveur MCP de Wmb Table : {{url}}': 'Seva ya MCP ya Wmb Table: {{url}}',
+    'Le port {{port}} est déjà utilisé (Wmb Table sert peut-être déjà cette adresse).':
+        'Mlango {{port}} tayari unatumika (huenda Wmb Table tayari inahudumia anwani hii).',
+    'Les ports {{firstPort}} à {{lastPort}} sont déjà utilisés.':
+        'Milango {{firstPort}} hadi {{lastPort}} tayari inatumika.',
 
     // ── AI provider descriptions ──
     'Fonctionne sans connexion internet, directement sur votre ordinateur.':
@@ -93,10 +168,13 @@ const sw: Record<string, string> = {
 
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Ongeza mtoa huduma',
-    'Ajouter un fournisseur personnalisé': 'Ongeza mtoa huduma maalum',
     'Compatible avec l’API OpenAI.': 'Inalingana na API ya OpenAI.',
     'Supprimer ce fournisseur ?': 'Futa mtoa huduma huyu?',
     'Un fournisseur avec ce nom existe déjà.': 'Mtoa huduma mwenye jina hili tayari yupo.',
+    "L'URL de base est requise.": 'URL ya msingi inahitajika.',
+    "L'URL doit commencer par http:// ou https://.": 'URL lazima ianze na http:// au https://.',
+    "Cette URL n'est pas valide.": 'URL hii si sahihi.',
+    'Supprimer le fournisseur {{name}}': 'Futa mtoa huduma {{name}}',
     'ex: Mon Service IA': 'mf.: Huduma Yangu ya AI',
     'ex: gpt-4o-mini': 'mf.: gpt-4o-mini',
     'Taille du contexte (tokens)': 'Ukubwa wa muktadha (tokeni)',
@@ -106,6 +184,12 @@ const sw: Record<string, string> = {
     Connecté: 'Imeunganishwa',
     Échec: 'Imeshindwa',
     'La connexion a échoué.': 'Muunganisho umeshindwa.',
+    'La clé API a été refusée. Vérifiez-la puis réessayez.':
+        'Ufunguo wa API umekataliwa. Uhakiki kisha ujaribu tena.',
+    "Le modèle ou l'adresse est introuvable. Vérifiez le modèle et l'URL de base.":
+        'Modeli au anwani haikupatikana. Hakiki modeli na URL ya msingi.',
+    "Impossible de joindre le serveur. Vérifiez l'URL de base et votre connexion.":
+        'Imeshindwa kufikia seva. Hakiki URL ya msingi na muunganisho wako.',
     'La clé API est manquante pour ce fournisseur.': 'Ufunguo wa API haupo kwa mtoa huduma huyu.',
     'Fournisseur IA inconnu.': 'Mtoa huduma wa AI hajulikani.',
     'Validation du fournisseur impossible.': 'Haiwezekani kuthibitisha mtoa huduma.',
@@ -135,20 +219,22 @@ const sw: Record<string, string> = {
         'Sauti hii haiwezi kuchezwa kwenye kompyuta hii.',
 
     // ── AI errors ──
-    "L'assistant IA est désactivé dans les paramètres.":
-        'Msaidizi wa AI amezimwa kwenye mipangilio.',
     'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.':
         'Hakuna mtoa huduma wa AI aliyesanidiwa. Chagua mtoa huduma kwenye mipangilio.',
     'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.':
         'Hakuna mfano uliosanidiwa kwa mtoa huduma huyu. Weka mfano kwenye mipangilio.',
 
     // ── AI chat ──
-    "L'assistant IA est désactivé.": 'Msaidizi wa AI amezimwa.',
-    'Ouvrir les paramètres': 'Fungua mipangilio',
+    "Posez une question sur un sujet d'étude : l'assistant développe le thème, rapproche ce que disent les prédications et les Écritures, et vous donne les références pour vérifier par vous-même.":
+        'Uliza swali kuhusu mada ya kujifunza: msaidizi huikuza mada, huunganisha yale yanayosemwa na mahubiri na Maandiko, na hukupa marejeo ili ujithibitishie mwenyewe.',
+    "Pour l'utiliser, choisissez un service d'IA — par exemple OpenAI, Claude, Gemini, OpenRouter, ou Ollama sur votre ordinateur — et ajoutez votre clé API si le service en demande une.":
+        'Ili kumtumia, chagua huduma ya AI — kwa mfano OpenAI, Claude, Gemini, OpenRouter, au Ollama kwenye kompyuta yako — kisha ongeza ufunguo wako wa API ikiwa huduma inauhitaji.',
+    "Configurer l'assistant": 'Sanidi msaidizi',
+    'Voir le guide': 'Soma mwongozo',
     'Le saviez-vous ? <u>{{feature}}</u> peut vous aider à explorer un sujet et comprendre plus vite ce que vous cherchez.':
         'Je, unajua? <u>{{feature}}</u> inaweza kukusaidia kuchunguza mada na kuelewa haraka zaidi unachotafuta.',
-    'Activez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
-        'Washa <u>{{feature}}</u> ili kuuliza maswali, kuchunguza mada kwa kina, kulinganisha mahubiri mengi, kupata vifungu vya Biblia na kupata majibu wazi bila kupitia kila kitu kwa mkono.',
+    'Configurez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
+        'Sanidi <u>{{feature}}</u> ili kuuliza maswali, kuchunguza mada kwa kina, kulinganisha mahubiri mengi, kupata vifungu vya Biblia na kupata majibu wazi bila kupitia kila kitu kwa mkono.',
     "Ouvrir les réglages de l'assistant": 'Fungua mipangilio ya msaidizi',
     'Le saviez-vous ? <u>{{feature}}</u> peut lire vos documents.':
         'Je, unajua? <u>{{feature}}</u> inaweza kusoma nyaraka zako kwa sauti.',
@@ -195,6 +281,7 @@ const sw: Record<string, string> = {
         'Mfano huu ni finyu mno kwa msaidizi. Chagua mwingine ili uweze kuutumia.',
     'Voir le raisonnement': 'Onyesha hoja',
     'Masquer le raisonnement': 'Ficha hoja',
+    'Actions de la conversation': 'Vitendo vya mazungumzo',
     '{{count}} dernières lignes': 'mistari {{count}} ya mwisho',
     '+{{count}} autre': '+{{count}} nyingine',
     '+{{count}} autres': '+{{count}} nyingine',
@@ -213,6 +300,10 @@ const sw: Record<string, string> = {
     'Mis à jour le': 'Imesasishwa tarehe',
     'Exporté le': 'Imehamishwa tarehe',
     'Réponse sans texte': 'Jibu lisilo na maandishi',
+    'Réponse coupée : elle a atteint la longueur maximale que ce modèle peut écrire.':
+        'Jibu limekatika: limefikia urefu wa juu kabisa ambao modeli hii inaweza kuandika.',
+    "Le modèle n'a pas répondu à temps. Réessayez, ou choisissez un modèle plus rapide dans les paramètres.":
+        'Modeli haikujibu kwa wakati. Jaribu tena, au chagua modeli yenye kasi zaidi kwenye mipangilio.',
     'Aller en bas': 'Nenda chini',
     'Une génération est en cours.': 'Uundaji unaendelea.',
     Réessayer: 'Jaribu tena',
@@ -220,6 +311,36 @@ const sw: Record<string, string> = {
     'Supprimer cette conversation ?': 'Futa mazungumzo haya?',
     'Supprimer toutes les conversations ?': 'Futa mazungumzo yote?',
     "Vider l'historique": 'Futa historia',
+    "Recherche incomplète : la limite d'étapes a été atteinte.":
+        'Utafiti haujakamilika: kikomo cha hatua kimefikiwa.',
+    'Arrêté par vous.': 'Imesimamishwa na wewe.',
+    "Le modèle n'a renvoyé aucun texte.": 'Modeli haikurudisha maandishi yoyote.',
+    "L'assistant n'est pas encore configuré.": 'Msaidizi bado haujawekwa.',
+    'Clé API refusée. Vérifiez-la dans les paramètres.':
+        'Ufunguo wa API umekataliwa. Uangalie katika mipangilio.',
+    'Modèle introuvable chez ce fournisseur. Choisissez-en un autre.':
+        'Modeli haikupatikana kwa mtoa huduma huyu. Chagua nyingine.',
+    'Trop de demandes pour le moment. Patientez un peu, puis réessayez.':
+        'Maombi ni mengi kwa sasa. Subiri kidogo, kisha ujaribu tena.',
+    'Quota ou crédit épuisé chez le fournisseur.': 'Kiwango au salio limekwisha kwa mtoa huduma.',
+    'La conversation est trop longue pour ce modèle. Commencez une nouvelle conversation.':
+        'Mazungumzo ni marefu mno kwa modeli hii. Anzisha mazungumzo mapya.',
+    'Le serveur du service IA est indisponible pour le moment.':
+        'Seva ya huduma ya AI haipatikani kwa sasa.',
+    'Connexion perdue avec le service IA. Vérifiez votre réseau.':
+        'Muunganisho na huduma ya AI umepotea. Angalia mtandao wako.',
+    "Le service IA n'a pas répondu à temps.": 'Huduma ya AI haikujibu kwa wakati.',
+    'Le service IA a refusé la demande.': 'Huduma ya AI imekataa ombi.',
+    'Une erreur est survenue.': 'Hitilafu imetokea.',
+    'Poursuivre la recherche': 'Endelea na utafiti',
+    'Ouvrir les paramètres IA': 'Fungua mipangilio ya AI',
+    "Continue ta réponse là où elle s'est arrêtée.": 'Endelea na jibu lako pale liliposimama.',
+    'Poursuis tes recherches, puis complète ta réponse.':
+        'Endelea na utafiti wako, kisha ukamilishe jibu lako.',
+    'Réponse en cours': 'Jibu linaandikwa',
+    Renvoyer: 'Tuma tena',
+    'La suppression de la conversation a échoué.': 'Imeshindikana kufuta mazungumzo.',
+    "La suppression de l'historique a échoué.": 'Imeshindikana kufuta historia.',
     'La relance de la réponse a échoué.': 'Imeshindikana kujaribu tena jibu.',
     'La relance est disponible uniquement pour le dernier message utilisateur.':
         'Kujaribu tena kunapatikana tu kwa ujumbe wa mwisho wa mtumiaji.',
@@ -252,6 +373,7 @@ const sw: Record<string, string> = {
     'Recherche dans les documents': 'Utafutaji katika nyaraka',
     'Recherche biblique': 'Utafutaji wa Biblia',
     'Recherche approfondie': 'Utafiti wa kina',
+    'Recherche incomplète': 'Utafiti haujakamilika',
     'Langues disponibles': 'Lugha zinazopatikana',
     'Documents personnalisés': 'Nyaraka maalum',
     'Lecture du document': 'Usomaji wa waraka',
@@ -997,10 +1119,8 @@ const sw: Record<string, string> = {
     'Si vous voulez quelque chose de simple, gardez le fournisseur proposé puis testez une voix.':
         'Ukihitaji jambo rahisi, tumia mtoa huduma uliopendekezwa kisha ujaribu sauti.',
     "À quoi servent les réglages de l'assistant ?": 'Mipangilio ya msaidizi hutumika kwa nini?',
-    "Cet onglet active l'assistant IA et choisit comment il répond dans l'application.":
-        'Kichupo hiki huwasha msaidizi wa AI na kuchagua jinsi anavyojibu ndani ya programu.',
-    "Activez ou masquez l'assistant dans la barre latérale.":
-        'Washa au ficha msaidizi kwenye upau wa pembeni.',
+    "Cet onglet choisit le service d'IA de l'assistant et la façon dont il répond.":
+        'Kichupo hiki huchagua huduma ya AI ya msaidizi na jinsi anavyojibu.',
     'Sélectionnez un fournisseur local, cloud ou personnalisé.':
         'Chagua mtoa huduma wa ndani, wa mtandaoni au maalum.',
     'Définissez la langue et le modèle utilisés pour les réponses.':
@@ -1077,12 +1197,12 @@ const sw: Record<string, string> = {
         'Pia kinadhibiti uzoefu wa kusikiliza: sauti, kasi, uangaziaji na tabia ya sauti.',
     "L'assistant peut aider à explorer un thème, retrouver des références et comparer plus vite plusieurs contenus.":
         'Msaidizi anaweza kusaidia kuchunguza mada, kupata marejeo na kulinganisha maudhui mengi kwa haraka.',
-    "Cet onglet détermine s'il est disponible, quel service il utilise et dans quelle langue il travaille.":
-        'Kichupo hiki kinaamua kama anapatikana, anatumia huduma gani na anafanya kazi kwa lugha gani.',
+    'Cet onglet détermine quel service il utilise et dans quelle langue il travaille.':
+        'Kichupo hiki kinaamua anatumia huduma gani na anafanya kazi kwa lugha gani.',
     'Vous pouvez choisir une solution locale, cloud ou personnalisée selon vos besoins.':
         'Unaweza kuchagua suluhisho la ndani, la mtandaoni au maalum kulingana na mahitaji yako.',
-    "Activez l'assistant pour le rendre disponible dans la barre latérale.":
-        'Washa msaidizi ili apatikane kwenye upau wa pembeni.',
+    'Ajoutez votre clé API si le service en demande une.':
+        'Ongeza ufunguo wako wa API ikiwa huduma inauhitaji.',
     'Elle sert à retrouver rapidement un mot, un thème, un lieu ou une expression dans les prédications.':
         'Kinatumika kupata kwa haraka neno, mada, mahali au usemi ndani ya mahubiri.',
     'Elle évite de parcourir manuellement plusieurs documents quand vous savez déjà ce que vous cherchez.':
@@ -1166,6 +1286,8 @@ const sw: Record<string, string> = {
     "L'arrêt de la génération a échoué.": 'Imeshindikana kusimamisha uzalishaji.',
     "L'envoi du message a échoué.": 'Imeshindikana kutuma ujumbe.',
     'La création de la conversation a échoué.': 'Imeshindikana kuunda mazungumzo.',
+    'Le message est trop long. Raccourcissez-le puis réessayez.':
+        'Ujumbe ni mrefu mno. Ufupishe kisha ujaribu tena.',
     'Le chargement de la conversation a échoué.': 'Imeshindikana kupakia mazungumzo.',
     'Le chargement des anciennes conversations a échoué.':
         'Imeshindikana kupakia mazungumzo ya zamani.',

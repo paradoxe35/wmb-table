@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb, SQL_NORMALIZE_FUNCTION } from '../index';
 import { aiConversations, aiMessages, aiSettings } from '../schema';
@@ -10,6 +10,8 @@ import {
     BUILTIN_PROVIDER_IDS,
     AI_MESSAGE_HISTORY_PAGE_SIZE,
     createDefaultAiSettings,
+    isBuiltinProviderId,
+    MAX_HISTORY_CONVERSATIONS,
     type AiConversation,
     type AiConversationHistoryPage,
     type AiConversationHistoryPageRequest,
@@ -17,11 +19,13 @@ import {
     type AiMessageHistoryPageRequest,
     type AiMessage,
     type AiMessageRole,
+    type AiProviderConfig,
     type AiProviders,
     type AiSettings,
     type AiToolCall,
     type AiToolResult,
 } from '@shared/ai.types';
+import { normalizeApiKey } from '@shared/ai-provider-input';
 
 const AI_SETTINGS_ID = 'ai_settings';
 function toConversation(row: typeof aiConversations.$inferSelect): AiConversation {
@@ -53,13 +57,22 @@ function toMessage(row: typeof aiMessages.$inferSelect): AiMessage {
     };
 }
 
+/** Older builds could store 0 or any number, and 0 would delete every conversation. */
+function readHistoryLimit(stored: number, fallback: number): number {
+    if (!Number.isInteger(stored) || stored < MAX_HISTORY_CONVERSATIONS.min) return fallback;
+    return Math.min(stored, MAX_HISTORY_CONVERSATIONS.max);
+}
+
 function rowToSettings(row: typeof aiSettings.$inferSelect): AiSettings {
     const defaults = createDefaultAiSettings();
     return {
         enabled: row.enabled,
         activeProvider: row.activeProvider,
         languagePreference: row.languagePreference as AiSettings['languagePreference'],
-        maxHistoryConversations: row.maxHistoryConversations,
+        maxHistoryConversations: readHistoryLimit(
+            row.maxHistoryConversations,
+            defaults.maxHistoryConversations,
+        ),
         providers: {
             ...defaults.providers,
             ...parseJsonOrFallback<AiProviders>(row.providers, defaults.providers, {
@@ -102,12 +115,29 @@ export function ensureSettings(): AiSettings {
     return getSettings()!;
 }
 
+function trimProviderConfig(config: Partial<AiProviderConfig>): Partial<AiProviderConfig> {
+    const trimmed = { ...config };
+    if ('apiKey' in config) trimmed.apiKey = normalizeApiKey(config.apiKey);
+    if ('baseUrl' in config) trimmed.baseUrl = config.baseUrl?.trim() || undefined;
+    return trimmed;
+}
+
 function mergeProviders(current: AiProviders, partial: Partial<AiProviders>): AiProviders {
     const result = {} as AiProviders;
     for (const id of BUILTIN_PROVIDER_IDS) {
-        result[id] = partial[id] ? { ...current[id], ...partial[id] } : current[id];
+        result[id] = partial[id]
+            ? { ...current[id], ...trimProviderConfig(partial[id]) }
+            : current[id];
     }
     return result;
+}
+
+function resolveActiveProviderId(
+    requested: AiSettings['activeProvider'],
+    customProviders: AiSettings['customProviders'],
+): AiSettings['activeProvider'] {
+    if (!requested || isBuiltinProviderId(requested)) return requested;
+    return customProviders.some((provider) => provider.id === requested) ? requested : null;
 }
 
 export function updateSettings(partial: Partial<AiSettings>): AiSettings {
@@ -115,18 +145,22 @@ export function updateSettings(partial: Partial<AiSettings>): AiSettings {
     const mergedProviders = partial.providers
         ? mergeProviders(current.providers, partial.providers as Partial<AiProviders>)
         : current.providers;
+    const customProviders = partial.customProviders ?? current.customProviders;
+    const activeProvider = resolveActiveProviderId(
+        'activeProvider' in partial ? (partial.activeProvider ?? null) : current.activeProvider,
+        customProviders,
+    );
 
     getDb()
         .update(aiSettings)
         .set({
             enabled: partial.enabled ?? current.enabled,
-            activeProvider:
-                'activeProvider' in partial ? partial.activeProvider : current.activeProvider,
+            activeProvider,
             languagePreference: partial.languagePreference ?? current.languagePreference,
             maxHistoryConversations:
                 partial.maxHistoryConversations ?? current.maxHistoryConversations,
             providers: JSON.stringify(mergedProviders),
-            customProviders: JSON.stringify(partial.customProviders ?? current.customProviders),
+            customProviders: JSON.stringify(customProviders),
             updatedAt: new Date().toISOString(),
         })
         .where(eq(aiSettings.id, AI_SETTINGS_ID))
@@ -285,6 +319,7 @@ export function clearAllConversations(): void {
 }
 
 export function trimConversationHistory(limit: number): void {
+    if (!Number.isInteger(limit) || limit < 1) return;
     const rows = getDb()
         .select({ id: aiConversations.id })
         .from(aiConversations)
@@ -434,23 +469,16 @@ export function updateMessage(
     return getMessage(messageId)!;
 }
 
-export function appendAssistantContent(messageId: string, delta: string): void {
-    const row = getDb()
-        .select({ conversationId: aiMessages.conversationId })
-        .from(aiMessages)
-        .where(eq(aiMessages.id, messageId))
-        .get();
-    if (!row) {
-        throw new Error(`AI message not found: ${messageId}`);
-    }
-
-    getDb()
+/** Returns false when the reply row is gone (deleted by sync or by the user mid-stream). */
+export function appendAssistantContent(messageId: string, delta: string): boolean {
+    const result = getDb()
         .update(aiMessages)
         .set({
             content: sql`${aiMessages.content} || ${delta}`,
         })
         .where(eq(aiMessages.id, messageId))
         .run();
+    return result.changes > 0;
 }
 
 export function setAssistantToolCalls(messageId: string, toolCalls: AiToolCall[]): AiMessage {
@@ -479,6 +507,25 @@ export function deleteMessage(messageId: string): void {
     touchConversation(current.conversationId);
     logChange('ai_messages', messageId, 'DELETE', { id: messageId });
     logConversationChange(current.conversationId);
+}
+
+/**
+ * Removes reply placeholders a crash or a forced quit left empty. They were never logged for
+ * sync (replies are logged only when finished), so they are deleted without a change log.
+ */
+export function deleteEmptyAssistantMessages(createdBefore: string): number {
+    return getDb()
+        .delete(aiMessages)
+        .where(
+            and(
+                eq(aiMessages.role, 'assistant'),
+                lt(aiMessages.createdAt, createdBefore),
+                sql`trim(${aiMessages.content}, char(32, 9, 10, 13)) = ''`,
+                sql`coalesce(${aiMessages.toolCalls}, '[]') = '[]'`,
+                sql`coalesce(${aiMessages.toolResults}, '[]') = '[]'`,
+            ),
+        )
+        .run().changes;
 }
 
 /**

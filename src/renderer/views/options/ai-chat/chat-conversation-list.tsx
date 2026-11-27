@@ -116,6 +116,7 @@ const ConversationListItem = memo(function ConversationListItem({
                                 size="small"
                                 disabled={isStreaming}
                                 className="ai-chat__conv-menu-trigger"
+                                aria-label={t('Actions de la conversation')}
                                 icon={<MoreOutlined style={{ fontSize: 'var(--fs-xs)' }} />}
                                 onClick={(event) => event.stopPropagation()}
                                 onKeyDown={(event) => event.stopPropagation()}
@@ -202,6 +203,7 @@ export default memo(function ChatConversationList({
                         size="small"
                         type="text"
                         icon={<PlusOutlined />}
+                        className="ai-chat__new-conversation"
                         onClick={onCreateConversation}
                         aria-label={t('Nouvelle conversation')}
                     />
@@ -262,6 +264,9 @@ export default memo(function ChatConversationList({
                 <div className="ai-chat__sidebar-footer">
                     <Popconfirm
                         title={t('Supprimer toutes les conversations ?')}
+                        okText={t('Supprimer')}
+                        cancelText={t('Annuler')}
+                        okButtonProps={{ danger: true }}
                         onConfirm={onClearConversations}
                     >
                         <Button

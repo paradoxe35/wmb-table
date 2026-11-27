@@ -3,7 +3,7 @@
 <p class="lead">Wmb Table comprend une vraie fonction de discussion IA pour vous aider à retrouver plus vite des prédications, des versets, des sujets, des notes et des documents personnels, mais aussi pour explorer un thème, comparer des messages et préparer une étude plus facilement.</p>
 
 > [!IMPORTANT]
-> La discussion IA existe dans l’application, mais elle reste désactivée tant que vous ne l’activez pas vous-même dans l’onglet `Assistant`.
+> Pour utiliser la discussion IA, choisissez d’abord un service d’IA dans l’onglet `Assistant` des paramètres. Tant que ce n’est pas fait, la page Assistant affiche une carte d’accueil avec le bouton `Configurer l’assistant`.
 
 ## À quoi sert la discussion IA
 
@@ -32,12 +32,12 @@ L’idée simple est celle-ci : au lieu de refaire vous-même plusieurs recherch
 
 ## Où ouvrir cette fonction
 
-Quand elle est activée, la discussion IA apparaît dans la barre latérale de l’application, avec les autres outils.
+La discussion IA se trouve toujours dans la barre latérale de l’application, avec les autres outils.
 
 <ScreenshotPlaceholder
   file="fr-ai-chat-sidebar-entry.png"
   label="Entrée Assistant dans le menu de gauche"
-  hint="Montrer l’entrée Assistant visible dans la barre latérale après activation."
+  hint="Montrer l’entrée Assistant dans la barre latérale."
 />
 
 ## Ce que vous voyez dans la page Assistant

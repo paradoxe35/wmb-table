@@ -61,7 +61,6 @@ Cette partie sert à gérer la fonction de discussion IA.
 
 Elle permet de :
 
-- activer ou désactiver l’assistant
 - choisir le fournisseur IA
 - régler un modèle local ou un service en ligne
 - vérifier le comportement de langue
@@ -106,7 +105,7 @@ Si vous voulez…
 - faire une vérification rapide : ouvrez `Général`
 - reprendre vos lectures ou limiter les onglets : ouvrez `Vue document`
 - changer la langue de votre bibliothèque : ouvrez `Bibliothèque`
-- utiliser ou activer la discussion IA : ouvrez `Assistant`
+- configurer la discussion IA : ouvrez `Assistant`
 - écouter une prédication ou la Bible : ouvrez `Lecture audio`
 - protéger votre travail : ouvrez `Sauvegarde`
 - installer la dernière version : ouvrez `Mise à jour`

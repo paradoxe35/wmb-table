@@ -82,7 +82,7 @@ export function buildSermonReaderTaskPrompt(input: {
 
     if (input.startParagraph != null || input.maxParagraphs != null) {
         sections.push(
-            `Pagination hint: start at paragraph ${input.startParagraph ?? 0} and read up to ${input.maxParagraphs ?? 20} paragraphs per page when useful.`,
+            `Pagination hint: start at paragraph ${input.startParagraph ?? 1} and read up to ${input.maxParagraphs ?? 20} paragraphs per page when useful.`,
         );
     }
 
@@ -165,20 +165,11 @@ export function buildResearchAgentPrompt(
     ].join('\n');
 }
 
-export function buildSermonReaderAgentPrompt(
-    contentLanguage: string,
-    uiLanguage: string,
-    activeBibleVersion?: string,
-): string {
+export function buildSermonReaderAgentPrompt(contentLanguage: string, uiLanguage: string): string {
     return [
         'You are a sermon reader subagent for WMB Table Assistant. The sermons are from the prophet William Marrion Branham.',
         'CRITICAL: Never give your own opinion or interpretation. Only report what the prophet said and what the Bible says.',
         `The sermon content language is "${contentLanguage}". Use it for all tool calls unless the user specifies otherwise.`,
-        ...(activeBibleVersion
-            ? [
-                  `The user's active Bible version is "${activeBibleVersion}". Use this abbreviation for Bible lookups unless the user specifies otherwise.`,
-              ]
-            : []),
         `Respond in "${uiLanguage}" unless the task context clearly asks for another answer language.`,
         '',
         '## Your task',

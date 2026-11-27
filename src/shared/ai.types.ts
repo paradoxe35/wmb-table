@@ -9,6 +9,9 @@ export type AiMessageRole = 'system' | 'user' | 'assistant' | 'tool';
 export type AiLanguagePreference = 'active' | 'explicit-only';
 export const AI_CONVERSATION_HISTORY_PAGE_SIZE = 30;
 export const AI_MESSAGE_HISTORY_PAGE_SIZE = 30;
+export const AI_MESSAGE_MAX_LENGTH = 100_000;
+export const AI_MESSAGE_TOO_LONG_ERROR =
+    'Le message est trop long. Raccourcissez-le puis réessayez.';
 
 /** Below this the assistant warns in settings and refuses to run: the prompt alone would not fit. */
 export const RECOMMENDED_MIN_CONTEXT_WINDOW = 32_000;
@@ -62,6 +65,8 @@ export interface AiModelLimits {
 export interface AiRemoteModel extends AiModelLimits {
     id: string;
     name: string;
+    /** Unknown when the provider's model list does not say. */
+    supportsReasoning?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -101,6 +106,8 @@ export const BUILTIN_PROVIDER_REQUIRES_API_KEY: Record<AiBuiltinProviderId, bool
     ollama: false,
 };
 
+export const MAX_HISTORY_CONVERSATIONS = { min: 1, max: 500 } as const;
+
 export function createDefaultAiSettings(): AiSettings {
     const providers = {} as AiProviders;
     for (const id of BUILTIN_PROVIDER_IDS) {
@@ -111,7 +118,7 @@ export function createDefaultAiSettings(): AiSettings {
         };
     }
     return {
-        enabled: false,
+        enabled: true,
         activeProvider: null,
         languagePreference: 'active',
         maxHistoryConversations: 50,
@@ -289,10 +296,28 @@ export interface AiStreamChunkEvent {
     delta: string;
 }
 
+export type AiRunFinishReason =
+    'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'interrupted' | 'other';
+
+export type AiRunStoppedBy = 'model' | 'stop-condition' | 'tool-without-execute' | 'approval';
+
+/** How a finished run ended, so the renderer can tell a full answer from a cut one. */
+export interface AiRunOutcome {
+    finishReason: AiRunFinishReason;
+    stoppedBy: AiRunStoppedBy;
+    /** The answer is still cut by the output limit after the automatic continuations. */
+    truncated: boolean;
+    /** The step limit was reached, so the last step was made to write the answer. */
+    stepLimitReached: boolean;
+    steps: number;
+    continuations: number;
+}
+
 export interface AiStreamCompleteEvent {
     conversationId: string;
     generationId: string;
     messageId: string;
+    outcome?: AiRunOutcome;
 }
 
 export interface AiStreamCancelEvent {
@@ -301,11 +326,26 @@ export interface AiStreamCancelEvent {
     messageId: string;
 }
 
+export type AiErrorCode =
+    | 'not-configured'
+    | 'auth'
+    | 'model-not-found'
+    | 'rate-limit'
+    | 'quota'
+    | 'context-too-long'
+    | 'provider-unavailable'
+    | 'network'
+    | 'timeout'
+    | 'invalid-request'
+    | 'unknown';
+
 export interface AiStreamErrorEvent {
     conversationId: string;
     generationId: string;
     messageId: string;
     error: string;
+    code?: AiErrorCode;
+    retryable?: boolean;
 }
 
 export interface AiToolEvent {
@@ -315,6 +355,16 @@ export interface AiToolEvent {
     toolName: string;
     toolCallId: string;
     payload?: unknown;
+    isError?: boolean;
+}
+
+/** Tools report expected failures by returning `{ error }`; agents return `status: 'failed'`. */
+export function isToolErrorOutput(output: unknown): boolean {
+    if (!output || typeof output !== 'object' || Array.isArray(output)) return false;
+    const record = output as { error?: unknown; status?: unknown };
+    return (
+        (typeof record.error === 'string' && record.error.length > 0) || record.status === 'failed'
+    );
 }
 
 export interface AiReasoningEvent {

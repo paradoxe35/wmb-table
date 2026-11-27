@@ -89,7 +89,7 @@ export function getCustomDocumentContent(id: string): CustomDocumentContent | nu
     };
 }
 
-function toDocumentLines(content: string): string[] {
+export function toDocumentLines(content: string): string[] {
     try {
         const parsed = JSON.parse(content);
         if (Array.isArray(parsed)) {

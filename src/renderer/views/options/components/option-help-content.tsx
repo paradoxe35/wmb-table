@@ -119,9 +119,7 @@ export function getTtsSettingsHelp(t: TFunction): InlineHelpContent {
 export function getAiSettingsHelp(t: TFunction): InlineHelpContent {
     return {
         title: t("À quoi servent les réglages de l'assistant ?"),
-        summary: t(
-            "Cet onglet active l'assistant IA et choisit comment il répond dans l'application.",
-        ),
+        summary: t("Cet onglet choisit le service d'IA de l'assistant et la façon dont il répond."),
         sections: [
             {
                 title: t('Ce que cette fonction vous apporte'),
@@ -130,7 +128,7 @@ export function getAiSettingsHelp(t: TFunction): InlineHelpContent {
                         "L'assistant peut aider à explorer un thème, retrouver des références et comparer plus vite plusieurs contenus.",
                     ),
                     t(
-                        "Cet onglet détermine s'il est disponible, quel service il utilise et dans quelle langue il travaille.",
+                        'Cet onglet détermine quel service il utilise et dans quelle langue il travaille.',
                     ),
                     t(
                         'Vous pouvez choisir une solution locale, cloud ou personnalisée selon vos besoins.',
@@ -140,8 +138,8 @@ export function getAiSettingsHelp(t: TFunction): InlineHelpContent {
             {
                 title: t('Pour commencer'),
                 items: [
-                    t("Activez l'assistant pour le rendre disponible dans la barre latérale."),
                     t('Sélectionnez un fournisseur local, cloud ou personnalisé.'),
+                    t('Ajoutez votre clé API si le service en demande une.'),
                 ],
             },
         ],

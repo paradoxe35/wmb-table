@@ -1,6 +1,6 @@
 # Ajustes de Assistant
 
-<p class="lead">La pestaña `Assistant` sirve para activar el chat con IA y elegir cómo debe funcionar dentro de Wmb Table.</p>
+<p class="lead">La pestaña `Assistant` sirve para elegir el servicio de IA del chat y cómo debe funcionar dentro de Wmb Table.</p>
 
 ## Dónde abrirla
 
@@ -10,26 +10,22 @@
 <ScreenshotPlaceholder
   file="es-settings-assistant-tab.png"
   label="Pestaña Assistant en ajustes"
-  hint="Mostrar el interruptor de activación, la elección del proveedor, el comportamiento del idioma y, si es posible, la zona del modelo local."
+  hint="Mostrar la elección del proveedor, el comportamiento del idioma y, si es posible, la zona del modelo local."
 />
 
 ## Lo que puede hacer aquí
 
-- activar o desactivar el asistente
 - elegir el servicio usado para responder
 - configurar un modelo local si quiere trabajar sin internet
 - introducir los datos necesarios para un servicio en línea
 - probar la conexión
 - elegir cómo el asistente sigue el idioma de su biblioteca
 
-## Paso 1: activar el asistente
+## Paso 1: empezar desde la página Assistant
 
-En la parte superior de la página, hay un interruptor simple.
+El asistente siempre está en el menú de la izquierda. Mientras no haya un servicio configurado, su página muestra una tarjeta de bienvenida con el botón `Configurar el asistente`, que abre directamente esta pestaña.
 
-Cuando está activado:
-
-- el asistente aparece en el menú de la izquierda
-- puede abrir la página de chat con IA
+En cuanto el servicio está listo, la página Assistant muestra el chat, sin reiniciar la aplicación.
 
 ## Paso 2: elegir el servicio
 
@@ -151,11 +147,10 @@ Para la mayoría de usuarios, `Seguir el idioma activo` es la mejor opción.
 
 Para empezar sin complicaciones:
 
-1. active el asistente
-2. elija el servicio que quiere usar
-3. introduzca los datos necesarios
-4. mantenga `Seguir el idioma activo`
-5. abra la página `Chat con IA`
+1. elija el servicio que quiere usar
+2. introduzca los datos necesarios
+3. mantenga `Seguir el idioma activo`
+4. abra la página `Chat con IA`
 
 ## Cuándo volver a esta pestaña
 
@@ -166,6 +161,41 @@ Vuelva aquí si:
 - quiere usar el modo local
 - quiere usar otro modelo
 - quiere cambiar cómo el asistente gestiona los idiomas
+
+## Usar su propia aplicación de IA (servidor MCP)
+
+Si ya usa una aplicación de IA en su ordenador, como Claude Desktop o Codex, puede leer su biblioteca de Wmb Table: prédicas, Biblia, sus documentos, notas y temas. Se usa su propia suscripción; Wmb Table no necesita una clave API para esto.
+
+1. Al final de esta pestaña, marque `Servidor MCP`. Mientras la casilla no esté marcada, no se muestra nada más.
+2. En `Configuración`, abra la pestaña de su aplicación: `Claude Desktop`, `Codex` u `Otra aplicación`.
+3. Copie el ejemplo marcado `(recomendado)` y siga la breve explicación que aparece encima. Los ejemplos ya contienen la ruta completa de Wmb Table en su ordenador: no tiene que buscar nada.
+
+Para Claude Desktop, lo más sencillo es el botón `Configurar automáticamente` arriba de su pestaña. Wmb Table añade entonces su propia entrada al archivo `claude_desktop_config.json`, después de hacer una copia de seguridad (`claude_desktop_config.json.wmb-table-backup-…`); sus demás servidores no cambian. Luego reinicie Claude Desktop.
+
+- Si Claude Desktop no está instalado, la pestaña lo indica y da el enlace de descarga; Wmb Table no crea ningún archivo.
+- `Ya configurado` indica que la entrada está en su lugar. Si Wmb Table cambió de carpeta, el botón `Actualizar` corrige la ruta.
+- Si el archivo no es un JSON válido, o Wmb Table no tiene permiso para modificarlo, no se cambia nada: añada entonces el ejemplo a mano.
+
+Cada pestaña ofrece dos métodos:
+
+- `HTTP`: su aplicación se conecta a la dirección mostrada, por ejemplo `http://127.0.0.1:23132/mcp`. Wmb Table debe estar abierto. Es el método recomendado para Codex.
+- `Comando`: su aplicación inicia Wmb Table por sí misma, sin ventana, con el comando `wmb-table mcp`. Funciona incluso con Wmb Table cerrado. Es el método recomendado para Claude Desktop, que así no necesita Node.js.
+
+La parte `Avanzado`, abajo, da el comando `wmb-table mcp --http --port 23132`: inicia el servidor HTTP en una terminal sin abrir Wmb Table. `Ctrl+C` lo detiene. Cierre primero Wmb Table si está abierto, porque ya usa este puerto.
+
+Conviene saber:
+
+- El servidor está desactivado por defecto. Mientras `Servidor MCP` no esté marcado, el comando `wmb-table mcp` se niega a iniciarse y explica por qué.
+- Desmarcar `Servidor MCP` también detiene el comando: si lo inició su aplicación, se cierra solo; el servidor HTTP sin ventana rechaza las solicitudes hasta que vuelva a marcar la casilla.
+- En Linux, los ejemplos añaden `--no-sandbox` antes de `mcp` (por ejemplo `wmb-table --no-sandbox mcp`). Sin esto, el comando no se inicia como root, en un contenedor o en algunos sistemas. Este modo no abre ninguna página web, así que no reduce la seguridad.
+- El servidor HTTP se inicia con Wmb Table mientras la casilla está marcada y se detiene al desmarcarla o al salir de Wmb Table.
+- Por defecto, su aplicación de IA solo puede leer. Marque `Permitir cambios (notas y temas)` para que también pueda crear y modificar sus notas y temas. Esto vale para todos los métodos.
+- Wmb Table puede permanecer abierto mientras el comando funciona: ambos usan la misma biblioteca sin molestarse.
+- Las herramientas usan su idioma de contenido. Añada `--language en` (por ejemplo) al comando para otro idioma instalado.
+- Solo se puede acceder al servidor desde su propio ordenador. Los sitios web abiertos en su navegador no pueden usarlo.
+- Si el puerto habitual ya está ocupado, Wmb Table usa el siguiente y lo muestra. Guarde esa nueva dirección en su aplicación.
+- Este ajuste es propio de cada ordenador: no se sincroniza con Google Drive.
+- Para Claude Desktop por `HTTP`, Node.js debe estar instalado en el ordenador.
 
 ## Ver también
 

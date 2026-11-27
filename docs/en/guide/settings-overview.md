@@ -61,7 +61,6 @@ This section is used for the AI feature.
 
 It lets you:
 
-- enable or disable the assistant
 - choose the AI provider
 - configure a local model or an online service
 - control language behavior
@@ -106,7 +105,7 @@ If you want to…
 - make a quick check: open `General`
 - manage tab behavior or reading resume: open `Document View`
 - change your library language: open `Library`
-- use or enable AI chat: open `Assistant`
+- set up AI chat: open `Assistant`
 - listen to a sermon or Bible chapter: open `Audio Reading`
 - protect your work: open `Backup`
 - install the latest version: open `Update`

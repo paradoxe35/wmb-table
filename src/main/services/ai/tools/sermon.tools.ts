@@ -2,7 +2,7 @@ import { z } from 'zod';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 import * as searchService from '@main/services/search.service';
-import { filterBySearchQuery, parseSearchQuery } from '@shared/searchable';
+import { filterBySearchQuery, parseSearchQuery, tokenizeQuery } from '@shared/searchable';
 import { buildSermonWmbLink } from '@shared/wmb-link';
 import type {
     AiToolDefinition,
@@ -105,7 +105,9 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
             description:
                 'Retrieve the text content (paragraphs) of a sermon. ' +
                 'You MUST pass sermonId (and translationId if available from searchSermons results). ' +
-                'Use startParagraph and maxParagraphs to paginate through long sermons. ' +
+                'startParagraph is a paragraph number, the same numbers as paragraphNumber in results and searchContent matches; ' +
+                'omit it to start at the first paragraph. ' +
+                'If hasMore is true, pass nextStartParagraph as startParagraph to read on. ' +
                 'To get a general overview, read the first 15 paragraphs. ' +
                 'Each paragraph includes wmbUrl for markdown reference links. ' +
                 'If the requested translation is unavailable, the response will include translationWarning and the resolved translationId.',
@@ -187,25 +189,35 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                         };
                     }
 
-                    const paragraphs: SermonParagraphResult[] = rawParagraphs
-                        .slice(startParagraph, startParagraph + maxParagraphs)
-                        .map((p) => ({
-                            paragraphNumber: p.paragraphIndex,
-                            content: p.content,
-                            wmbUrl: buildSermonWmbLink({
-                                type: 'sermon',
-                                sermonId: meta.sermonId,
-                                languageCode: lang,
-                                translationId: meta.translationId,
-                                paragraphIndex: p.paragraphIndex,
-                            }),
-                        }));
+                    const firstIndex = rawParagraphs.findIndex(
+                        (p) => p.paragraphIndex >= startParagraph,
+                    );
+                    const window =
+                        firstIndex === -1
+                            ? []
+                            : rawParagraphs.slice(firstIndex, firstIndex + maxParagraphs);
+                    const nextParagraph =
+                        firstIndex === -1 ? undefined : rawParagraphs[firstIndex + maxParagraphs];
+
+                    const paragraphs: SermonParagraphResult[] = window.map((p) => ({
+                        paragraphNumber: p.paragraphIndex,
+                        content: p.content,
+                        wmbUrl: buildSermonWmbLink({
+                            type: 'sermon',
+                            sermonId: meta.sermonId,
+                            languageCode: lang,
+                            translationId: meta.translationId,
+                            paragraphIndex: p.paragraphIndex,
+                        }),
+                    }));
 
                     const response: SermonContentResponse = {
                         meta: slimMeta,
                         paragraphs,
                         totalParagraphs: rawParagraphs.length,
-                        startParagraph,
+                        startParagraph: window[0]?.paragraphIndex ?? startParagraph,
+                        hasMore: nextParagraph !== undefined,
+                        nextStartParagraph: nextParagraph?.paragraphIndex,
                         requestedTranslationId,
                         resolvedTranslationId: meta.translationId,
                         fallbackTranslationId:
@@ -237,7 +249,8 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                 'Each match includes wmbUrl for markdown reference links. ' +
                 'Mode controls precision: "exact" (default) finds words in order as a phrase, ' +
                 '"all" requires all words present in any order, "any" matches at least one word. ' +
-                'If nextCursor is returned, pass it back to continue from the next page instead of repeating page one.',
+                'If nextCursor is returned, pass it back to continue from the next page instead of repeating page one. ' +
+                'A page can come back with no results but hasMore true: that only means keep paging with nextCursor.',
             inputSchema: contentSearchToolInputSchema,
             execute: async ({ query, languageCode, mode: searchMode, limit, cursor }) => {
                 const page = resolveContentSearchPage({
@@ -259,14 +272,21 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                     return langError;
                 }
 
+                if (tokenizeQuery(page.query, page.mode).length === 0) {
+                    return {
+                        error: `Query "${page.query}" contains no searchable word for mode "${page.mode}". Search for at least one word of two or more letters, or use mode "exact".`,
+                    };
+                }
+
                 try {
-                    const { matches, total, totalIsExact } = await searchService.searchSermons({
-                        langCode: page.languageCode,
-                        query: page.query,
-                        mode: page.mode,
-                        limit: page.limit,
-                        offset: page.offset,
-                    });
+                    const { matches, rawHitCount, total, totalIsExact } =
+                        await searchService.searchSermons({
+                            langCode: page.languageCode,
+                            query: page.query,
+                            mode: page.mode,
+                            limit: page.limit,
+                            offset: page.offset,
+                        });
 
                     const items: SearchContentHit[] = matches.map((m) => ({
                         sermonId: m.sermonId,
@@ -293,18 +313,15 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                         totalMatches: m.snippets.length,
                     }));
 
-                    const returned = items.length;
-                    // Hits are dropped after the query, so a page can be empty while `total`
-                    // still counts them; a cursor here would repeat the same offset forever.
-                    const hasMore = returned > 0 && page.offset + returned < total;
+                    const hasMore = rawHitCount > 0 && page.offset + rawHitCount < total;
                     const response: SearchContentToolResponse = {
                         results: items,
                         totalSermons: total,
                         totalIsExact,
-                        returned,
+                        returned: items.length,
                         hasMore,
                         nextCursor: hasMore
-                            ? buildNextContentSearchCursor(page, returned)
+                            ? buildNextContentSearchCursor(page, rawHitCount)
                             : undefined,
                     };
 

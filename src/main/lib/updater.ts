@@ -1,7 +1,7 @@
 import updater from 'electron-updater';
 import { app, type BrowserWindow } from 'electron';
 import { PushChannels } from '@shared/ipc.types';
-import { sendToRenderer } from '@main/ipc/register';
+import { sendToRenderer } from '@main/ipc/ipc-bridge';
 import type { UpdateInfo, UpdaterNotification } from '@shared/types';
 import { GITHUB_OWNER, GITHUB_REPO, GITHUB_TOKEN } from './github';
 import log from './logger';

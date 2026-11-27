@@ -51,9 +51,6 @@ const en: Record<string, string> = {
     'Gérez les préférences de votre application.': 'Manage your application preferences.',
     Assistant: 'Assistant',
     'Assistant IA': 'AI Assistant',
-    "Activer l'assistant IA": 'Enable AI assistant',
-    "Une fois activé, l'assistant apparaît dans la barre latérale.":
-        'Once enabled, the assistant appears in the sidebar.',
     'Clé API': 'API key',
     'URL de base': 'Base URL',
     Modèle: 'Model',
@@ -69,6 +66,11 @@ const en: Record<string, string> = {
     // ── AI settings ──
     'Choisissez le service à utiliser pour le chat IA.': 'Choose the service to use for AI chat.',
     'Choisir un fournisseur': 'Choose a provider',
+    "Choisissez un fournisseur pour utiliser l'assistant.":
+        'Choose a provider to use the assistant.',
+    'Ajoutez une clé API pour utiliser ce fournisseur.': 'Add an API key to use this provider.',
+    "Les paramètres de l'assistant n'ont pas pu être enregistrés.":
+        'The assistant settings could not be saved.',
     Personnalisé: 'Custom',
     'Comportement des langues': 'Language behavior',
     "L'assistant suit la langue active, sauf si vous demandez explicitement une autre langue.":
@@ -77,6 +79,78 @@ const en: Record<string, string> = {
     'Changer uniquement sur demande': 'Switch only on request',
     "Utilisez l'identifiant exact du modèle fourni par ce service.":
         'Use the exact model identifier provided by this service.',
+
+    // ── MCP server ──
+    'Serveur MCP': 'MCP server',
+    'Permet à votre propre application d’IA (Claude Desktop, Codex…) d’utiliser votre bibliothèque Wmb Table.':
+        'Lets your own AI app (Claude Desktop, Codex…) use your Wmb Table library.',
+    'Autoriser les modifications (notes et sujets)': 'Allow changes (notes and subjects)',
+    'Votre application d’IA peut créer et modifier vos notes et vos sujets.':
+        'Your AI app can create and change your notes and subjects.',
+    'Votre application d’IA peut seulement lire votre bibliothèque.':
+        'Your AI app can only read your library.',
+    'Adresse du serveur': 'Server address',
+    'Le port habituel {{defaultPort}} était occupé : Wmb Table utilise le port {{port}}.':
+        'The usual port {{defaultPort}} was busy: Wmb Table uses port {{port}}.',
+    'Ajoutez ces lignes au fichier ~/.codex/config.toml.':
+        'Add these lines to the file ~/.codex/config.toml.',
+    'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop. Node.js doit être installé.':
+        'Add this to the file claude_desktop_config.json (Settings, Developer, Edit Config), then restart Claude Desktop. Node.js must be installed.',
+    'Copier {{label}}': 'Copy {{label}}',
+    Copié: 'Copied',
+    'Le serveur MCP n’a pas pu démarrer : les ports {{firstPort}} à {{lastPort}} sont déjà utilisés. Fermez l’application qui les occupe, puis réactivez le serveur.':
+        'The MCP server could not start: ports {{firstPort}} to {{lastPort}} are already in use. Close the app that uses them, then turn the server on again.',
+    'Le serveur MCP n’a pas pu démarrer. Réessayez ou redémarrez Wmb Table.':
+        'The MCP server could not start. Try again or restart Wmb Table.',
+    'Le réglage du serveur MCP n’a pas pu être enregistré.':
+        'The MCP server setting could not be saved.',
+    Commande: 'Command',
+    '{{method}} (recommandé)': '{{method}} (recommended)',
+    'Autre méthode : {{method}}': 'Other way: {{method}}',
+    'Wmb Table doit être ouvert.': 'Wmb Table must be open.',
+    'Fonctionne même quand Wmb Table est fermé.': 'Works even when Wmb Table is closed.',
+    'Autre application': 'Other app',
+    'Le fichier de configuration de Claude Desktop n’est pas un JSON valide : Wmb Table ne l’a pas modifié. Corrigez-le, ou ajoutez la configuration ci-dessous à la main.':
+        'Claude Desktop’s configuration file is not valid JSON: Wmb Table did not change it. Fix it, or add the configuration below by hand.',
+    'Wmb Table n’a pas le droit de modifier le fichier de configuration de Claude Desktop. Ajoutez la configuration ci-dessous à la main.':
+        'Wmb Table is not allowed to change Claude Desktop’s configuration file. Add the configuration below by hand.',
+    'Le fichier de configuration de Claude Desktop n’a pas pu être lu ou enregistré. Ajoutez la configuration ci-dessous à la main.':
+        'Claude Desktop’s configuration file could not be read or saved. Add the configuration below by hand.',
+    'Claude Desktop n’est pas installé sur cet ordinateur.':
+        'Claude Desktop is not installed on this computer.',
+    'Télécharger Claude Desktop': 'Download Claude Desktop',
+    'Après l’installation, revenez ici pour le configurer automatiquement, ou copiez la configuration ci-dessous.':
+        'After installing it, come back here to set it up automatically, or copy the configuration below.',
+    'Déjà configuré': 'Already set up',
+    'Wmb Table a été ajouté à Claude Desktop. Redémarrez Claude Desktop pour l’utiliser.':
+        'Wmb Table was added to Claude Desktop. Restart Claude Desktop to use it.',
+    'Configurer automatiquement': 'Set up automatically',
+    'La configuration enregistrée dans Claude Desktop ne correspond plus à cette copie de Wmb Table.':
+        'The configuration saved in Claude Desktop no longer matches this copy of Wmb Table.',
+    'Ajoute Wmb Table au fichier de configuration de Claude Desktop, après en avoir fait une copie de sauvegarde. Les autres serveurs restent inchangés.':
+        'Adds Wmb Table to Claude Desktop’s configuration file, after making a backup copy. The other servers stay unchanged.',
+    'Ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
+        'Add a “Streamable HTTP” MCP server with this address.',
+    'Ou laissez votre application lancer Wmb Table avec cette commande (stdio).':
+        'Or let your app start Wmb Table with this command (stdio).',
+    'Serveur HTTP sans fenêtre': 'HTTP server without a window',
+    Avancé: 'Advanced',
+    'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop.':
+        'Add this to the file claude_desktop_config.json (Settings, Developer, Edit Config), then restart Claude Desktop.',
+    Configuration: 'Configuration',
+    'Commande de développement : cette copie de Wmb Table n’est pas installée.':
+        'Development command: this copy of Wmb Table is not installed.',
+    'Lancez cette commande dans un terminal et laissez-le ouvert ; Ctrl+C arrête le serveur. Fermez d’abord Wmb Table s’il est ouvert : il utilise déjà ce port.':
+        'Run this command in a terminal and leave it open; Ctrl+C stops the server. Close Wmb Table first if it is open: it already uses this port.',
+    'Le serveur MCP est désactivé. Activez « Serveur MCP » dans Wmb Table → Paramètres → Assistant.':
+        'The MCP server is turned off. Turn on “MCP server” in Wmb Table → Settings → Assistant.',
+    'La langue « {{language}} » n’est pas installée dans Wmb Table. Installées : {{installed}}.':
+        'The language “{{language}}” is not installed in Wmb Table. Installed: {{installed}}.',
+    'Serveur MCP de Wmb Table : {{url}}': 'Wmb Table MCP server: {{url}}',
+    'Le port {{port}} est déjà utilisé (Wmb Table sert peut-être déjà cette adresse).':
+        'Port {{port}} is already in use (Wmb Table may already serve this address).',
+    'Les ports {{firstPort}} à {{lastPort}} sont déjà utilisés.':
+        'Ports {{firstPort}} to {{lastPort}} are already in use.',
 
     // ── AI provider descriptions ──
     'Fonctionne sans connexion internet, directement sur votre ordinateur.':
@@ -91,10 +165,13 @@ const en: Record<string, string> = {
 
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Add a provider',
-    'Ajouter un fournisseur personnalisé': 'Add a custom provider',
     'Compatible avec l’API OpenAI.': 'Compatible with the OpenAI API.',
     'Supprimer ce fournisseur ?': 'Delete this provider?',
     'Un fournisseur avec ce nom existe déjà.': 'A provider with this name already exists.',
+    "L'URL de base est requise.": 'The base URL is required.',
+    "L'URL doit commencer par http:// ou https://.": 'The URL must start with http:// or https://.',
+    "Cette URL n'est pas valide.": 'This URL is not valid.',
+    'Supprimer le fournisseur {{name}}': 'Delete the provider {{name}}',
     'ex: Mon Service IA': 'e.g. My AI Service',
     'ex: gpt-4o-mini': 'e.g. gpt-4o-mini',
     'Taille du contexte (tokens)': 'Context size (tokens)',
@@ -104,6 +181,12 @@ const en: Record<string, string> = {
     Connecté: 'Connected',
     Échec: 'Failed',
     'La connexion a échoué.': 'Connection failed.',
+    'La clé API a été refusée. Vérifiez-la puis réessayez.':
+        'The API key was refused. Check it and try again.',
+    "Le modèle ou l'adresse est introuvable. Vérifiez le modèle et l'URL de base.":
+        'The model or address was not found. Check the model and the base URL.',
+    "Impossible de joindre le serveur. Vérifiez l'URL de base et votre connexion.":
+        'Cannot reach the server. Check the base URL and your connection.',
     'La clé API est manquante pour ce fournisseur.': 'The API key is missing for this provider.',
     'Fournisseur IA inconnu.': 'Unknown AI provider.',
     'Validation du fournisseur impossible.': 'Unable to validate the provider.',
@@ -133,20 +216,22 @@ const en: Record<string, string> = {
         'This voice cannot be played on this computer.',
 
     // ── AI errors ──
-    "L'assistant IA est désactivé dans les paramètres.":
-        'The AI assistant is disabled in settings.',
     'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.':
         'No AI provider configured. Select a provider in settings.',
     'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.':
         'No model configured for this provider. Set a model in settings.',
 
     // ── AI chat ──
-    "L'assistant IA est désactivé.": 'The AI assistant is disabled.',
-    'Ouvrir les paramètres': 'Open settings',
+    "Posez une question sur un sujet d'étude : l'assistant développe le thème, rapproche ce que disent les prédications et les Écritures, et vous donne les références pour vérifier par vous-même.":
+        'Ask a question about a study topic: the assistant develops the theme, brings together what the sermons and the Scriptures say, and gives you the references so you can check for yourself.',
+    "Pour l'utiliser, choisissez un service d'IA — par exemple OpenAI, Claude, Gemini, OpenRouter, ou Ollama sur votre ordinateur — et ajoutez votre clé API si le service en demande une.":
+        'To use it, choose an AI service — for example OpenAI, Claude, Gemini, OpenRouter, or Ollama on your computer — and add your API key if the service asks for one.',
+    "Configurer l'assistant": 'Set up the assistant',
+    'Voir le guide': 'Read the guide',
     'Le saviez-vous ? <u>{{feature}}</u> peut vous aider à explorer un sujet et comprendre plus vite ce que vous cherchez.':
         'Did you know? <u>{{feature}}</u> can help you explore a topic and understand what you are looking for faster.',
-    'Activez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
-        'Enable <u>{{feature}}</u> to ask questions, dig deeper into a theme, compare multiple sermons, find Bible passages, and get clear answers without reading through everything manually.',
+    'Configurez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
+        'Set up <u>{{feature}}</u> to ask questions, dig deeper into a theme, compare multiple sermons, find Bible passages, and get clear answers without reading through everything manually.',
     "Ouvrir les réglages de l'assistant": 'Open assistant settings',
     'Le saviez-vous ? <u>{{feature}}</u> peut lire vos documents.':
         'Did you know? <u>{{feature}}</u> can read your documents aloud.',
@@ -193,6 +278,7 @@ const en: Record<string, string> = {
         'This model is too limited for the assistant. Choose another one to be able to use it.',
     'Voir le raisonnement': 'Show reasoning',
     'Masquer le raisonnement': 'Hide reasoning',
+    'Actions de la conversation': 'Conversation actions',
     '{{count}} dernières lignes': 'last {{count}} lines',
     '+{{count}} autre': '+{{count}} other',
     '+{{count}} autres': '+{{count}} others',
@@ -211,6 +297,10 @@ const en: Record<string, string> = {
     'Mis à jour le': 'Updated on',
     'Exporté le': 'Exported on',
     'Réponse sans texte': 'Response without text',
+    'Réponse coupée : elle a atteint la longueur maximale que ce modèle peut écrire.':
+        'Answer cut off: it reached the maximum length this model can write.',
+    "Le modèle n'a pas répondu à temps. Réessayez, ou choisissez un modèle plus rapide dans les paramètres.":
+        'The model did not answer in time. Try again, or choose a faster model in the settings.',
     'Aller en bas': 'Go to bottom',
     'Une génération est en cours.': 'A generation is in progress.',
     Réessayer: 'Retry',
@@ -227,10 +317,42 @@ const en: Record<string, string> = {
     "L'arrêt de la génération a échoué.": 'Stopping the generation failed.',
     "L'envoi du message a échoué.": 'Sending the message failed.',
     'La création de la conversation a échoué.': 'Creating the conversation failed.',
+    'Le message est trop long. Raccourcissez-le puis réessayez.':
+        'The message is too long. Shorten it and try again.',
     'Le chargement de la conversation a échoué.': 'Loading the conversation failed.',
     'Le chargement des anciennes conversations a échoué.': 'Loading older conversations failed.',
     'Le chargement des conversations a échoué.': 'Loading conversations failed.',
     'Le rafraîchissement des conversations a échoué.': 'Refreshing conversations failed.',
+    "Recherche incomplète : la limite d'étapes a été atteinte.":
+        'Research incomplete: the step limit was reached.',
+    'Arrêté par vous.': 'Stopped by you.',
+    "Le modèle n'a renvoyé aucun texte.": 'The model returned no text.',
+    "L'assistant n'est pas encore configuré.": 'The assistant is not set up yet.',
+    'Clé API refusée. Vérifiez-la dans les paramètres.':
+        'API key refused. Check it in the settings.',
+    'Modèle introuvable chez ce fournisseur. Choisissez-en un autre.':
+        'Model not found at this provider. Choose another one.',
+    'Trop de demandes pour le moment. Patientez un peu, puis réessayez.':
+        'Too many requests right now. Wait a moment, then try again.',
+    'Quota ou crédit épuisé chez le fournisseur.': 'Quota or credit used up at the provider.',
+    'La conversation est trop longue pour ce modèle. Commencez une nouvelle conversation.':
+        'The conversation is too long for this model. Start a new conversation.',
+    'Le serveur du service IA est indisponible pour le moment.':
+        'The AI service server is unavailable right now.',
+    'Connexion perdue avec le service IA. Vérifiez votre réseau.':
+        'Connection to the AI service lost. Check your network.',
+    "Le service IA n'a pas répondu à temps.": 'The AI service did not answer in time.',
+    'Le service IA a refusé la demande.': 'The AI service refused the request.',
+    'Une erreur est survenue.': 'Something went wrong.',
+    'Poursuivre la recherche': 'Continue the research',
+    'Ouvrir les paramètres IA': 'Open AI settings',
+    "Continue ta réponse là où elle s'est arrêtée.": 'Continue your answer where it stopped.',
+    'Poursuis tes recherches, puis complète ta réponse.':
+        'Continue your research, then complete your answer.',
+    'Réponse en cours': 'Answer in progress',
+    Renvoyer: 'Send again',
+    'La suppression de la conversation a échoué.': 'Deleting the conversation failed.',
+    "La suppression de l'historique a échoué.": 'Deleting the history failed.',
     'La relance de la réponse a échoué.': 'Retrying the response failed.',
     'La relance est disponible uniquement pour le dernier message utilisateur.':
         'Retry is only available for the last user message.',
@@ -263,6 +385,7 @@ const en: Record<string, string> = {
     'Recherche dans les documents': 'Document search',
     'Recherche biblique': 'Bible search',
     'Recherche approfondie': 'In-depth research',
+    'Recherche incomplète': 'Research incomplete',
     'Langues disponibles': 'Available languages',
     'Documents personnalisés': 'Custom documents',
     'Lecture du document': 'Reading document',
@@ -1005,10 +1128,8 @@ const en: Record<string, string> = {
     'Si vous voulez quelque chose de simple, gardez le fournisseur proposé puis testez une voix.':
         'If you want something simple, keep the suggested provider and test a voice.',
     "À quoi servent les réglages de l'assistant ?": 'What are the assistant settings for?',
-    "Cet onglet active l'assistant IA et choisit comment il répond dans l'application.":
-        'This tab enables the AI assistant and chooses how it responds in the application.',
-    "Activez ou masquez l'assistant dans la barre latérale.":
-        'Enable or hide the assistant in the sidebar.',
+    "Cet onglet choisit le service d'IA de l'assistant et la façon dont il répond.":
+        "This tab chooses the assistant's AI service and how it responds.",
     'Sélectionnez un fournisseur local, cloud ou personnalisé.':
         'Select a local, cloud, or custom provider.',
     'Définissez la langue et le modèle utilisés pour les réponses.':
@@ -1085,12 +1206,12 @@ const en: Record<string, string> = {
         'It also controls the listening experience: voice, speed, highlighting, and audio behavior.',
     "L'assistant peut aider à explorer un thème, retrouver des références et comparer plus vite plusieurs contenus.":
         'The assistant can help explore a theme, find references, and compare multiple contents faster.',
-    "Cet onglet détermine s'il est disponible, quel service il utilise et dans quelle langue il travaille.":
-        'This tab determines whether it is available, which service it uses, and which language it works in.',
+    'Cet onglet détermine quel service il utilise et dans quelle langue il travaille.':
+        'This tab determines which service it uses and which language it works in.',
     'Vous pouvez choisir une solution locale, cloud ou personnalisée selon vos besoins.':
         'You can choose a local, cloud, or custom solution depending on your needs.',
-    "Activez l'assistant pour le rendre disponible dans la barre latérale.":
-        'Enable the assistant to make it available in the sidebar.',
+    'Ajoutez votre clé API si le service en demande une.':
+        'Add your API key if the service asks for one.',
     'Elle sert à retrouver rapidement un mot, un thème, un lieu ou une expression dans les prédications.':
         'It is used to quickly find a word, theme, place, or expression in sermons.',
     'Elle évite de parcourir manuellement plusieurs documents quand vous savez déjà ce que vous cherchez.':

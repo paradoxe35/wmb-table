@@ -9,6 +9,9 @@ export default [
         ignores: [
             'out/**',
             'tmp/**',
+            '.claude/**',
+            'docs/.vitepress/cache/**',
+            'docs/.vitepress/dist/**',
             'release/**',
             'node_modules/**',
             'resources/**',
@@ -31,7 +34,7 @@ export default [
         ],
     },
     {
-        files: ['**/*.{ts,tsx}'],
+        files: ['**/*.{ts,tsx,mts}'],
         languageOptions: {
             parser: tsParser,
             parserOptions: {
@@ -52,7 +55,11 @@ export default [
         rules: {
             ...tsPlugin.configs.recommended.rules,
             ...reactPlugin.configs.recommended.rules,
-            ...reactHooksPlugin.configs.recommended.rules,
+            // Only the classic hook rules. The React Compiler rules added in
+            // eslint-plugin-react-hooks 7 (refs, set-state-in-effect, immutability, ...)
+            // flag existing code and are adopted in a separate cleanup.
+            'react-hooks/rules-of-hooks': 'error',
+            'react-hooks/exhaustive-deps': 'warn',
             'react/react-in-jsx-scope': 'off',
             'react/prop-types': 'off',
             '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],

@@ -8,7 +8,7 @@
 /* ── Root layout ─────────────────────────────────────────────── */
 .ai-chat {
     --max-width: 90%;
-    container-type: inline-size;
+    container: ai-chat / inline-size;
     display: flex;
     flex: 1;
     min-height: 0;
@@ -19,13 +19,44 @@
     margin-bottom: 10px;
 }
 
-/* ── Disabled state ──────────────────────────────────────────── */
-.ai-chat__disabled {
+/* ── Setup state ─────────────────────────────────────────────── */
+.ai-chat__setup {
+    container-type: inline-size;
     display: flex;
-    align-items: center;
-    justify-content: center;
     flex: 1;
     height: 100%;
+    padding: 24px 0;
+    overflow-y: auto;
+}
+
+.ai-chat__setup-card {
+    width: 100%;
+    max-width: 520px;
+    margin: auto;
+    text-align: center;
+
+    .ant-typography:not(h3) {
+        line-height: 1.6;
+    }
+}
+
+.ai-chat__setup-icon {
+    font-size: var(--fs-10xl);
+    color: var(--ant-color-primary);
+}
+
+.ai-chat__setup-card .ai-chat__setup-title {
+    margin: 8px 0 16px;
+}
+
+@container (max-width: 420px) {
+    .ai-chat__setup-card .ant-card-body {
+        padding: 16px;
+    }
+
+    .ai-chat__setup-icon {
+        font-size: var(--fs-7xl);
+    }
 }
 
 /* ── Sidebar (conversation list) ─────────────────────────────── */
@@ -79,11 +110,12 @@
     border: none;
     box-shadow: none;
     background: transparent;
-    opacity: 0.5;
+    opacity: 0.75;
     transition: opacity 0.15s;
 }
 
-.ai-chat__sidebar-footer .ant-btn:hover {
+.ai-chat__sidebar-footer .ant-btn:hover,
+.ai-chat__sidebar-footer .ant-btn:focus-visible {
     opacity: 1;
     background: transparent;
 }
@@ -290,6 +322,7 @@
 
 /* ── Message list ────────────────────────────────────────────── */
 .ai-chat__messages-wrapper {
+    container: ai-chat-thread / inline-size;
     flex: 1;
     min-height: 0;
     position: relative;
@@ -297,6 +330,7 @@
 
 .ai-chat__messages {
     height: 100%;
+    overflow-x: hidden;
     overflow-y: auto;
     @include thin-scrollbar;
 }
@@ -428,7 +462,7 @@
     color: var(--ant-color-primary);
 }
 
-@container (max-width: 900px) {
+@container ai-chat (max-width: 900px) {
     .ai-chat__quick-start-list {
         grid-template-columns: 1fr;
     }
@@ -515,6 +549,17 @@
 
 .ai-markdown {
     min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.ai-markdown blockquote,
+.ai-markdown li {
+    min-width: 0;
+}
+
+.ai-markdown pre {
+    overflow-x: auto;
+    @include thin-scrollbar;
 }
 
 .ai-markdown > *:first-child {
@@ -613,8 +658,45 @@
 }
 
 .ai-chat__typing-indicator {
-    margin-top: 6px;
-    color: var(--ant-color-text-quaternary);
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.ai-chat__typing-indicator span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ant-color-text-quaternary);
+    animation: ai-chat-typing 1.2s ease-in-out infinite;
+}
+
+.ai-chat__typing-indicator span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.ai-chat__typing-indicator span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes ai-chat-typing {
+    0%,
+    60%,
+    100% {
+        opacity: 0.35;
+        transform: translateY(0);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-3px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ai-chat__typing-indicator span {
+        animation: none;
+    }
 }
 
 .ai-chat__bubble-actions {
@@ -626,12 +708,12 @@
     justify-content: flex-end;
 }
 
-.ai-chat__retry-button.ant-btn {
+.ai-chat__bubble-actions .ai-chat__retry-button.ant-btn {
     color: var(--ant-color-text-secondary);
 }
 
-.ai-chat__retry-button.ant-btn:hover,
-.ai-chat__retry-button.ant-btn:focus-visible {
+.ai-chat__bubble-actions .ai-chat__retry-button.ant-btn:hover,
+.ai-chat__bubble-actions .ai-chat__retry-button.ant-btn:focus-visible {
     color: var(--ant-color-primary);
     background: var(--ant-color-primary-bg);
 }
@@ -644,6 +726,80 @@
 .ai-chat__retry-button--user.ant-btn:focus-visible {
     color: #fff;
     background: color-mix(in srgb, #fff 14%, transparent);
+}
+
+.ai-chat__run-notice {
+    margin-top: 8px;
+    flex-wrap: wrap;
+    row-gap: 6px;
+}
+
+.ai-chat__run-notice .ant-alert-section {
+    flex: 1 1 0;
+    min-width: min(100%, 140px);
+}
+
+/* A detail line must not switch the banner to Ant Design's large layout: every banner looks alike */
+.ai-chat__run-notice.ant-alert-with-description {
+    padding: 8px 12px;
+    align-items: flex-start;
+}
+
+.ai-chat__run-notice.ant-alert-with-description .ant-alert-icon {
+    font-size: var(--ant-font-size);
+    margin-top: 0.3em;
+    margin-inline-end: 8px;
+}
+
+.ai-chat__run-notice.ant-alert-with-description .ant-alert-title {
+    font-size: inherit;
+    margin-bottom: 2px;
+}
+
+.ai-chat__run-notice-detail.ant-typography {
+    display: block;
+    max-width: 100%;
+    font-size: var(--fs-rel-md);
+}
+
+.ai-chat__run-notice .ant-alert-actions {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+}
+
+.ai-chat__run-notice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+}
+
+/* Long labels (sw, pt) wrap inside the button instead of leaving the banner */
+.ai-chat__run-notice-actions .ant-btn {
+    max-width: 100%;
+    height: auto;
+    min-height: var(--ant-control-height-sm);
+    white-space: normal;
+    text-align: start;
+}
+
+.ai-chat__notice-row {
+    margin-left: 38px;
+    max-width: calc(99% - 38px);
+}
+
+.ai-reference-tag.ant-tag {
+    display: inline;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: inherit;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+.ai-reference-tag.ant-tag:focus-visible {
+    outline: 2px solid var(--ant-color-primary-border);
+    outline-offset: 1px;
 }
 
 .ai-chat__tool-results {
@@ -701,6 +857,11 @@
 .ai-chat__queue-caption {
     font-size: var(--fs-rel-xs);
     color: var(--ant-color-text-secondary);
+}
+
+.ai-chat__queue-resend.ant-btn {
+    margin-left: auto;
+    padding-inline: 4px;
 }
 
 .ai-chat__queue-list {
@@ -804,6 +965,11 @@
     resize: none;
 }
 
+/* The whole input box shows the focus ring */
+textarea.ai-chat__input-textarea:focus-visible {
+    outline: none;
+}
+
 .ai-chat__input-placeholder {
     position: absolute;
     left: 14px;
@@ -838,12 +1004,23 @@
     gap: 6px;
     cursor: pointer;
     padding: 4px 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: inherit;
+    font: inherit;
     opacity: 0.7;
     transition: opacity 0.15s;
 }
 
-.ai-reasoning__toggle:hover {
+.ai-reasoning__toggle:hover,
+.ai-reasoning__toggle:focus-visible {
     opacity: 1;
+}
+
+.ai-reasoning__toggle:focus-visible {
+    outline: 2px solid var(--ant-color-primary-border);
+    outline-offset: 2px;
 }
 
 .ai-reasoning__content {
@@ -866,8 +1043,60 @@
     font-family: inherit;
 }
 
+/* ── Very narrow chat column: the text gets the room the avatars took ── */
+@container ai-chat-thread (max-width: 360px) {
+    .ai-chat__messages-content {
+        padding: 12px 8px;
+    }
+
+    .ai-chat__bubble {
+        gap: 0;
+    }
+
+    .ai-chat__avatar {
+        display: none;
+    }
+
+    .ai-chat__bubble-content {
+        padding: 8px 10px;
+    }
+
+    .ai-markdown blockquote {
+        margin-inline: 0;
+        padding-inline-start: 8px;
+    }
+
+    .ai-chat__notice-row {
+        margin-left: 0;
+        max-width: 100%;
+    }
+}
+
+/* ── Narrow chat: the conversation list gives room to the thread ── */
+@container ai-chat (max-width: 520px) {
+    .ai-chat__sidebar {
+        width: 136px;
+    }
+
+    .ai-chat__sidebar-header {
+        padding-inline: 8px;
+    }
+
+    .ai-chat__sidebar-search {
+        padding-inline: 6px;
+    }
+
+    .ai-chat__sidebar-list {
+        padding-inline: 4px;
+    }
+
+    .ai-chat__conv-item {
+        padding-inline: 6px;
+    }
+}
+
 /* ── Responsive: full width on small chat containers ────────── */
-@container (max-width: 950px) {
+@container ai-chat (max-width: 950px) {
     .ai-chat__messages-content {
         max-width: 100%;
     }

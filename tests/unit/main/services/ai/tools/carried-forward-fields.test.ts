@@ -49,7 +49,7 @@ const CARRIED_FORWARD: Array<[string, Record<string, unknown>]> = [
     ['getCustomDocumentContent', { documentId: 'doc-1' }],
     ['getNoteById', { noteId: 'note-1' }],
     ['getSubjectById', { subjectId: 'subject-1' }],
-    ['removeSubjectReference', { referenceId: 'ref-1' }],
+    ['removeSubjectReference', { subjectId: 'subject-1', referenceId: 'ref-1' }],
 ];
 
 /**

@@ -629,6 +629,12 @@ body {
     border-bottom: 0;
 }
 
+@media (max-height: 640px) {
+    .settings-page__tabs > .ant-tabs-nav {
+        position: static;
+    }
+}
+
 .inline-help-trigger.ant-btn {
     width: 22px;
     min-width: 22px;

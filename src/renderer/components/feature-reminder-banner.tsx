@@ -33,6 +33,8 @@ export default function FeatureReminderBanner() {
     const snooze = useFeatureRemindersStore((s) => s.snooze);
     const ttsStatus = useTtsStore((s) => s.status);
     const aiConversations = useAiChatStore((s) => s.conversations.length);
+    const aiRunActive = useAiChatStore((s) => Object.keys(s.conversationRuns).length > 0);
+    const aiChatInUse = aiRunActive || (mainView === 'options' && optionView === 'ai-chat');
     /** Incremented each time the notification effect re-opens; onClose ignores stale versions */
     const notificationVersionRef = useRef(0);
     const [hasInteracted, setHasInteracted] = useState(false);
@@ -102,6 +104,7 @@ export default function FeatureReminderBanner() {
         loaded,
         syncing,
         readingMode,
+        aiChatInUse,
         hasInteracted,
         sessionDelayElapsed,
         sessionHiddenUntil,

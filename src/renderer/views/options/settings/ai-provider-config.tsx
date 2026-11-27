@@ -1,285 +1,54 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, AutoComplete, Button, Card, Divider, Popconfirm, Space, Tag } from 'antd';
-import {
-    CheckCircleOutlined,
-    CloudOutlined,
-    CloseCircleOutlined,
-    DeleteOutlined,
-} from '@ant-design/icons';
+import { Button, Card, Divider, Popconfirm, Space, Tag } from 'antd';
+import { DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
     resolveActiveModel,
     DEFAULT_MODELS,
     DEFAULT_PROVIDER_BASE_URLS,
     BUILTIN_PROVIDER_REQUIRES_API_KEY,
-    RECOMMENDED_MIN_CONTEXT_WINDOW,
     type AiBuiltinProviderId,
     type AiCustomProviderConfig,
+    type AiProviderConfig,
     type AiProviderDefinition,
-    type AiRemoteModel,
     type AiSettings,
 } from '@shared/ai.types';
-import { useAiChatStore } from '@renderer/stores';
-import { debounce } from '@renderer/utils/functions';
+import { isLocalBaseUrl, normalizeApiKey, normalizeBaseUrl } from '@shared/ai-provider-input';
+import type { AiSettingsUpdate } from '@renderer/stores/ai-settings-save-queue';
 import DebouncedInput from '@renderer/components/debounced-input';
-import { ApiKeyLink, Field, Hint } from './ai-shared';
+import { ApiKeyLink, describeBaseUrlProblem, Field, Hint } from './ai-shared';
+import { ModelSelect } from './ai-model-select';
+import { ProviderTestButton } from './ai-provider-test-button';
+import { LocalityTag } from './tts-shared';
 
-type TestStatus = 'idle' | 'testing' | 'success' | 'error';
-
-function TestButton({
-    providerId,
-    model,
-    apiKey,
-    baseUrl,
-}: {
-    providerId: string;
-    model: string | null | undefined;
-    apiKey?: string;
-    baseUrl?: string;
-}) {
-    const { t } = useTranslation();
-    const testProvider = useAiChatStore((s) => s.testProvider);
-    const [status, setStatus] = useState<TestStatus>('idle');
-    const [errorMessage, setErrorMessage] = useState('');
-
-    async function handleTest() {
-        if (!model) {
-            return;
-        }
-        setStatus('testing');
-        setErrorMessage('');
-        try {
-            const result = await testProvider({
-                providerId,
-                model,
-                apiKey,
-                baseUrl,
-            });
-            setStatus(result.valid ? 'success' : 'error');
-            if (result.error) {
-                setErrorMessage(t(result.error));
-            }
-        } catch {
-            setStatus('error');
-            setErrorMessage(t('La connexion a échoué.'));
-        }
-    }
-
-    return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-            <Button
-                size="small"
-                onClick={handleTest}
-                disabled={!model || status === 'testing'}
-                loading={status === 'testing'}
-                style={{ flexShrink: 0 }}
-            >
-                {t('Tester la connexion')}
-            </Button>
-            {status === 'success' ? (
-                <Tag icon={<CheckCircleOutlined />} color="success">
-                    {t('Connecté')}
-                </Tag>
-            ) : null}
-            {status === 'error' ? (
-                <Tag
-                    icon={<CloseCircleOutlined />}
-                    color="error"
-                    style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                    title={errorMessage}
-                >
-                    {errorMessage || t('Échec')}
-                </Tag>
-            ) : null}
-        </div>
-    );
-}
-
-function ModelContextWarning({
-    providerId,
-    model,
-    baseUrl,
-    listedContextWindow,
-}: {
-    providerId: string;
-    model: string;
-    baseUrl?: string;
-    listedContextWindow?: number;
-}) {
-    const { t } = useTranslation();
-    const [contextWindow, setContextWindow] = useState<number>();
-
-    useEffect(() => {
-        if (!model) {
-            setContextWindow(undefined);
-            return;
-        }
-        if (listedContextWindow) {
-            setContextWindow(listedContextWindow);
-            return;
-        }
-
-        let active = true;
-        window.api.ai
-            .getModelLimits({ providerId, model, baseUrl })
-            .then((limits) => active && setContextWindow(limits.contextWindow))
-            .catch(() => active && setContextWindow(undefined));
-
-        return () => {
-            active = false;
-        };
-    }, [providerId, model, baseUrl, listedContextWindow]);
-
-    if (!contextWindow || contextWindow >= RECOMMENDED_MIN_CONTEXT_WINDOW) {
-        return null;
-    }
-
-    return (
-        <Alert
-            type="error"
-            showIcon
-            style={{ marginBlockStart: 8 }}
-            title={t(
-                "Ce modèle est trop limité pour l'assistant. Choisissez-en un autre pour pouvoir l'utiliser.",
-            )}
-        />
-    );
-}
-
-// ── Model select with fetch + custom entry ──
-
-function ModelSelect({
-    providerId,
-    value,
-    defaultModel,
-    apiKey,
-    baseUrl,
-    onChange,
-}: {
-    providerId: string;
-    value: string | null | undefined;
-    defaultModel?: string | null;
-    apiKey?: string;
-    baseUrl?: string;
-    onChange: (model: string) => void;
-}) {
-    const { t } = useTranslation();
-    const [localValue, setLocalValue] = useState(value ?? '');
-    const [models, setModels] = useState<AiRemoteModel[]>([]);
-    const [fetched, setFetched] = useState(false);
-
-    // Sync local state when external value changes (e.g. settings reload)
-    useEffect(() => {
-        const nextValue = value ?? '';
-        setLocalValue((current) => (current === nextValue ? current : nextValue));
-    }, [value]);
-
-    // Debounced save — lets the user type freely without cursor jumps
-    const debouncedOnChange = useMemo(() => debounce(onChange, 500), [onChange]);
-    useEffect(() => () => debouncedOnChange.cancel(), [debouncedOnChange]);
-
-    const handleChange = useCallback(
-        (val: string) => {
-            setLocalValue(val);
-            debouncedOnChange(val);
-        },
-        [debouncedOnChange],
-    );
-
-    const handleSelect = useCallback(
-        (val: string) => {
-            setLocalValue(val);
-            debouncedOnChange.cancel();
-            onChange(val);
-        },
-        [onChange, debouncedOnChange],
-    );
-
-    const handleBlur = useCallback(() => {
-        if (localValue.trim() || !defaultModel) {
-            return;
-        }
-
-        debouncedOnChange.cancel();
-        setLocalValue(defaultModel);
-        onChange(defaultModel);
-    }, [localValue, defaultModel, debouncedOnChange, onChange]);
-
-    const fetchModels = useCallback(async () => {
-        try {
-            setModels(await window.api.ai.fetchProviderModels({ providerId, apiKey, baseUrl }));
-            setFetched(true);
-        } catch {
-            // Fetch failed — user can still type a custom model
-        }
-    }, [providerId, apiKey, baseUrl]);
-
-    // Fetch once when ready (API key available, or custom provider with baseUrl)
-    useEffect(() => {
-        if (!fetched && (apiKey || baseUrl)) {
-            fetchModels();
-        }
-    }, [apiKey, baseUrl, fetched, fetchModels]);
-
-    // Reset when provider/apiKey/baseUrl changes
-    useEffect(() => {
-        setFetched(false);
-        setModels([]);
-    }, [providerId, apiKey, baseUrl]);
-
-    // Ensure the current value is always in the options list
-    const allOptions = models.map((m) => ({
-        value: m.id,
-        label: m.name !== m.id ? `${m.name} (${m.id})` : m.id,
-    }));
-    if (localValue && !allOptions.some((o) => o.value === localValue)) {
-        allOptions.unshift({ value: localValue, label: localValue });
-    }
-
-    return (
-        <>
-            <AutoComplete
-                value={localValue}
-                placeholder={t('Sélectionner ou saisir un modèle')}
-                onChange={handleChange}
-                onSelect={handleSelect}
-                onBlur={handleBlur}
-                options={allOptions}
-                filterOption={(input, option) => {
-                    return (
-                        ((option?.label as string) ?? '')
-                            .toLowerCase()
-                            .includes(input.toLowerCase()) ||
-                        (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
-                    );
-                }}
-                onDropdownVisibleChange={(open) => {
-                    if (open && !fetched && (apiKey || baseUrl)) fetchModels();
-                }}
-                style={{ width: '100%' }}
-            />
-            <ModelContextWarning
-                providerId={providerId}
-                model={value ?? ''}
-                baseUrl={baseUrl}
-                listedContextWindow={models.find((m) => m.id === value)?.contextWindow}
-            />
-        </>
-    );
-}
-
-function defaultModelHint(
-    t: (k: string) => string,
-    defaultModel?: string | null,
-): string | undefined {
+function defaultModelHint(t: TFunction, defaultModel?: string | null): string | undefined {
     return defaultModel ? `${t('Modèle par défaut')}: ${defaultModel}` : undefined;
 }
 
-function defaultBaseUrlHint(t: (k: string) => string, defaultBaseUrl?: string): string | undefined {
+function defaultBaseUrlHint(t: TFunction, defaultBaseUrl?: string): string | undefined {
     return defaultBaseUrl ? `${t('URL par défaut')}: ${defaultBaseUrl}` : undefined;
 }
 
-// ── Provider configs ──
+function baseUrlError(
+    t: TFunction,
+    value: string,
+    options: { required: boolean },
+): string | undefined {
+    if (!options.required && !value.trim()) return undefined;
+    const check = normalizeBaseUrl(value);
+    return check.ok ? undefined : describeBaseUrlProblem(t, check.problem);
+}
+
+function cleanBaseUrl(value: string, defaultPath?: string): string {
+    const check = normalizeBaseUrl(value, { defaultPath });
+    return check.ok ? check.url : value.trim();
+}
+
+const trimValue = (value: string) => value.trim();
+
+function fieldId(providerId: string, field: string): string {
+    return `ai-${providerId}-${field}`;
+}
 
 export function BuiltinProviderConfig({
     provider,
@@ -288,22 +57,28 @@ export function BuiltinProviderConfig({
 }: {
     provider: AiProviderDefinition;
     settings: AiSettings;
-    onSave: (partial: Partial<AiSettings>) => void;
+    onSave: (update: AiSettingsUpdate) => void;
 }) {
     const { t } = useTranslation();
-    const config = settings.providers[provider.id as AiBuiltinProviderId];
+    const providerId: AiBuiltinProviderId = provider.id;
+    const config = settings.providers[providerId];
+    const defaultBaseUrl = DEFAULT_PROVIDER_BASE_URLS[providerId];
+    const baseUrl = config?.baseUrl ?? defaultBaseUrl;
+    const defaultPath = new URL(defaultBaseUrl).pathname;
     const activeModel = resolveActiveModel(settings);
+    const requiresApiKey = BUILTIN_PROVIDER_REQUIRES_API_KEY[providerId] ?? true;
 
-    const requiresApiKey =
-        BUILTIN_PROVIDER_REQUIRES_API_KEY[provider.id as AiBuiltinProviderId] ?? true;
-
-    function updateField(key: string, value: string) {
-        onSave({
+    function updateConfig(patch: Partial<AiProviderConfig>) {
+        onSave((current) => ({
             providers: {
-                ...settings.providers,
-                [provider.id]: { ...config, [key]: value },
+                ...current.providers,
+                [providerId]: { ...current.providers[providerId], ...patch },
             },
-        });
+        }));
+    }
+
+    function saveBaseUrl(value: string) {
+        updateConfig({ baseUrl: cleanBaseUrl(value, defaultPath) || undefined });
     }
 
     return (
@@ -312,9 +87,7 @@ export function BuiltinProviderConfig({
             title={
                 <span>
                     {provider.name}{' '}
-                    <Tag color="blue" icon={<CloudOutlined />}>
-                        {t('Cloud')}
-                    </Tag>
+                    <LocalityTag type={isLocalBaseUrl(baseUrl) ? 'local' : 'remote'} />
                 </span>
             }
         >
@@ -322,18 +95,21 @@ export function BuiltinProviderConfig({
             <Divider style={{ margin: '8px 0' }} />
             <Space orientation="vertical" style={{ width: '100%' }} size="small">
                 {provider.configurableFields.map((field) => {
+                    const id = fieldId(providerId, field.key);
                     if (field.key === 'apiKey') {
                         return (
-                            <Field key={field.key} label={t('Clé API')}>
-                                <>
-                                    <DebouncedInput
-                                        password
-                                        value={config?.apiKey ?? ''}
-                                        onChange={(val) => updateField('apiKey', val)}
-                                        placeholder={requiresApiKey ? t('Clé API') : t('Optionnel')}
-                                    />
-                                    {provider.apiKeyUrl ? <ApiKeyLink provider={provider} /> : null}
-                                </>
+                            <Field key={field.key} label={t('Clé API')} htmlFor={id}>
+                                <DebouncedInput
+                                    id={id}
+                                    password
+                                    value={config?.apiKey ?? ''}
+                                    onChange={(val) =>
+                                        updateConfig({ apiKey: normalizeApiKey(val) })
+                                    }
+                                    normalize={trimValue}
+                                    placeholder={requiresApiKey ? t('Clé API') : t('Optionnel')}
+                                />
+                                <ApiKeyLink provider={provider} />
                             </Field>
                         );
                     }
@@ -342,25 +118,16 @@ export function BuiltinProviderConfig({
                             <Field
                                 key={field.key}
                                 label={t('URL de base')}
-                                hint={defaultBaseUrlHint(
-                                    t,
-                                    DEFAULT_PROVIDER_BASE_URLS[provider.id as AiBuiltinProviderId],
-                                )}
+                                htmlFor={id}
+                                hint={defaultBaseUrlHint(t, defaultBaseUrl)}
                             >
                                 <DebouncedInput
-                                    value={
-                                        config?.baseUrl ??
-                                        DEFAULT_PROVIDER_BASE_URLS[
-                                            provider.id as AiBuiltinProviderId
-                                        ] ??
-                                        ''
-                                    }
-                                    onChange={(val) => updateField('baseUrl', val)}
-                                    placeholder={
-                                        DEFAULT_PROVIDER_BASE_URLS[
-                                            provider.id as AiBuiltinProviderId
-                                        ] ?? 'https://...'
-                                    }
+                                    id={id}
+                                    value={config?.baseUrl ?? ''}
+                                    onChange={saveBaseUrl}
+                                    validate={(val) => baseUrlError(t, val, { required: false })}
+                                    normalize={(val) => cleanBaseUrl(val, defaultPath)}
+                                    placeholder={defaultBaseUrl ?? 'https://...'}
                                 />
                             </Field>
                         );
@@ -369,33 +136,24 @@ export function BuiltinProviderConfig({
                         <Field
                             key={field.key}
                             label={t('Modèle')}
-                            hint={defaultModelHint(
-                                t,
-                                DEFAULT_MODELS[provider.id as AiBuiltinProviderId],
-                            )}
+                            htmlFor={id}
+                            hint={defaultModelHint(t, DEFAULT_MODELS[providerId])}
                         >
                             <ModelSelect
-                                providerId={provider.id}
+                                id={id}
+                                providerId={providerId}
                                 value={config?.model ?? ''}
-                                defaultModel={DEFAULT_MODELS[provider.id]}
+                                defaultModel={DEFAULT_MODELS[providerId]}
                                 apiKey={config?.apiKey}
-                                baseUrl={
-                                    config?.baseUrl ??
-                                    DEFAULT_PROVIDER_BASE_URLS[provider.id as AiBuiltinProviderId]
-                                }
-                                onChange={(model) => updateField('model', model)}
+                                baseUrl={baseUrl}
+                                onChange={(model) => updateConfig({ model: model.trim() })}
                             />
                         </Field>
                     );
                 })}
-                <TestButton
-                    providerId={provider.id}
-                    model={activeModel}
-                    apiKey={config?.apiKey}
-                    baseUrl={
-                        config?.baseUrl ??
-                        DEFAULT_PROVIDER_BASE_URLS[provider.id as AiBuiltinProviderId]
-                    }
+                <ProviderTestButton
+                    providerId={providerId}
+                    savedInputs={[config?.apiKey, baseUrl, activeModel].join('\n')}
                 />
             </Space>
         </Card>
@@ -409,24 +167,28 @@ export function CustomProviderConfig({
 }: {
     provider: AiCustomProviderConfig;
     settings: AiSettings;
-    onSave: (partial: Partial<AiSettings>) => void;
+    onSave: (update: AiSettingsUpdate) => void;
 }) {
     const { t } = useTranslation();
     const activeModel = resolveActiveModel(settings);
 
-    function updateCustom(partial: Partial<AiCustomProviderConfig>) {
-        onSave({
-            customProviders: settings.customProviders.map((p) =>
-                p.id === provider.id ? { ...p, ...partial } : p,
+    function updateCustom(patch: Partial<AiCustomProviderConfig>) {
+        onSave((current) => ({
+            customProviders: current.customProviders.map((p) =>
+                p.id === provider.id ? { ...p, ...patch } : p,
             ),
-        });
+        }));
+    }
+
+    function saveBaseUrl(value: string) {
+        updateCustom({ baseUrl: cleanBaseUrl(value) });
     }
 
     function deleteCustom() {
-        onSave({
-            customProviders: settings.customProviders.filter((p) => p.id !== provider.id),
-            activeProvider: null,
-        });
+        onSave((current) => ({
+            customProviders: current.customProviders.filter((p) => p.id !== provider.id),
+            activeProvider: current.activeProvider === provider.id ? null : current.activeProvider,
+        }));
     }
 
     return (
@@ -439,41 +201,56 @@ export function CustomProviderConfig({
             }
             extra={
                 <Popconfirm title={t('Supprimer ce fournisseur ?')} onConfirm={deleteCustom}>
-                    <Button size="small" danger icon={<DeleteOutlined />} />
+                    <Button
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        aria-label={t('Supprimer le fournisseur {{name}}', {
+                            name: provider.name,
+                        })}
+                    />
                 </Popconfirm>
             }
         >
             <Space orientation="vertical" style={{ width: '100%' }} size="small">
-                <Field label={t('URL de base')}>
+                <Field label={t('URL de base')} htmlFor={fieldId(provider.id, 'baseUrl')}>
                     <DebouncedInput
+                        id={fieldId(provider.id, 'baseUrl')}
                         value={provider.baseUrl}
-                        onChange={(val) => updateCustom({ baseUrl: val })}
+                        onChange={saveBaseUrl}
+                        validate={(val) => baseUrlError(t, val, { required: true })}
+                        normalize={cleanBaseUrl}
                         placeholder="http://127.0.0.1:1234/v1"
                     />
                 </Field>
-                <Field label={t('Clé API')}>
+                <Field label={t('Clé API')} htmlFor={fieldId(provider.id, 'apiKey')}>
                     <DebouncedInput
+                        id={fieldId(provider.id, 'apiKey')}
                         password
                         value={provider.apiKey ?? ''}
-                        onChange={(val) => updateCustom({ apiKey: val })}
+                        onChange={(val) => updateCustom({ apiKey: normalizeApiKey(val) })}
+                        normalize={trimValue}
                         placeholder={t('Optionnel')}
                     />
                 </Field>
-                <Field label={t('Modèle')} hint={defaultModelHint(t, provider.defaultModel)}>
+                <Field
+                    label={t('Modèle')}
+                    htmlFor={fieldId(provider.id, 'model')}
+                    hint={defaultModelHint(t, provider.defaultModel)}
+                >
                     <ModelSelect
+                        id={fieldId(provider.id, 'model')}
                         providerId={provider.id}
                         value={provider.model ?? ''}
                         defaultModel={provider.defaultModel}
                         apiKey={provider.apiKey}
                         baseUrl={provider.baseUrl}
-                        onChange={(model) => updateCustom({ model })}
+                        onChange={(model) => updateCustom({ model: model.trim() })}
                     />
                 </Field>
-                <TestButton
+                <ProviderTestButton
                     providerId={provider.id}
-                    model={activeModel}
-                    apiKey={provider.apiKey}
-                    baseUrl={provider.baseUrl}
+                    savedInputs={[provider.apiKey, provider.baseUrl, activeModel].join('\n')}
                 />
             </Space>
         </Card>

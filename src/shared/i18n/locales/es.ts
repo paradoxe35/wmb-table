@@ -51,9 +51,6 @@ const es: Record<string, string> = {
     'Gérez les préférences de votre application.': 'Gestione las preferencias de su aplicación.',
     Assistant: 'Asistente',
     'Assistant IA': 'Asistente IA',
-    "Activer l'assistant IA": 'Activar el asistente IA',
-    "Une fois activé, l'assistant apparaît dans la barre latérale.":
-        'Una vez activado, el asistente aparece en la barra lateral.',
     'Clé API': 'Clave API',
     'URL de base': 'URL base',
     Modèle: 'Modelo',
@@ -70,6 +67,12 @@ const es: Record<string, string> = {
     'Choisissez le service à utiliser pour le chat IA.':
         'Elija el servicio a usar para el chat de IA.',
     'Choisir un fournisseur': 'Elegir un proveedor',
+    "Choisissez un fournisseur pour utiliser l'assistant.":
+        'Elija un proveedor para usar el asistente.',
+    'Ajoutez une clé API pour utiliser ce fournisseur.':
+        'Añada una clave API para usar este proveedor.',
+    "Les paramètres de l'assistant n'ont pas pu être enregistrés.":
+        'No se pudo guardar la configuración del asistente.',
     Personnalisé: 'Personalizado',
     'Comportement des langues': 'Comportamiento de idiomas',
     "L'assistant suit la langue active, sauf si vous demandez explicitement une autre langue.":
@@ -78,6 +81,78 @@ const es: Record<string, string> = {
     'Changer uniquement sur demande': 'Cambiar solo a petición',
     "Utilisez l'identifiant exact du modèle fourni par ce service.":
         'Use el identificador exacto del modelo proporcionado por este servicio.',
+
+    // ── MCP server ──
+    'Serveur MCP': 'Servidor MCP',
+    'Permet à votre propre application d’IA (Claude Desktop, Codex…) d’utiliser votre bibliothèque Wmb Table.':
+        'Permite que su propia aplicación de IA (Claude Desktop, Codex…) use su biblioteca de Wmb Table.',
+    'Autoriser les modifications (notes et sujets)': 'Permitir cambios (notas y temas)',
+    'Votre application d’IA peut créer et modifier vos notes et vos sujets.':
+        'Su aplicación de IA puede crear y modificar sus notas y sus temas.',
+    'Votre application d’IA peut seulement lire votre bibliothèque.':
+        'Su aplicación de IA solo puede leer su biblioteca.',
+    'Adresse du serveur': 'Dirección del servidor',
+    'Le port habituel {{defaultPort}} était occupé : Wmb Table utilise le port {{port}}.':
+        'El puerto habitual {{defaultPort}} estaba ocupado: Wmb Table usa el puerto {{port}}.',
+    'Ajoutez ces lignes au fichier ~/.codex/config.toml.':
+        'Añada estas líneas al archivo ~/.codex/config.toml.',
+    'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop. Node.js doit être installé.':
+        'Añada esto al archivo claude_desktop_config.json (Configuración, Desarrollador, Editar configuración) y reinicie Claude Desktop. Node.js debe estar instalado.',
+    'Copier {{label}}': 'Copiar {{label}}',
+    Copié: 'Copiado',
+    'Le serveur MCP n’a pas pu démarrer : les ports {{firstPort}} à {{lastPort}} sont déjà utilisés. Fermez l’application qui les occupe, puis réactivez le serveur.':
+        'El servidor MCP no pudo iniciarse: los puertos {{firstPort}} a {{lastPort}} ya están en uso. Cierre la aplicación que los usa y vuelva a activar el servidor.',
+    'Le serveur MCP n’a pas pu démarrer. Réessayez ou redémarrez Wmb Table.':
+        'El servidor MCP no pudo iniciarse. Inténtelo de nuevo o reinicie Wmb Table.',
+    'Le réglage du serveur MCP n’a pas pu être enregistré.':
+        'No se pudo guardar el ajuste del servidor MCP.',
+    Commande: 'Comando',
+    '{{method}} (recommandé)': '{{method}} (recomendado)',
+    'Autre méthode : {{method}}': 'Otra forma: {{method}}',
+    'Wmb Table doit être ouvert.': 'Wmb Table debe estar abierto.',
+    'Fonctionne même quand Wmb Table est fermé.': 'Funciona incluso con Wmb Table cerrado.',
+    'Autre application': 'Otra aplicación',
+    'Le fichier de configuration de Claude Desktop n’est pas un JSON valide : Wmb Table ne l’a pas modifié. Corrigez-le, ou ajoutez la configuration ci-dessous à la main.':
+        'El archivo de configuración de Claude Desktop no es un JSON válido: Wmb Table no lo modificó. Corríjalo o añada a mano la configuración de abajo.',
+    'Wmb Table n’a pas le droit de modifier le fichier de configuration de Claude Desktop. Ajoutez la configuration ci-dessous à la main.':
+        'Wmb Table no tiene permiso para modificar el archivo de configuración de Claude Desktop. Añada a mano la configuración de abajo.',
+    'Le fichier de configuration de Claude Desktop n’a pas pu être lu ou enregistré. Ajoutez la configuration ci-dessous à la main.':
+        'No se pudo leer ni guardar el archivo de configuración de Claude Desktop. Añada a mano la configuración de abajo.',
+    'Claude Desktop n’est pas installé sur cet ordinateur.':
+        'Claude Desktop no está instalado en este ordenador.',
+    'Télécharger Claude Desktop': 'Descargar Claude Desktop',
+    'Après l’installation, revenez ici pour le configurer automatiquement, ou copiez la configuration ci-dessous.':
+        'Después de instalarlo, vuelva aquí para configurarlo automáticamente, o copie la configuración de abajo.',
+    'Déjà configuré': 'Ya configurado',
+    'Wmb Table a été ajouté à Claude Desktop. Redémarrez Claude Desktop pour l’utiliser.':
+        'Wmb Table se añadió a Claude Desktop. Reinicie Claude Desktop para usarlo.',
+    'Configurer automatiquement': 'Configurar automáticamente',
+    'La configuration enregistrée dans Claude Desktop ne correspond plus à cette copie de Wmb Table.':
+        'La configuración guardada en Claude Desktop ya no corresponde a esta copia de Wmb Table.',
+    'Ajoute Wmb Table au fichier de configuration de Claude Desktop, après en avoir fait une copie de sauvegarde. Les autres serveurs restent inchangés.':
+        'Añade Wmb Table al archivo de configuración de Claude Desktop, después de hacer una copia de seguridad. Los demás servidores no cambian.',
+    'Ajoutez un serveur MCP « Streamable HTTP » avec cette adresse.':
+        'Agregue un servidor MCP «Streamable HTTP» con esta dirección.',
+    'Ou laissez votre application lancer Wmb Table avec cette commande (stdio).':
+        'O deje que su aplicación inicie Wmb Table con este comando (stdio).',
+    'Serveur HTTP sans fenêtre': 'Servidor HTTP sin ventana',
+    Avancé: 'Avanzado',
+    'Ajoutez ceci au fichier claude_desktop_config.json (Paramètres, Développeur, Modifier la configuration), puis redémarrez Claude Desktop.':
+        'Agregue esto al archivo claude_desktop_config.json (Configuración, Desarrollador, Editar configuración) y reinicie Claude Desktop.',
+    Configuration: 'Configuración',
+    'Commande de développement : cette copie de Wmb Table n’est pas installée.':
+        'Comando de desarrollo: esta copia de Wmb Table no está instalada.',
+    'Lancez cette commande dans un terminal et laissez-le ouvert ; Ctrl+C arrête le serveur. Fermez d’abord Wmb Table s’il est ouvert : il utilise déjà ce port.':
+        'Ejecute este comando en una terminal y déjela abierta; Ctrl+C detiene el servidor. Cierre primero Wmb Table si está abierto: ya usa este puerto.',
+    'Le serveur MCP est désactivé. Activez « Serveur MCP » dans Wmb Table → Paramètres → Assistant.':
+        'El servidor MCP está desactivado. Active «Servidor MCP» en Wmb Table → Configuración → Asistente.',
+    'La langue « {{language}} » n’est pas installée dans Wmb Table. Installées : {{installed}}.':
+        'El idioma «{{language}}» no está instalado en Wmb Table. Instalados: {{installed}}.',
+    'Serveur MCP de Wmb Table : {{url}}': 'Servidor MCP de Wmb Table: {{url}}',
+    'Le port {{port}} est déjà utilisé (Wmb Table sert peut-être déjà cette adresse).':
+        'El puerto {{port}} ya está en uso (puede que Wmb Table ya sirva esta dirección).',
+    'Les ports {{firstPort}} à {{lastPort}} sont déjà utilisés.':
+        'Los puertos {{firstPort}} a {{lastPort}} ya están en uso.',
 
     // ── AI provider descriptions ──
     'Fonctionne sans connexion internet, directement sur votre ordinateur.':
@@ -92,10 +167,13 @@ const es: Record<string, string> = {
 
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Añadir un proveedor',
-    'Ajouter un fournisseur personnalisé': 'Añadir un proveedor personalizado',
     'Compatible avec l’API OpenAI.': 'Compatible con la API de OpenAI.',
     'Supprimer ce fournisseur ?': '¿Eliminar este proveedor?',
     'Un fournisseur avec ce nom existe déjà.': 'Ya existe un proveedor con este nombre.',
+    "L'URL de base est requise.": 'La URL base es obligatoria.',
+    "L'URL doit commencer par http:// ou https://.": 'La URL debe empezar por http:// o https://.',
+    "Cette URL n'est pas valide.": 'Esta URL no es válida.',
+    'Supprimer le fournisseur {{name}}': 'Eliminar el proveedor {{name}}',
     'ex: Mon Service IA': 'ej.: Mi Servicio IA',
     'ex: gpt-4o-mini': 'ej.: gpt-4o-mini',
     'Taille du contexte (tokens)': 'Tamaño del contexto (tokens)',
@@ -105,6 +183,12 @@ const es: Record<string, string> = {
     Connecté: 'Conectado',
     Échec: 'Error',
     'La connexion a échoué.': 'La conexión ha fallado.',
+    'La clé API a été refusée. Vérifiez-la puis réessayez.':
+        'La clave API fue rechazada. Revísela e inténtelo de nuevo.',
+    "Le modèle ou l'adresse est introuvable. Vérifiez le modèle et l'URL de base.":
+        'No se encontró el modelo o la dirección. Revise el modelo y la URL base.',
+    "Impossible de joindre le serveur. Vérifiez l'URL de base et votre connexion.":
+        'No se puede contactar con el servidor. Revise la URL base y su conexión.',
     'La clé API est manquante pour ce fournisseur.': 'Falta la clave API para este proveedor.',
     'Fournisseur IA inconnu.': 'Proveedor IA desconocido.',
     'Validation du fournisseur impossible.': 'No se pudo validar el proveedor.',
@@ -135,20 +219,22 @@ const es: Record<string, string> = {
         'Esta voz no se puede reproducir en este ordenador.',
 
     // ── AI errors ──
-    "L'assistant IA est désactivé dans les paramètres.":
-        'El asistente IA está desactivado en la configuración.',
     'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.':
         'Ningún proveedor IA configurado. Seleccione un proveedor en la configuración.',
     'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.':
         'Ningún modelo configurado para este proveedor. Defina un modelo en la configuración.',
 
     // ── AI chat ──
-    "L'assistant IA est désactivé.": 'El asistente IA está desactivado.',
-    'Ouvrir les paramètres': 'Abrir configuración',
+    "Posez une question sur un sujet d'étude : l'assistant développe le thème, rapproche ce que disent les prédications et les Écritures, et vous donne les références pour vérifier par vous-même.":
+        'Haga una pregunta sobre un tema de estudio: el asistente desarrolla el tema, relaciona lo que dicen las predicaciones y las Escrituras, y le da las referencias para que lo compruebe usted mismo.',
+    "Pour l'utiliser, choisissez un service d'IA — par exemple OpenAI, Claude, Gemini, OpenRouter, ou Ollama sur votre ordinateur — et ajoutez votre clé API si le service en demande une.":
+        'Para usarlo, elija un servicio de IA (por ejemplo OpenAI, Claude, Gemini, OpenRouter u Ollama en su ordenador) y añada su clave API si el servicio la pide.',
+    "Configurer l'assistant": 'Configurar el asistente',
+    'Voir le guide': 'Ver la guía',
     'Le saviez-vous ? <u>{{feature}}</u> peut vous aider à explorer un sujet et comprendre plus vite ce que vous cherchez.':
         '¿Sabía que <u>{{feature}}</u> puede ayudarle a explorar un tema y comprender más rápido lo que está buscando?',
-    'Activez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
-        'Active <u>{{feature}}</u> para hacer preguntas, profundizar en un tema, comparar varias predicaciones, encontrar pasajes bíblicos y obtener respuestas claras sin tener que recorrerlo todo manualmente.',
+    'Configurez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
+        'Configure <u>{{feature}}</u> para hacer preguntas, profundizar en un tema, comparar varias predicaciones, encontrar pasajes bíblicos y obtener respuestas claras sin tener que recorrerlo todo manualmente.',
     "Ouvrir les réglages de l'assistant": 'Abrir ajustes del asistente',
     'Le saviez-vous ? <u>{{feature}}</u> peut lire vos documents.':
         '¿Sabía que <u>{{feature}}</u> puede leer sus documentos?',
@@ -196,6 +282,7 @@ const es: Record<string, string> = {
         'Este modelo es demasiado limitado para el asistente. Elija otro para poder usarlo.',
     'Voir le raisonnement': 'Ver razonamiento',
     'Masquer le raisonnement': 'Ocultar razonamiento',
+    'Actions de la conversation': 'Acciones de la conversación',
     '{{count}} dernières lignes': 'últimas {{count}} líneas',
     '+{{count}} autre': '+{{count}} otro',
     '+{{count}} autres': '+{{count}} otros',
@@ -214,6 +301,10 @@ const es: Record<string, string> = {
     'Mis à jour le': 'Actualizado el',
     'Exporté le': 'Exportado el',
     'Réponse sans texte': 'Respuesta sin texto',
+    'Réponse coupée : elle a atteint la longueur maximale que ce modèle peut écrire.':
+        'Respuesta cortada: alcanzó la longitud máxima que este modelo puede escribir.',
+    "Le modèle n'a pas répondu à temps. Réessayez, ou choisissez un modèle plus rapide dans les paramètres.":
+        'El modelo no respondió a tiempo. Inténtelo de nuevo o elija un modelo más rápido en los ajustes.',
     'Aller en bas': 'Ir abajo',
     'Une génération est en cours.': 'Hay una generación en curso.',
     Réessayer: 'Reintentar',
@@ -221,6 +312,36 @@ const es: Record<string, string> = {
     'Supprimer cette conversation ?': '¿Eliminar esta conversación?',
     'Supprimer toutes les conversations ?': '¿Eliminar todas las conversaciones?',
     "Vider l'historique": 'Vaciar historial',
+    "Recherche incomplète : la limite d'étapes a été atteinte.":
+        'Búsqueda incompleta: se alcanzó el límite de pasos.',
+    'Arrêté par vous.': 'Detenido por ti.',
+    "Le modèle n'a renvoyé aucun texte.": 'El modelo no devolvió ningún texto.',
+    "L'assistant n'est pas encore configuré.": 'El asistente aún no está configurado.',
+    'Clé API refusée. Vérifiez-la dans les paramètres.':
+        'Clave API rechazada. Revísala en los ajustes.',
+    'Modèle introuvable chez ce fournisseur. Choisissez-en un autre.':
+        'Modelo no encontrado en este proveedor. Elige otro.',
+    'Trop de demandes pour le moment. Patientez un peu, puis réessayez.':
+        'Demasiadas solicitudes por ahora. Espera un poco y vuelve a intentarlo.',
+    'Quota ou crédit épuisé chez le fournisseur.': 'Cuota o crédito agotado en el proveedor.',
+    'La conversation est trop longue pour ce modèle. Commencez une nouvelle conversation.':
+        'La conversación es demasiado larga para este modelo. Empieza una nueva conversación.',
+    'Le serveur du service IA est indisponible pour le moment.':
+        'El servidor del servicio de IA no está disponible por el momento.',
+    'Connexion perdue avec le service IA. Vérifiez votre réseau.':
+        'Se perdió la conexión con el servicio de IA. Revisa tu red.',
+    "Le service IA n'a pas répondu à temps.": 'El servicio de IA no respondió a tiempo.',
+    'Le service IA a refusé la demande.': 'El servicio de IA rechazó la solicitud.',
+    'Une erreur est survenue.': 'Se produjo un error.',
+    'Poursuivre la recherche': 'Continuar la búsqueda',
+    'Ouvrir les paramètres IA': 'Abrir los ajustes de IA',
+    "Continue ta réponse là où elle s'est arrêtée.": 'Continúa tu respuesta donde se detuvo.',
+    'Poursuis tes recherches, puis complète ta réponse.':
+        'Continúa tu búsqueda y luego completa tu respuesta.',
+    'Réponse en cours': 'Respuesta en curso',
+    Renvoyer: 'Reenviar',
+    'La suppression de la conversation a échoué.': 'No se pudo eliminar la conversación.',
+    "La suppression de l'historique a échoué.": 'No se pudo eliminar el historial.',
     'La relance de la réponse a échoué.': 'No se pudo reintentar la respuesta.',
     'La relance est disponible uniquement pour le dernier message utilisateur.':
         'Solo se puede reintentar el último mensaje del usuario.',
@@ -253,6 +374,7 @@ const es: Record<string, string> = {
     'Recherche dans les documents': 'Búsqueda en documentos',
     'Recherche biblique': 'Búsqueda bíblica',
     'Recherche approfondie': 'Investigación profunda',
+    'Recherche incomplète': 'Búsqueda incompleta',
     'Langues disponibles': 'Idiomas disponibles',
     'Documents personnalisés': 'Documentos personalizados',
     'Lecture du document': 'Lectura del documento',
@@ -1002,10 +1124,8 @@ const es: Record<string, string> = {
     'Si vous voulez quelque chose de simple, gardez le fournisseur proposé puis testez une voix.':
         'Si quiere algo sencillo, mantenga el proveedor propuesto y luego pruebe una voz.',
     "À quoi servent les réglages de l'assistant ?": '¿Para qué sirven los ajustes del asistente?',
-    "Cet onglet active l'assistant IA et choisit comment il répond dans l'application.":
-        'Esta pestaña activa el asistente de IA y define cómo responde en la aplicación.',
-    "Activez ou masquez l'assistant dans la barre latérale.":
-        'Active u oculte el asistente en la barra lateral.',
+    "Cet onglet choisit le service d'IA de l'assistant et la façon dont il répond.":
+        'Esta pestaña elige el servicio de IA del asistente y cómo responde.',
     'Sélectionnez un fournisseur local, cloud ou personnalisé.':
         'Seleccione un proveedor local, en la nube o personalizado.',
     'Définissez la langue et le modèle utilisés pour les réponses.':
@@ -1082,12 +1202,12 @@ const es: Record<string, string> = {
         'También controla la experiencia de escucha: voz, velocidad, resaltado y comportamiento de audio.',
     "L'assistant peut aider à explorer un thème, retrouver des références et comparer plus vite plusieurs contenus.":
         'El asistente puede ayudar a explorar un tema, encontrar referencias y comparar varios contenidos más rápido.',
-    "Cet onglet détermine s'il est disponible, quel service il utilise et dans quelle langue il travaille.":
-        'Esta pestaña determina si está disponible, qué servicio usa y en qué idioma trabaja.',
+    'Cet onglet détermine quel service il utilise et dans quelle langue il travaille.':
+        'Esta pestaña determina qué servicio usa y en qué idioma trabaja.',
     'Vous pouvez choisir une solution locale, cloud ou personnalisée selon vos besoins.':
         'Puede elegir una solución local, en la nube o personalizada según sus necesidades.',
-    "Activez l'assistant pour le rendre disponible dans la barre latérale.":
-        'Active el asistente para hacerlo disponible en la barra lateral.',
+    'Ajoutez votre clé API si le service en demande une.':
+        'Añada su clave API si el servicio la pide.',
     'Elle sert à retrouver rapidement un mot, un thème, un lieu ou une expression dans les prédications.':
         'Sirve para encontrar rápidamente una palabra, un tema, un lugar o una expresión en las predicaciones.',
     'Elle évite de parcourir manuellement plusieurs documents quand vous savez déjà ce que vous cherchez.':
@@ -1171,6 +1291,8 @@ const es: Record<string, string> = {
     "L'arrêt de la génération a échoué.": 'No se pudo detener la generación.',
     "L'envoi du message a échoué.": 'No se pudo enviar el mensaje.',
     'La création de la conversation a échoué.': 'No se pudo crear la conversación.',
+    'Le message est trop long. Raccourcissez-le puis réessayez.':
+        'El mensaje es demasiado largo. Acórtalo e inténtalo de nuevo.',
     'Le chargement de la conversation a échoué.': 'No se pudo cargar la conversación.',
     'Le chargement des anciennes conversations a échoué.':
         'No se pudieron cargar las conversaciones antiguas.',

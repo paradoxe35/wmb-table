@@ -1,5 +1,5 @@
 import { PushChannels } from '@shared/ipc.types';
-import { sendToRenderer } from '@main/ipc/register';
+import { sendToRenderer } from '@main/ipc/ipc-bridge';
 import type { AgentDispatch } from './types';
 
 /**
@@ -29,7 +29,7 @@ export function dispatchAgentToolComplete(
     agentName: string,
     toolName: string,
     toolCallId: string,
-    error?: unknown,
+    errorMessage?: string,
 ): void {
     sendToRenderer(dispatch.browserWindow, PushChannels.aiToolCallComplete, {
         conversationId: dispatch.conversationId,
@@ -37,9 +37,7 @@ export function dispatchAgentToolComplete(
         messageId: dispatch.assistantMessageId,
         toolName: `${agentName}:${toolName}`,
         toolCallId,
-        payload:
-            error === undefined
-                ? {}
-                : { error: error instanceof Error ? error.message : String(error) },
+        payload: errorMessage === undefined ? {} : { error: errorMessage },
+        isError: errorMessage !== undefined,
     });
 }

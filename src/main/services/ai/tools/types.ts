@@ -43,6 +43,8 @@ export interface SermonContentResponse {
     paragraphs: SermonParagraphResult[];
     totalParagraphs: number;
     startParagraph: number;
+    hasMore: boolean;
+    nextStartParagraph?: number;
     requestedTranslationId?: number;
     resolvedTranslationId?: number;
     fallbackTranslationId?: number;

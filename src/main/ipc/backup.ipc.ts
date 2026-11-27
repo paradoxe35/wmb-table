@@ -1,5 +1,5 @@
 import { BackupChannels } from '@shared/ipc.types';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import * as backupRepo from '@main/database/repositories/backup.repository';
 import {
     authenticateWithGoogle,

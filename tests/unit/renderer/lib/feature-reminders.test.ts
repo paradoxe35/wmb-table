@@ -8,6 +8,7 @@ describe('feature reminders visibility', () => {
         loaded: true,
         syncing: false,
         readingMode: false,
+        aiChatInUse: false,
         hasInteracted: true,
         sessionDelayElapsed: true,
         sessionHiddenUntil: null,
@@ -21,5 +22,9 @@ describe('feature reminders visibility', () => {
 
     it('returns true when content language is set and other conditions are met', () => {
         expect(canDisplayFeatureReminders(baseInput)).toBe(true);
+    });
+
+    it('waits while the assistant is answering or its chat is open', () => {
+        expect(canDisplayFeatureReminders({ ...baseInput, aiChatInUse: true })).toBe(false);
     });
 });

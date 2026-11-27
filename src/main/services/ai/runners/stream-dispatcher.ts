@@ -2,7 +2,7 @@ import type { BrowserWindow } from 'electron';
 import { PushChannels } from '@shared/ipc.types';
 import type { AiToolCall, AiToolResult } from '@shared/ai.types';
 import * as aiRepo from '@main/database/repositories/ai.repository';
-import { sendToRenderer } from '@main/ipc/register';
+import { sendToRenderer } from '@main/ipc/ipc-bridge';
 
 export type RunDispatchGuard = (generationId: string, assistantMessageId: string) => boolean;
 
@@ -70,5 +70,6 @@ export function dispatchToolCallComplete(
         toolName: toolResult.name,
         toolCallId: toolResult.toolCallId,
         payload: toolResult.output,
+        isError: toolResult.isError === true,
     });
 }

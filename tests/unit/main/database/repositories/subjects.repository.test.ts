@@ -104,6 +104,27 @@ describe('subjects.repository', () => {
         expect(subjectsRepo.getItems(subject.id)).toHaveLength(0);
     });
 
+    it('getItem returns one item with the subject it belongs to', () => {
+        const subject = subjectsRepo.create('Topic');
+        const item = subjectsRepo.createItem(
+            subject.id,
+            'Doc',
+            {
+                kind: 'tree',
+                documentIdentity: { documentType: 'custom', customDocumentId: 'doc-1' },
+                tree: [],
+            },
+            'text',
+        );
+
+        expect(subjectsRepo.getItem(item.id)).toMatchObject({
+            id: item.id,
+            subjectId: subject.id,
+            documentTitle: 'Doc',
+        });
+        expect(subjectsRepo.getItem('missing')).toBeNull();
+    });
+
     it('getAll returns lightweight subject summaries', () => {
         const s1 = subjectsRepo.create('Subject A');
         const s2 = subjectsRepo.create('Subject B');

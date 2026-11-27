@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import { getErrorMessage } from '@renderer/utils/functions';
 
 export function startDownloadProgress(
@@ -25,7 +26,7 @@ export function clearDownloadProgress(
 }
 
 export function buildDownloadErrorMessage(
-    t: (key: string, options?: Record<string, string>) => string,
+    t: TFunction,
     error: unknown,
     fallbackKey?: string,
 ): string {

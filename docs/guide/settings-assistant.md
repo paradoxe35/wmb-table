@@ -1,6 +1,6 @@
 # Paramètres Assistant
 
-<p class="lead">L'onglet `Assistant` sert à activer la discussion IA et à choisir comment elle doit fonctionner dans Wmb Table.</p>
+<p class="lead">L'onglet `Assistant` sert à choisir le service d'IA de la discussion et la façon dont elle fonctionne dans Wmb Table.</p>
 
 ## Où ouvrir cet onglet
 
@@ -10,33 +10,24 @@
 <ScreenshotPlaceholder
   file="fr-settings-assistant-tab.png"
   label="Onglet Assistant dans les paramètres"
-  hint="Montrer l'interrupteur d'activation, le choix du fournisseur, les réglages de langue et, si possible, le bloc du modèle local."
+  hint="Montrer le choix du fournisseur, les réglages de langue et, si possible, le bloc du modèle local."
 />
 
 ## Ce que vous faites ici
 
 Dans cet onglet, vous pouvez :
 
-- activer ou désactiver l'assistant
 - choisir le service utilisé pour répondre
 - régler un modèle local si vous voulez travailler sans internet
 - entrer les informations nécessaires pour un service en ligne
 - tester la connexion d'un service
 - choisir comment l'assistant suit la langue de votre bibliothèque
 
-## Étape 1 : activer l'assistant
+## Étape 1 : partir de la page Assistant
 
-En haut de la page, vous trouvez un interrupteur simple.
+L'assistant est toujours dans le menu de gauche. Tant qu'aucun service n'est configuré, sa page affiche une carte d'accueil avec le bouton `Configurer l'assistant`, qui ouvre directement cet onglet.
 
-Quand il est activé :
-
-- l'assistant devient disponible dans le menu de gauche
-- vous pouvez ouvrir la page de discussion IA
-
-Quand il est désactivé :
-
-- la page Assistant reste bloquée
-- l'application vous renvoie vers les paramètres pour l'activer
+Dès que le service est prêt, la page Assistant affiche la discussion, sans redémarrer l'application.
 
 ## Étape 2 : choisir le service utilisé
 
@@ -75,7 +66,7 @@ Vous pouvez aussi ajouter un service compatible si vous avez une adresse et un m
 <ScreenshotPlaceholder
   file="fr-settings-assistant-provider-selector.png"
   label="Choix du fournisseur IA"
-  hint="Montrer la liste des fournisseurs avec Local, OpenRouter, OpenAI, Gemini, Claude et Ajouter un fournisseur personnalisé."
+  hint="Montrer la liste des fournisseurs avec Local, OpenRouter, OpenAI, Gemini, Claude et Ajouter un fournisseur."
 />
 
 ## Étape 3 : si vous choisissez un service en ligne
@@ -187,11 +178,10 @@ Ainsi, l'assistant cherchera plus naturellement dans :
 
 Pour commencer sans complication :
 
-1. activez l'assistant
-2. choisissez le service que vous voulez utiliser
-3. entrez les informations nécessaires si besoin
-4. gardez `Suivre la langue active`
-5. ouvrez ensuite la page `Discussion IA`
+1. choisissez le service que vous voulez utiliser
+2. entrez les informations nécessaires si besoin
+3. gardez `Suivre la langue active`
+4. ouvrez ensuite la page `Discussion IA`
 
 ## Quand revenir dans cet onglet
 
@@ -202,6 +192,41 @@ Revenez ici si :
 - vous voulez passer en mode local
 - vous voulez utiliser un autre modèle
 - vous voulez modifier la manière dont l'assistant gère les langues
+
+## Utiliser votre propre application d'IA (serveur MCP)
+
+Si vous utilisez déjà une application d'IA sur votre ordinateur, comme Claude Desktop ou Codex, elle peut lire votre bibliothèque Wmb Table : prédications, Bible, vos documents, vos notes et vos sujets. C'est votre propre abonnement qui est utilisé ; Wmb Table n'a pas besoin de clé API pour cela.
+
+1. Tout en bas de cet onglet, cochez `Serveur MCP`. Tant que la case n'est pas cochée, rien d'autre ne s'affiche.
+2. Dans `Configuration`, ouvrez l'onglet de votre application : `Claude Desktop`, `Codex` ou `Autre application`.
+3. Copiez l'exemple marqué `(recommandé)` et suivez la petite explication au-dessus. Les exemples contiennent déjà le chemin complet de Wmb Table sur votre ordinateur : vous n'avez rien à chercher.
+
+Pour Claude Desktop, le plus simple est le bouton `Configurer automatiquement` en haut de son onglet. Wmb Table ajoute alors lui-même son entrée au fichier `claude_desktop_config.json`, après en avoir fait une copie de sauvegarde (`claude_desktop_config.json.wmb-table-backup-…`) ; vos autres serveurs ne sont pas modifiés. Redémarrez ensuite Claude Desktop.
+
+- Si Claude Desktop n'est pas installé, l'onglet le dit et donne le lien de téléchargement ; Wmb Table ne crée aucun fichier.
+- `Déjà configuré` indique que l'entrée est en place. Si Wmb Table a changé de dossier, le bouton `Mettre à jour` corrige le chemin.
+- Si le fichier n'est pas un JSON valide, ou si Wmb Table n'a pas le droit de le modifier, rien n'est changé : ajoutez alors l'exemple à la main.
+
+Chaque onglet propose deux méthodes :
+
+- `HTTP` : votre application se connecte à l'adresse affichée, par exemple `http://127.0.0.1:23132/mcp`. Wmb Table doit être ouvert. C'est la méthode recommandée pour Codex.
+- `Commande` : votre application lance Wmb Table elle-même, sans fenêtre, avec la commande `wmb-table mcp`. Cela fonctionne même quand Wmb Table est fermé. C'est la méthode recommandée pour Claude Desktop, qui n'a alors pas besoin de Node.js.
+
+La partie `Avancé`, en bas, donne la commande `wmb-table mcp --http --port 23132` : elle démarre le serveur HTTP dans un terminal, sans ouvrir Wmb Table. `Ctrl+C` l'arrête. Fermez d'abord Wmb Table s'il est ouvert, car il utilise déjà ce port.
+
+Bon à savoir :
+
+- Le serveur est désactivé par défaut. Tant que la case `Serveur MCP` n'est pas cochée, la commande `wmb-table mcp` refuse de démarrer et l'explique.
+- Décocher `Serveur MCP` arrête aussi la commande : lancée par votre application, elle se ferme d'elle-même ; le serveur HTTP sans fenêtre refuse les demandes jusqu'à ce que vous recochiez la case.
+- Sous Linux, les exemples ajoutent `--no-sandbox` avant `mcp` (par exemple `wmb-table --no-sandbox mcp`). Sans cela, la commande ne démarre pas en tant que root, dans un conteneur ou sur certains systèmes. Ce mode n'ouvre aucune page web, donc cela ne réduit pas la sécurité.
+- Le serveur HTTP démarre avec Wmb Table quand la case est cochée, et s'arrête quand vous la décochez ou quand vous quittez Wmb Table.
+- Par défaut, votre application d'IA peut seulement lire. Cochez `Autoriser les modifications (notes et sujets)` pour qu'elle puisse aussi créer et modifier vos notes et vos sujets. Ce choix vaut pour toutes les méthodes.
+- Wmb Table peut rester ouvert pendant que la commande tourne : les deux utilisent la même bibliothèque sans se gêner.
+- Les outils utilisent votre langue de contenu. Ajoutez `--language en` (par exemple) à la commande pour une autre langue installée.
+- Le serveur n'est joignable que depuis votre ordinateur. Les sites web ouverts dans votre navigateur ne peuvent pas l'utiliser.
+- Si le port habituel est déjà pris, Wmb Table utilise le suivant et l'affiche. Gardez alors cette nouvelle adresse dans votre application.
+- Ce réglage reste propre à chaque ordinateur : il n'est pas synchronisé avec Google Drive.
+- Pour Claude Desktop en `HTTP`, Node.js doit être installé sur l'ordinateur.
 
 ## Voir aussi
 

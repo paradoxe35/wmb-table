@@ -57,3 +57,19 @@ describe('resolveBookCode', () => {
         expect(resolveBookCode(db, 'zzz')).toBeNull();
     });
 });
+
+describe('resolveBookCode with ambiguous input', () => {
+    it.each(['', ' ', 'J', 'j', '1', '1 ', 'é'])('names no book for %j', (book) => {
+        expect(resolveBookCode(db, book)).toBeNull();
+    });
+
+    it('picks the first book in Bible order, whatever order the rows were stored in', () => {
+        const insert = db.prepare(
+            'INSERT INTO bible_verses (book, book_name, chapter, verse, content) VALUES (?, ?, ?, ?, ?)',
+        );
+        insert.run('18O', 'Job', '1', '1', 'x');
+        insert.run('06O', 'Josué', '1', '1', 'x');
+
+        expect(resolveBookCode(db, 'Jo')).toBe('06O');
+    });
+});

@@ -89,8 +89,9 @@ export function useConversationActions(
         }
         modal.confirm({
             title: t('Supprimer cette conversation ?'),
-            okText: t('Oui'),
-            cancelText: t('Non'),
+            okText: t('Supprimer'),
+            cancelText: t('Annuler'),
+            okButtonProps: { danger: true },
             onOk: () => onDeleteConversation(conversation.id),
         });
     }, [conversation.id, isKnownEmpty, modal, onDeleteConversation, t]);

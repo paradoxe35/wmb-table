@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createTestDb } from '../test-helpers';
+import { eq } from 'drizzle-orm';
 import * as aiRepo from '@main/database/repositories/ai.repository';
+import { getDb } from '@main/database';
+import { aiMessages, aiSettings } from '@main/database/schema';
 
 describe('ai.repository', () => {
     beforeEach(() => {
@@ -242,18 +245,154 @@ describe('ai.repository', () => {
             const updated = aiRepo.updateMessage(msg.id, { content: 'new' });
             expect(updated.content).toBe('new');
         });
+
+        it('appendAssistantContent says when the reply row is gone instead of throwing', () => {
+            const conv = aiRepo.createConversation('en');
+            const msg = aiRepo.createMessage({ conversationId: conv.id, role: 'assistant' });
+
+            expect(aiRepo.appendAssistantContent(msg.id, 'Bon')).toBe(true);
+            aiRepo.deleteMessage(msg.id);
+            expect(aiRepo.appendAssistantContent(msg.id, 'jour')).toBe(false);
+        });
+
+        it('deleteEmptyAssistantMessages removes only empty replies older than the cutoff', () => {
+            const conv = aiRepo.createConversation('en');
+            const user = aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'user',
+                content: '',
+            });
+            const empty = aiRepo.createMessage({ conversationId: conv.id, role: 'assistant' });
+            const blank = aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'assistant',
+                content: '  \n',
+            });
+            const text = aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'assistant',
+                content: 'Réponse',
+            });
+            const withTools = aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'assistant',
+                toolCalls: [{ id: 't1', name: 'searchContent', input: {} }],
+            });
+            const cutoff = new Date(Date.now() + 1_000).toISOString();
+            const live = aiRepo.createMessage({ conversationId: conv.id, role: 'assistant' });
+            getDb()
+                .update(aiMessages)
+                .set({ createdAt: new Date(Date.now() + 5_000).toISOString() })
+                .where(eq(aiMessages.id, live.id))
+                .run();
+
+            expect(aiRepo.deleteEmptyAssistantMessages(cutoff)).toBe(2);
+
+            const remaining = aiRepo.getMessages(conv.id).map((message) => message.id);
+            expect(remaining).toEqual(
+                expect.arrayContaining([user.id, text.id, withTools.id, live.id]),
+            );
+            expect(remaining).not.toContain(empty.id);
+            expect(remaining).not.toContain(blank.id);
+        });
     });
 
     describe('settings', () => {
+        it.each([0, -3, 1.5, 10_000])(
+            'reads a bad stored history limit (%s) as a usable one',
+            (stored) => {
+                aiRepo.ensureSettings();
+                getDb().update(aiSettings).set({ maxHistoryConversations: stored }).run();
+
+                const limit = aiRepo.ensureSettings().maxHistoryConversations;
+                expect(Number.isInteger(limit)).toBe(true);
+                expect(limit).toBeGreaterThanOrEqual(1);
+                expect(limit).toBeLessThanOrEqual(500);
+            },
+        );
+
+        it('trimConversationHistory ignores a limit that is not a positive whole number', () => {
+            aiRepo.createConversation('en', 'A');
+            aiRepo.createConversation('en', 'B');
+
+            aiRepo.trimConversationHistory(Number.NaN);
+            aiRepo.trimConversationHistory(0);
+
+            expect(aiRepo.getConversations()).toHaveLength(2);
+        });
+
         it('ensureSettings creates defaults', () => {
             const settings = aiRepo.ensureSettings();
-            expect(settings.enabled).toBe(false);
+            expect(settings.enabled).toBe(true);
+            expect(settings.activeProvider).toBeNull();
         });
 
         it('updateSettings merges partial', () => {
             aiRepo.ensureSettings();
-            const updated = aiRepo.updateSettings({ enabled: true });
-            expect(updated.enabled).toBe(true);
+            const updated = aiRepo.updateSettings({ enabled: false });
+            expect(updated.enabled).toBe(false);
+        });
+
+        it('a provider update keeps the other fields and providers', () => {
+            const current = aiRepo.ensureSettings();
+            aiRepo.updateSettings({
+                providers: {
+                    ...current.providers,
+                    gemini: { ...current.providers.gemini, apiKey: 'gm-key' },
+                },
+            });
+            const updated = aiRepo.updateSettings({
+                providers: { openai: { apiKey: 'oa-key' } } as never,
+            });
+
+            expect(updated.providers.gemini.apiKey).toBe('gm-key');
+            expect(updated.providers.openai).toMatchObject({
+                apiKey: 'oa-key',
+                model: current.providers.openai.model,
+            });
+        });
+
+        it('trims builtin API keys and base URLs, and drops blank ones', () => {
+            const current = aiRepo.ensureSettings();
+            const updated = aiRepo.updateSettings({
+                providers: {
+                    ...current.providers,
+                    openai: { ...current.providers.openai, apiKey: '  sk-abc \n' },
+                    ollama: { ...current.providers.ollama, apiKey: '   ', baseUrl: '  ' },
+                },
+            });
+
+            expect(updated.providers.openai.apiKey).toBe('sk-abc');
+            expect(updated.providers.ollama.apiKey).toBeUndefined();
+            expect(updated.providers.ollama.baseUrl).toBeUndefined();
+        });
+
+        it('clears the active provider when its custom provider is deleted', () => {
+            aiRepo.updateSettings({
+                activeProvider: 'lm',
+                customProviders: [
+                    {
+                        id: 'lm',
+                        name: 'LM',
+                        baseUrl: 'http://127.0.0.1:1234/v1',
+                        defaultModel: 'm',
+                    },
+                ],
+            });
+
+            const updated = aiRepo.updateSettings({ customProviders: [] });
+
+            expect(updated.customProviders).toEqual([]);
+            expect(updated.activeProvider).toBeNull();
+        });
+
+        it('keeps a builtin active provider when custom providers change', () => {
+            aiRepo.updateSettings({ activeProvider: 'ollama' });
+            expect(aiRepo.updateSettings({ customProviders: [] }).activeProvider).toBe('ollama');
+        });
+
+        it('does not activate a custom provider that does not exist', () => {
+            expect(aiRepo.updateSettings({ activeProvider: 'ghost' }).activeProvider).toBeNull();
         });
     });
 });

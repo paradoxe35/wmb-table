@@ -1,43 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Empty, Typography } from 'antd';
-import { RobotOutlined } from '@ant-design/icons';
+import { Alert } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { useAiChatStore, useAppStore } from '@renderer/stores';
+import { isAiConfigured } from '@renderer/lib/feature-reminders';
+import { useAiChatStore } from '@renderer/stores';
 import type { AiMessage } from '@shared/ai.types';
+import AssistantSetupCard from './assistant-setup-card';
 import ChatConversationList from './chat-conversation-list';
 import ChatHeader from './chat-header';
 import ChatInput from './chat-input';
 import ChatMessageList from './chat-message-list';
 import './ai-chat.scss';
 
-const { Text } = Typography;
 const EMPTY_MESSAGES: AiMessage[] = [];
 const EMPTY_QUEUED_MESSAGES: { id: string; content: string }[] = [];
-
-function DisabledState() {
-    const { t } = useTranslation();
-    const showOptions = useAppStore((s) => s.showOptions);
-
-    return (
-        <div className="ai-chat__disabled">
-            <Empty
-                image={
-                    <RobotOutlined
-                        style={{
-                            fontSize: 'var(--fs-11xl)',
-                            color: 'var(--ant-color-text-quaternary)',
-                        }}
-                    />
-                }
-                description={<Text type="secondary">{t("L'assistant IA est désactivé.")}</Text>}
-            >
-                <Button type="primary" onClick={() => showOptions('settings')}>
-                    {t('Ouvrir les paramètres')}
-                </Button>
-            </Empty>
-        </div>
-    );
-}
 
 export default function AiChatView() {
     const { t } = useTranslation();
@@ -90,7 +65,12 @@ export default function AiChatView() {
     const sendMessage = useAiChatStore((s) => s.sendMessage);
     const stopGeneration = useAiChatStore((s) => s.stopGeneration);
     const removeQueuedMessage = useAiChatStore((s) => s.removeQueuedMessage);
+    const flushQueuedMessages = useAiChatStore((s) => s.flushQueuedMessages);
     const error = useAiChatStore((s) => s.error);
+    const clearError = useAiChatStore((s) => s.clearError);
+    const runNotice = useAiChatStore((s) =>
+        activeConversationId ? (s.runNoticeByConversation[activeConversationId] ?? null) : null,
+    );
     const completionCount = useAiChatStore((s) => s.completionCount);
     const lastCompletedConversationId = useAiChatStore((s) => s.lastCompletedConversationId);
     const [draft, setDraft] = useState('');
@@ -122,9 +102,10 @@ export default function AiChatView() {
         if (!trimmed) {
             return;
         }
+        setDraft('');
         void sendMessage(trimmed).then((accepted) => {
-            if (accepted) {
-                setDraft('');
+            if (!accepted) {
+                setDraft((current) => (current.trim() ? `${draft}\n${current}` : draft));
             }
         });
     }, [draft, sendMessage]);
@@ -179,6 +160,21 @@ export default function AiChatView() {
         [sendMessage],
     );
 
+    const handleRemoveQueuedMessage = useCallback(
+        (queuedMessageId: string) => {
+            if (activeConversationId) {
+                removeQueuedMessage(activeConversationId, queuedMessageId);
+            }
+        },
+        [activeConversationId, removeQueuedMessage],
+    );
+
+    const handleResendQueue = useCallback(() => {
+        if (activeConversationId) {
+            void flushQueuedMessages(activeConversationId);
+        }
+    }, [activeConversationId, flushQueuedMessages]);
+
     const handleLoadOlderMessages = useCallback(() => {
         if (!activeConversationId) {
             return Promise.resolve();
@@ -191,8 +187,8 @@ export default function AiChatView() {
         return null;
     }
 
-    if (!settings.enabled) {
-        return <DisabledState />;
+    if (!isAiConfigured(settings)) {
+        return <AssistantSetupCard />;
     }
 
     return (
@@ -232,10 +228,11 @@ export default function AiChatView() {
 
                 {error ? (
                     <Alert
+                        key={error}
                         type="error"
                         showIcon
-                        closable
-                        title={t(error)}
+                        closable={{ onClose: clearError }}
+                        title={t(error, { keySeparator: false, nsSeparator: false })}
                         style={{ margin: '12px 16px 0' }}
                     />
                 ) : null}
@@ -250,6 +247,7 @@ export default function AiChatView() {
                     loading={activeLoading}
                     loadingOlder={activeLoadingOlder}
                     hasMoreHistory={activeHasMoreHistory}
+                    runNotice={runNotice}
                     onLoadOlderMessages={handleLoadOlderMessages}
                     onQuickStart={handleQuickStart}
                 />
@@ -265,13 +263,8 @@ export default function AiChatView() {
                     onDraftChange={setDraft}
                     onSend={handleSend}
                     onStop={handleStop}
-                    onRemoveQueuedMessage={(queuedMessageId) => {
-                        if (!activeConversationId) {
-                            return;
-                        }
-
-                        removeQueuedMessage(activeConversationId, queuedMessageId);
-                    }}
+                    onRemoveQueuedMessage={handleRemoveQueuedMessage}
+                    onResendQueue={handleResendQueue}
                 />
             </div>
         </div>

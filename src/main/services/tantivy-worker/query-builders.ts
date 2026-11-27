@@ -26,7 +26,7 @@ export function buildModeQuery(
     const words = tokenizeQuery(queryText, mode);
     const field = getSearchField(index);
 
-    if (words.length === 0) return Query.allQuery();
+    if (words.length === 0) return Query.emptyQuery();
 
     function wordQuery(word: string): Query {
         const lowered = word.toLowerCase();

@@ -7,7 +7,7 @@ const downloadBibleVersionMock = vi.fn();
 const getBibleVersionToAutoActivateAfterDownloadMock = vi.fn();
 const switchBibleVersionMock = vi.fn();
 
-vi.mock('@main/ipc/register', () => ({
+vi.mock('@main/ipc/ipc-bridge', () => ({
     registerHandler: registerHandlerMock,
     sendToRenderer: sendToRendererMock,
 }));

@@ -134,7 +134,14 @@ export default function Settings() {
     return (
         <div
             className="settings-page"
-            style={{ padding: '16px 12px', maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}
+            style={{
+                boxSizing: 'border-box',
+                width: '100%',
+                padding: '16px 12px',
+                maxWidth: 700,
+                marginLeft: 'auto',
+                marginRight: 'auto',
+            }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <SettingOutlined style={{ fontSize: 'var(--fs-2xl)' }} />

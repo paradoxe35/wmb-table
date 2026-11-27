@@ -1,6 +1,6 @@
 import { BrowserWindow } from 'electron';
 import { LanguageChannels, PushChannels } from '@shared/ipc.types';
-import { registerHandler, sendToRenderer } from './register';
+import { registerHandler, sendToRenderer } from './ipc-bridge';
 import * as languagePackService from '@main/services/language-pack.service';
 
 export function registerLanguageHandlers(): void {

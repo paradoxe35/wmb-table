@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import * as notesRepo from '@main/database/repositories/notes.repository';
 import { applyNoteEdits } from '@main/lib/note-edit';
-import { markdownToNoteHtml, noteHtmlToMarkdown } from '@main/lib/note-markdown';
+import {
+    findUnsupportedFormatting,
+    markdownToNoteHtml,
+    noteHtmlToMarkdown,
+} from '@main/lib/note-markdown';
 import { escapeHtml } from '@shared/searchable';
 import type { AiToolDefinition } from './types';
 
@@ -24,6 +28,35 @@ function noteNotFound(noteId: string) {
 
 function failureMessage(err: unknown): string {
     return err instanceof Error ? err.message : String(err);
+}
+
+const FORMATTING_LABELS: Record<string, string> = {
+    '<table>': 'a table',
+    '<u>': 'underlined text',
+    '<ins>': 'underlined text',
+    '<s>': 'struck-through text',
+    '<strike>': 'struck-through text',
+    '<del>': 'struck-through text',
+    '<sub>': 'subscript text',
+    '<sup>': 'superscript text',
+    '<mark>': 'highlighted text',
+    style: 'colours, highlights, alignment or indentation',
+    lang: 'language marks',
+};
+
+function describeFormatting(construct: string): string {
+    if (construct.startsWith('data-')) return 'page breaks, checklists or other special blocks';
+    return FORMATTING_LABELS[construct] ?? construct;
+}
+
+function refuseLossyRewrite(noteId: string, construct: string) {
+    return {
+        error:
+            `Note "${noteId}" contains ${describeFormatting(construct)}, which markdown cannot carry. ` +
+            'Rewriting the whole note would remove that formatting, so the note was not changed. ' +
+            'Use editNote to change the plain parts of the note, or appendToNote to add a section. ' +
+            'If the formatted part itself must change, ask the user to edit it in the note editor.',
+    };
 }
 
 async function buildNoteHtml(markdown: string, title: string): Promise<string> {
@@ -96,22 +129,27 @@ export function buildNoteTools(): Record<string, AiToolDefinition> {
             }),
             execute: async ({ name, content }) => {
                 const title = name.trim();
-                const note = notesRepo.create(title);
-                notesRepo.rename(note.id, title);
-
-                if (content.trim()) {
-                    try {
-                        notesRepo.updateContent(note.id, await buildNoteHtml(content, title));
-                    } catch (err) {
-                        return {
-                            noteId: note.id,
-                            name: title,
-                            error: `Note created but empty — writing its content failed: ${failureMessage(err)}. Add the content with updateNoteContent.`,
-                        };
-                    }
+                let noteId: string;
+                try {
+                    noteId = notesRepo.create(title).id;
+                } catch (err) {
+                    return { error: `Failed to create the note: ${failureMessage(err)}` };
                 }
 
-                return { noteId: note.id, name: title };
+                try {
+                    notesRepo.rename(noteId, title);
+                    if (content.trim()) {
+                        notesRepo.updateContent(noteId, await buildNoteHtml(content, title));
+                    }
+                } catch (err) {
+                    return {
+                        noteId,
+                        name: title,
+                        error: `Note created but empty — writing its content failed: ${failureMessage(err)}. Add the content with updateNoteContent.`,
+                    };
+                }
+
+                return { noteId, name: title };
             },
         },
         editNote: {
@@ -190,7 +228,12 @@ export function buildNoteTools(): Record<string, AiToolDefinition> {
                 const note = notesRepo.getById(noteId);
                 if (!note) return noteNotFound(noteId);
 
-                const appended = await markdownToNoteHtml(content);
+                let appended: string;
+                try {
+                    appended = await markdownToNoteHtml(content);
+                } catch (err) {
+                    return { error: `Failed to convert the content: ${failureMessage(err)}` };
+                }
                 if (!appended) return { error: 'The content to append is empty.' };
 
                 const existing = note.content?.trim();
@@ -222,6 +265,9 @@ export function buildNoteTools(): Record<string, AiToolDefinition> {
                 const noteId = rawNoteId.trim();
                 const note = notesRepo.getById(noteId);
                 if (!note) return noteNotFound(noteId);
+
+                const lossy = findUnsupportedFormatting(note.content ?? '');
+                if (lossy) return refuseLossyRewrite(noteId, lossy);
 
                 try {
                     notesRepo.updateContent(noteId, await buildNoteHtml(content, note.name));

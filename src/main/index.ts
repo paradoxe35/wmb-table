@@ -1,21 +1,26 @@
+// Must stay first: `wmb-table mcp` relaunches itself headless before Electron needs a display.
+import { cliCommand } from '@main/cli/cli-entry';
 import '@main/lib/sentry';
 
-import { app, BrowserWindow, protocol, session, shell } from 'electron';
+import { app, BrowserWindow, protocol, session } from 'electron';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { is } from '@electron-toolkit/utils';
 import { APP_NAME } from '@shared/constants';
 import { initializeIpc } from '@main/ipc/register';
 import { getMainWindow, setMainWindow } from '@main/lib/window';
 import MenuBuilder from '@main/lib/menu';
 import { initializeLogger } from '@main/lib/logger';
+import { secureWindowNavigation } from '@main/lib/safe-external';
 import { initializeUpdater } from '@main/lib/updater';
 import { initializeDatabase, closeDatabase } from '@main/database';
 import { initializeTantivy, terminateWorker } from '@main/services/tantivy.service';
 import { refreshInstalledLanguageUpdates } from '@main/services/language-pack.service';
 import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/synchronizer';
 import { disposeTtsService } from '@main/services/tts';
-import { disposeAiService } from '@main/services/ai';
+import { disposeAiService, stopAiRunsWhenPageGoes } from '@main/services/ai';
 import { disposePowerSaveBlocker } from '@main/services/power-save.service';
+import { startMcpServerIfEnabled, stopMcpServer } from '@main/services/mcp/mcp-server.service';
 import * as configRepo from '@main/database/repositories/config.repository';
 import { getAudioCacheDir, getTtsCacheDir } from '@main/lib/app-paths';
 import { applyNativeChromeTheme, getThemeState } from '@main/lib/native-theme';
@@ -23,18 +28,27 @@ import { HEADER_BACKGROUND, type ResolvedTheme } from '@shared/theme';
 import i18n from '@main/lib/i18n';
 import log from '@main/lib/logger';
 import { resolveUiLanguage } from '@shared/constants';
+import { runMcpCommand } from '@main/cli/run-mcp-command';
 
 if (process.platform === 'linux' && process.env.APPIMAGE) {
     app.commandLine.appendSwitch('no-sandbox');
 }
 
-// Initialize logger first
-initializeLogger();
-
-if (!app.requestSingleInstanceLock()) {
-    app.quit();
+if (cliCommand.kind === 'mcp') {
+    runMcpCommand(cliCommand);
 } else {
-    bootstrapPrimaryInstance();
+    bootstrapApp();
+}
+
+function bootstrapApp(): void {
+    // Initialize logger first
+    initializeLogger();
+
+    if (!app.requestSingleInstanceLock()) {
+        app.quit();
+    } else {
+        bootstrapPrimaryInstance();
+    }
 }
 
 function bootstrapPrimaryInstance(): void {
@@ -66,6 +80,7 @@ function bootstrapPrimaryInstance(): void {
         });
         createMainWindow();
         tryStartSynchronizer();
+        void startMcpServerIfEnabled();
 
         app.on('activate', () => {
             if (BrowserWindow.getAllWindows().length === 0) {
@@ -74,13 +89,14 @@ function bootstrapPrimaryInstance(): void {
         });
     });
 
-    app.on('will-quit', () => {
-        stopSynchronizer();
-        terminateWorker();
-        disposeTtsService();
-        disposeAiService();
-        disposePowerSaveBlocker();
-        closeDatabase();
+    let servicesStopped = false;
+    app.on('will-quit', (event) => {
+        if (servicesStopped) return;
+        event.preventDefault();
+        void stopServicesBeforeQuit().finally(() => {
+            servicesStopped = true;
+            app.quit();
+        });
     });
 
     app.on('window-all-closed', () => {
@@ -88,6 +104,22 @@ function bootstrapPrimaryInstance(): void {
             app.quit();
         }
     });
+}
+
+const MCP_STOP_TIMEOUT_MS = 2_000;
+
+/** Everything that can still write (MCP requests, AI replies) stops before the database closes. */
+async function stopServicesBeforeQuit(): Promise<void> {
+    stopSynchronizer();
+    await Promise.race([
+        stopMcpServer().catch((error) => log.warn('[mcp] Stop at quit failed:', error)),
+        new Promise((resolve) => setTimeout(resolve, MCP_STOP_TIMEOUT_MS)),
+    ]);
+    terminateWorker();
+    disposeTtsService();
+    disposeAiService();
+    disposePowerSaveBlocker();
+    closeDatabase();
 }
 
 function registerPrivilegedSchemes(): void {
@@ -115,7 +147,7 @@ function setupCSP(): void {
                         "default-src 'self'",
                         "script-src 'self' 'wasm-unsafe-eval'",
                         "style-src 'self' 'unsafe-inline'",
-                        "img-src 'self' data: https:",
+                        "img-src 'self' data:",
                         "font-src 'self' data:",
                         "media-src 'self' blob: https: audio-cache: tts-cache:",
                         "connect-src 'self' https:",
@@ -196,6 +228,7 @@ function createWindow(resolvedTheme: ResolvedTheme): void {
 
     mainWindow.on('closed', disposePowerSaveBlocker);
     mainWindow.webContents.on('render-process-gone', disposePowerSaveBlocker);
+    stopAiRunsWhenPageGoes(mainWindow);
 
     // Show window when ready, maximized (matches legacy behavior)
     mainWindow.on('ready-to-show', () => {
@@ -203,11 +236,10 @@ function createWindow(resolvedTheme: ResolvedTheme): void {
         mainWindow.show();
     });
 
-    // Open external links in the user's browser
-    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        shell.openExternal(url);
-        return { action: 'deny' };
-    });
+    const devServerUrl = is.dev ? process.env['ELECTRON_RENDERER_URL'] : undefined;
+    const appPagePath = join(__dirname, '../renderer/index.html');
+
+    secureWindowNavigation(mainWindow.webContents, devServerUrl ?? pathToFileURL(appPagePath).href);
 
     // Build application menu
     const menuBuilder = new MenuBuilder(mainWindow);
@@ -226,9 +258,9 @@ function createWindow(resolvedTheme: ResolvedTheme): void {
     }
 
     // Load the app
-    if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-        mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    if (devServerUrl) {
+        mainWindow.loadURL(devServerUrl);
     } else {
-        mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+        mainWindow.loadFile(appPagePath);
     }
 }

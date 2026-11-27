@@ -25,7 +25,7 @@ The left menu contains the working pages:
 
 - `History`
 - `Search`
-- `Assistant` when the AI feature is enabled
+- `Assistant`
 - `Subjects`
 - `Notes`
 - `Highlights`

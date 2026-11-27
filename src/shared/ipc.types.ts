@@ -95,6 +95,12 @@ import type {
 } from './ai.types';
 import type { UiLanguagePreference } from './constants';
 import type { ThemeMode, ThemeState } from './theme';
+import type {
+    McpClientStatus,
+    McpConfigureClientRequest,
+    McpServerSettingsPatch,
+    McpServerStatus,
+} from './mcp.types';
 
 // ---------------------------------------------------------------------------
 // Invoke channels — renderer → main (request/response via ipcRenderer.invoke)
@@ -212,6 +218,13 @@ export const SyncChannels = {
 
 export const PowerChannels = {
     setActive: 'power:setActive',
+} as const;
+
+export const McpChannels = {
+    getStatus: 'mcp:getStatus',
+    updateSettings: 'mcp:updateSettings',
+    detectClients: 'mcp:detectClients',
+    configureClient: 'mcp:configureClient',
 } as const;
 
 export const AppChannels = {
@@ -509,6 +522,12 @@ export interface InvokeChannelMap {
 
     // Power save
     [PowerChannels.setActive]: { args: [boolean]; return: void };
+
+    // MCP server
+    [McpChannels.getStatus]: { args: []; return: McpServerStatus };
+    [McpChannels.updateSettings]: { args: [McpServerSettingsPatch]; return: McpServerStatus };
+    [McpChannels.detectClients]: { args: []; return: McpClientStatus[] };
+    [McpChannels.configureClient]: { args: [McpConfigureClientRequest]; return: McpClientStatus };
 
     // App
     [AppChannels.isInitialized]: { args: []; return: boolean };

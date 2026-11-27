@@ -1,5 +1,5 @@
 import { SyncChannels } from '@shared/ipc.types';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import {
     getSyncStatus,
     tryStartSynchronizer,

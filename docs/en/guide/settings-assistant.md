@@ -1,6 +1,6 @@
 # Assistant Settings
 
-<p class="lead">The `Assistant` tab is where you turn on AI chat and choose how it should work inside Wmb Table.</p>
+<p class="lead">The `Assistant` tab is where you choose the AI service for the chat and how it should work inside Wmb Table.</p>
 
 ## Where to open it
 
@@ -10,28 +10,24 @@
 <ScreenshotPlaceholder
   file="en-settings-assistant-tab.png"
   label="Assistant tab in settings"
-  hint="Show the enable switch, provider choice, language behavior, and if possible the local model area."
+  hint="Show the provider choice, language behavior, and if possible the local model area."
 />
 
 ## What this tab lets you do
 
 In this tab, you can:
 
-- enable or disable the assistant
 - choose the service used for replies
 - set up a local model if you want to work without internet
 - enter the information needed for an online service
 - test the connection of a service
 - choose how the assistant follows your library language
 
-## Step 1: enable the assistant
+## Step 1: start from the Assistant page
 
-At the top of the page, there is a simple switch.
+The assistant is always in the left menu. Until a service is set up, its page shows a welcome card with a `Set up the assistant` button that opens this tab directly.
 
-When it is on:
-
-- the assistant becomes available in the left menu
-- you can open the AI chat page
+Once the service is ready, the Assistant page shows the chat, without restarting the app.
 
 ## Step 2: choose the service
 
@@ -176,11 +172,10 @@ For most users, `Follow the content language` is the best choice.
 
 To get started without complication:
 
-1. enable the assistant
-2. choose the service you want to use
-3. enter the needed information
-4. keep `Follow the content language`
-5. open the `AI Chat` page
+1. choose the service you want to use
+2. enter the needed information
+3. keep `Follow the content language`
+4. open the `AI Chat` page
 
 ## When to come back to this tab
 
@@ -191,6 +186,41 @@ Come back here if:
 - you want to use local mode
 - you want to use a different model
 - you want to change how the assistant handles languages
+
+## Use your own AI app (MCP server)
+
+If you already use an AI app on your computer, such as Claude Desktop or Codex, it can read your Wmb Table library: sermons, Bible, your documents, notes and subjects. Your own subscription is used; Wmb Table needs no API key for this.
+
+1. At the bottom of this tab, check `MCP server`. Until the box is checked, nothing else shows.
+2. Under `Configuration`, open the tab for your app: `Claude Desktop`, `Codex` or `Other app`.
+3. Copy the example marked `(recommended)` and follow the short note above it. The examples already hold the full path of Wmb Table on your computer: there is nothing to look up.
+
+For Claude Desktop, the simplest way is the `Set up automatically` button at the top of its tab. Wmb Table then adds its own entry to the file `claude_desktop_config.json`, after making a backup copy (`claude_desktop_config.json.wmb-table-backup-…`); your other servers are not changed. Then restart Claude Desktop.
+
+- If Claude Desktop is not installed, the tab says so and gives the download link; Wmb Table creates no file.
+- `Already set up` means the entry is in place. If Wmb Table moved to another folder, the `Update` button fixes the path.
+- If the file is not valid JSON, or Wmb Table may not change it, nothing is changed: add the example by hand instead.
+
+Each tab offers two methods:
+
+- `HTTP`: your app connects to the address shown, for example `http://127.0.0.1:23132/mcp`. Wmb Table must be open. This is the recommended method for Codex.
+- `Command`: your app starts Wmb Table itself, without a window, with the command `wmb-table mcp`. This works even when Wmb Table is closed. This is the recommended method for Claude Desktop, which then needs no Node.js.
+
+The `Advanced` part at the bottom gives the command `wmb-table mcp --http --port 23132`: it starts the HTTP server in a terminal without opening Wmb Table. `Ctrl+C` stops it. Close Wmb Table first if it is open, since it already uses this port.
+
+Good to know:
+
+- The server is off by default. Until `MCP server` is checked, the `wmb-table mcp` command refuses to start and says why.
+- Unchecking `MCP server` also stops the command: when your app started it, it closes by itself; the HTTP server without a window refuses requests until you check the box again.
+- On Linux, the examples add `--no-sandbox` before `mcp` (for example `wmb-table --no-sandbox mcp`). Without it, the command does not start as root, in a container or on some systems. This mode opens no web page, so this does not lower security.
+- The HTTP server starts with Wmb Table while the box is checked, and stops when you uncheck it or quit Wmb Table.
+- By default your AI app can only read. Check `Allow changes (notes and subjects)` so it can also create and change your notes and subjects. This applies to every method.
+- Wmb Table can stay open while the command runs: both use the same library without getting in each other's way.
+- The tools use your content language. Add `--language en` (for example) to the command for another installed language.
+- The server can only be reached from your own computer. Websites open in your browser cannot use it.
+- If the usual port is already taken, Wmb Table uses the next one and shows it. Keep that new address in your app.
+- This setting belongs to each computer: it is not synced through Google Drive.
+- For Claude Desktop over `HTTP`, Node.js must be installed on the computer.
 
 ## See also
 

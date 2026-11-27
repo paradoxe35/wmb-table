@@ -1,6 +1,6 @@
 import { BrowserWindow } from 'electron';
 import { BibleChannels, PushChannels } from '@shared/ipc.types';
-import { registerHandler, sendToRenderer } from './register';
+import { registerHandler, sendToRenderer } from './ipc-bridge';
 import * as bibleRepo from '@main/database/repositories/bible.repository';
 import * as bibleService from '@main/services/bible.service';
 import * as configRepo from '@main/database/repositories/config.repository';

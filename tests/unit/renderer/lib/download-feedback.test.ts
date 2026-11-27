@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
 import {
     buildDownloadErrorMessage,
@@ -20,7 +21,7 @@ describe('download-feedback', () => {
     });
 
     it('builds a translated wrapped error with fallback', () => {
-        const t = (key: string, options?: Record<string, string>) => {
+        const t = ((key: string, options?: Record<string, string>) => {
             if (key === 'Le téléchargement a échoué.') {
                 return 'Download failed.';
             }
@@ -28,7 +29,7 @@ describe('download-feedback', () => {
                 return `Error: ${options?.error ?? ''}`;
             }
             return key;
-        };
+        }) as TFunction;
 
         expect(
             buildDownloadErrorMessage(t, new Error('network down'), 'Le téléchargement a échoué.'),
@@ -39,8 +40,8 @@ describe('download-feedback', () => {
     });
 
     it('builds a wrapped error without a fallback message', () => {
-        const t = (key: string, options?: Record<string, string>) =>
-            key === 'Erreur: {{error}}' ? `Error: ${options?.error ?? ''}` : key;
+        const t = ((key: string, options?: Record<string, string>) =>
+            key === 'Erreur: {{error}}' ? `Error: ${options?.error ?? ''}` : key) as TFunction;
 
         expect(buildDownloadErrorMessage(t, { message: 'permission denied' })).toBe(
             'Error: permission denied',

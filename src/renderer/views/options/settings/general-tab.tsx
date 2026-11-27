@@ -35,6 +35,18 @@ const UI_LANGUAGE_LABELS = UI_LANGUAGE_OPTIONS.reduce<Record<string, string>>((a
     return acc;
 }, {});
 const DEFAULT_UI_LANGUAGE = resolveUiLanguage('auto', null);
+const WRAPPING_ROW_STYLE: React.CSSProperties = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '4px 12px',
+};
+const SEGMENTED_STYLE: React.CSSProperties = {
+    maxWidth: '100%',
+    overflowX: 'auto',
+    scrollbarWidth: 'thin',
+};
 
 function formatLanguageDisplay(
     code: string | null | undefined,
@@ -311,13 +323,7 @@ export default function GeneralTab() {
         <Card size="small" variant="borderless">
             <Space direction="vertical" style={{ width: '100%' }} size="middle">
                 {/* Theme switcher */}
-                <div
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                    }}
-                >
+                <div style={WRAPPING_ROW_STYLE}>
                     <Space size="small">
                         <Text type="secondary">
                             <SunIcon style={{ fontSize: 'var(--fs-base)' }} />
@@ -326,6 +332,7 @@ export default function GeneralTab() {
                     </Space>
                     <Segmented
                         size="small"
+                        style={SEGMENTED_STYLE}
                         value={themeMode}
                         onChange={(val) => setThemeMode(val as ThemeMode)}
                         options={themeOptions.map((o) => ({
@@ -347,13 +354,7 @@ export default function GeneralTab() {
                 </div>
 
                 {/* Font size */}
-                <div
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                    }}
-                >
+                <div style={WRAPPING_ROW_STYLE}>
                     <Space size="small">
                         <Text type="secondary">
                             <FontSizeOutlined />
@@ -362,6 +363,7 @@ export default function GeneralTab() {
                     </Space>
                     <Segmented
                         size="small"
+                        style={SEGMENTED_STYLE}
                         value={fontSizeOption}
                         onChange={(val) => setFontSizeOption(val as FontSizeOption)}
                         options={[
@@ -406,14 +408,7 @@ export default function GeneralTab() {
                 </div>
 
                 {items.map((item) => (
-                    <div
-                        key={item.label}
-                        style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                        }}
-                    >
+                    <div key={item.label} style={WRAPPING_ROW_STYLE}>
                         <Space size="small">
                             <Text type="secondary">{item.icon}</Text>
                             <Text type="secondary">{item.label}</Text>
@@ -421,13 +416,7 @@ export default function GeneralTab() {
                         {item.value}
                     </div>
                 ))}
-                <div
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                    }}
-                >
+                <div style={WRAPPING_ROW_STYLE}>
                     <Space size="small">
                         <Text type="secondary">
                             <BookOutlined />

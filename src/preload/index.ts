@@ -14,6 +14,7 @@ import {
     TtsChannels,
     AiChannels,
     PowerChannels,
+    McpChannels,
     PushChannels,
     type InvokeChannel,
     type InvokeChannelMap,
@@ -51,6 +52,7 @@ import type {
     AiSendMessageRequest,
     AiSettings,
 } from '@shared/ai.types';
+import type { McpConfigureClientRequest, McpServerSettingsPatch } from '@shared/mcp.types';
 
 function invoke<C extends InvokeChannel>(
     channel: C,
@@ -319,6 +321,15 @@ const api = {
 
     power: {
         setActive: (active: boolean) => invoke(PowerChannels.setActive, active),
+    },
+
+    mcp: {
+        getStatus: () => invoke(McpChannels.getStatus),
+        updateSettings: (patch: McpServerSettingsPatch) =>
+            invoke(McpChannels.updateSettings, patch),
+        detectClients: () => invoke(McpChannels.detectClients),
+        configureClient: (request: McpConfigureClientRequest) =>
+            invoke(McpChannels.configureClient, request),
     },
 
     ai: {

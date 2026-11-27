@@ -1,5 +1,5 @@
 import { AudioChannels } from '@shared/ipc.types';
-import { registerHandler } from './register';
+import { registerHandler } from './ipc-bridge';
 import * as audioRepo from '@main/database/repositories/audio.repository';
 import { cacheAudio } from '@main/services/audio-cache.service';
 
