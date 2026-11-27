@@ -514,7 +514,45 @@ body {
     overflow: auto;
     flex: 1;
     padding: 0.5em;
+    // Room under the last line, so the back-to-start button never covers text at the end
+    padding-bottom: calc(0.5em + 56px);
     @include thin-scrollbar;
+}
+
+.document-top-button {
+    position: absolute;
+    right: 20px;
+    bottom: 16px;
+    z-index: 2;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    // Hidden only after the fade, so it never vanishes mid-animation
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease,
+        visibility 0s linear 0.2s;
+
+    .ant-btn {
+        box-shadow: var(--ant-box-shadow-secondary);
+    }
+
+    &--visible {
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        transition:
+            opacity 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+
+        &--visible {
+            transition: none;
+        }
+    }
 }
 
 // Blink highlight for navigated-to paragraphs
@@ -1960,6 +1998,6 @@ body {
     .sermon-body {
         max-width: 800px;
         margin: 0 auto;
-        padding: 1em 1.5em;
+        padding: 1em 1.5em calc(1em + 56px);
     }
 }

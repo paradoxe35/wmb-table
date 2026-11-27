@@ -571,6 +571,7 @@ const pt: Record<string, string> = {
     'Reprendre la lecture': 'Retomar leitura',
     'Démarrer la lecture': 'Iniciar leitura',
     'Lire à voix haute': 'Ler em voz alta',
+    'Revenir au début': 'Voltar ao início',
     'Pause voix': 'Pausar voz',
     'Reprendre la voix': 'Retomar voz',
     'Lecture audio indisponible': 'Leitura em voz alta indisponível',

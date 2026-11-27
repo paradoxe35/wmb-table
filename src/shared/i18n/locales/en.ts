@@ -582,6 +582,7 @@ const en: Record<string, string> = {
     'Reprendre la lecture': 'Resume reading',
     'Démarrer la lecture': 'Start reading',
     'Lire à voix haute': 'Read aloud',
+    'Revenir au début': 'Back to the start',
     'Pause voix': 'Pause voice',
     'Reprendre la voix': 'Resume voice',
     'Lecture audio indisponible': 'Audio playback unavailable',
