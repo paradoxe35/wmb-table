@@ -10,6 +10,11 @@ import {
 import { pendingNavigationMatchesTab } from '@renderer/utils/pending-navigation';
 import { debounce } from '@renderer/utils/functions';
 import type { ReadingPosition } from '@shared/types';
+import { followPause, msSinceUserScroll } from '@renderer/utils/user-scroll';
+import { clearReadingFinished, isReadingFinished } from './finished-reading';
+
+/** A scroll this soon after wheel, keys or drag is the reader's own. */
+const OWN_SCROLL_WINDOW_MS = 1_000;
 
 type ScrollRestoreOptions = {
     contentReady?: boolean;
@@ -219,16 +224,28 @@ export function useScrollAndZoom(
             return maxScroll === 0 ? 0 : el.scrollTop / maxScroll;
         };
 
+        // Opening the document again (a search hit, a link) saves where the reader goes; only a view
+        // already open when the voice finished is held at the start
+        clearReadingFinished(readingPositionKey);
         let lastScrollRatio = getScrollRatio();
+        // Read to the end by the voice: the document opens at the start next time
+        const ratioToSave = () => (isReadingFinished(readingPositionKey) ? 0 : lastScrollRatio);
         const handler = debounce(() => {
             if (readingPositionKey) {
-                void window.api.documents.saveReadingPosition(readingPositionKey, lastScrollRatio);
+                void window.api.documents.saveReadingPosition(readingPositionKey, ratioToSave());
             }
         }, 500);
 
         const onScroll = () => {
             // Ignore scroll resets caused by parent becoming display:none
             if (!el.offsetParent) return;
+            if (isReadingFinished(readingPositionKey)) {
+                // Follow reading's last glide is not the reader moving on; a jump to a paragraph is
+                const moved =
+                    msSinceUserScroll(el) <= OWN_SCROLL_WINDOW_MS || followPause(el) === 'jump';
+                if (!moved) return;
+                clearReadingFinished(readingPositionKey);
+            }
             lastScrollRatio = getScrollRatio();
             handler();
         };
@@ -236,11 +253,13 @@ export function useScrollAndZoom(
         return () => {
             handler.cancel();
             el.removeEventListener('scroll', onScroll);
-            updateTabScroll(activeTabKey, lastScrollRatio);
-            setSavedPosition((prev) => (prev ? { ...prev, scrollY: lastScrollRatio } : prev));
+            const ratio = ratioToSave();
+            updateTabScroll(activeTabKey, ratio);
+            setSavedPosition((prev) => (prev ? { ...prev, scrollY: ratio } : prev));
             if (readingPositionKey) {
-                void window.api.documents.saveReadingPosition(readingPositionKey, lastScrollRatio);
+                void window.api.documents.saveReadingPosition(readingPositionKey, ratio);
             }
+            clearReadingFinished(readingPositionKey);
         };
     }, [
         activeTabKey,

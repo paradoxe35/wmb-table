@@ -268,6 +268,140 @@ class FollowReadingRun {
         await this.shot(`top-button-up-${label}`);
     }
 
+    /** Opens a document from the right panel tab `panel` by the title of its list item. */
+    async openFromPanel(panel: string, title: string): Promise<void> {
+        await this.cdp.evaluate(
+            `[...document.querySelectorAll('.layout__sidebar .tab')].find((t) => t.innerText.includes(${JSON.stringify(panel)})).click()`,
+        );
+        await this.cdp.waitFor(
+            `[...document.querySelectorAll('.sidebar-item')].some((el) => el.innerText.includes(${JSON.stringify(title)}))`,
+            `"${title}" in the ${panel} list`,
+        );
+        const item = `[...document.querySelectorAll('.sidebar-item')].find((el) => el.innerText.includes(${JSON.stringify(title)}))`;
+        await this.cdp.evaluate(`${item}.scrollIntoView({ block: 'center' })`);
+        await sleep(300);
+        await new ChatPage(this.cdp, this.outDir).clickElement(item, `"${title}"`);
+    }
+
+    /** Waits for the voice to end on its own, returning how far down the view went meanwhile. */
+    async readToTheEnd(until: string, timeoutMs: number): Promise<number> {
+        await this.play();
+        let deepest = 0;
+        const start = Date.now();
+        while (Date.now() - start < timeoutMs) {
+            deepest = Math.max(deepest, await this.cdp.evaluate<number>(`${SCROLLER}.scrollTop`));
+            if (await this.cdp.evaluate<boolean>(until)) return deepest;
+            await sleep(250);
+        }
+        throw new Error(`Reading did not reach: ${until}`);
+    }
+
+    async finishedReading(): Promise<void> {
+        const title = 'Lecture courte';
+        const text = SENTENCES.slice(0, 10)
+            .map((sentence, i) => `${i + 1}. ${sentence}`)
+            .join('\n\n');
+        const id = await this.cdp.evaluate<string>(`(async () => {
+            const bytes = new TextEncoder().encode(${JSON.stringify(text)});
+            const doc = await window.api.app.createCustomDocument(${JSON.stringify(title)}, { fileName: 'courte.txt', mimeType: 'text/plain', bytes }, 'fr');
+            return doc.id;
+        })()`);
+        await this.cdp.reload();
+        await this.openFromPanel('Documents', title);
+        await this.cdp.waitFor(
+            `(document.getElementById('page-container')?.innerText ?? '').includes('Au commencement')`,
+            'the short document',
+        );
+        const notReading = `!document.querySelector('.tts-active-sentence') && !document.querySelector('button[aria-label="Lire à voix haute"] .anticon-pause')`;
+        const deepest = await this.readToTheEnd(
+            `(() => { const ok = ${notReading}; if (!ok) window.__wasReading = true; return ok && window.__wasReading === true; })()`,
+            180_000,
+        );
+        await sleep(1500);
+        await this.shot('finished-custom-end');
+        const saved = await this.cdp.evaluate<{ scrollY: number } | null>(
+            `window.api.documents.getReadingPosition(${JSON.stringify(`custom:${id}`)})`,
+        );
+        this.check(
+            `a document read to its end is saved at its start (view went down to ${Math.round(deepest)} px)`,
+            deepest > 0 && saved?.scrollY === 0,
+            { deepest, saved },
+        );
+        await this.openFromPanel('Documents', DOCUMENT_TITLE);
+        await sleep(800);
+        await this.openFromPanel('Documents', title);
+        await sleep(1200);
+        const reopenedAt = await this.cdp.evaluate<number>(`${SCROLLER}.scrollTop`);
+        this.check('it opens at the start again', reopenedAt === 0, reopenedAt);
+        await this.shot('finished-custom-reopened');
+
+        try {
+            await this.finishedBibleChapter();
+        } catch (error) {
+            await this.shot('finished-bible-error');
+            throw error;
+        }
+    }
+
+    async finishedBibleChapter(): Promise<void> {
+        const version = await this.cdp.evaluate<{
+            abbreviation: string;
+            available: boolean;
+        } | null>(
+            `window.api.bible.getAllVersions().then((all) => all.find((v) => v.langCode === 'fr' && v.available) ?? all.find((v) => v.langCode === 'fr') ?? null)`,
+        );
+        if (!version) {
+            this.check('a French Bible is available for the whole-book check', false, 'none');
+            return;
+        }
+        if (!version.available) {
+            await this.cdp.evaluate(
+                `window.api.bible.downloadVersion(${JSON.stringify(version.abbreviation)})`,
+                600_000,
+            );
+        }
+        await this.cdp.evaluate(`(async () => {
+            await window.api.tts.updateSettings({ bibleReadEntireBook: true });
+        })()`);
+        await this.cdp.reload();
+        const openChapter = async (chapter: string) => {
+            await this.openFromPanel('Bible', 'Psaumes');
+            await this.cdp.waitFor(
+                `[...document.querySelectorAll('.layout__sidebar button')].some((b) => b.innerText.trim() === '${chapter}')`,
+                `chapter ${chapter} button`,
+            );
+            const button = `[...document.querySelectorAll('.layout__sidebar button')].find((b) => b.innerText.trim() === '${chapter}')`;
+            await this.cdp.evaluate(`${button}.scrollIntoView({ block: 'center' })`);
+            await sleep(300);
+            await new ChatPage(this.cdp, this.outDir).clickElement(button, `chapter ${chapter}`);
+            await this.cdp.waitFor(
+                `(document.querySelector('#page-container .sermon-content-header__date')?.innerText ?? '').includes('${chapter}')`,
+                `Psalm ${chapter}`,
+            );
+            await sleep(800);
+        };
+        await openChapter('121');
+        const deepest = await this.readToTheEnd(
+            `(document.querySelector('#page-container .sermon-content-header__date')?.innerText ?? '').includes('122') && Boolean(document.querySelector('.tts-active-sentence'))`,
+            240_000,
+        );
+        await this.shot('finished-bible-next-chapter');
+        await this.stop();
+        this.check(
+            `whole-book reading moved on from Psalm 121 to 122 (view went down to ${Math.round(deepest)} px in 121)`,
+            deepest > 0,
+            deepest,
+        );
+        await openChapter('121');
+        const reopenedAt = await this.cdp.evaluate<number>(`${SCROLLER}.scrollTop`);
+        this.check(
+            'Psalm 121, read to its end, opens at its start again',
+            reopenedAt === 0,
+            reopenedAt,
+        );
+        await this.shot('finished-bible-reopened');
+    }
+
     /** Samples until `until` holds; a sentence may be out of view only while a scroll glides. */
     async watch(name: string, until: (sample: Sample | null) => boolean, timeoutMs: number) {
         const samples: Sample[] = [];
@@ -311,6 +445,7 @@ async function main(): Promise<void> {
             out: { type: 'string' },
             'cache-dir': { type: 'string' },
             voice: { type: 'string', default: 'sherpa' },
+            only: { type: 'string' },
         },
     });
     const outDir = resolve(values.out ?? join(repoRoot, 'tmp/e2e-output/follow-reading'));
@@ -332,6 +467,12 @@ async function main(): Promise<void> {
         if (values.voice === 'sherpa') await run.installSherpaVoice(app.appDataDir, cacheDir);
         await run.setViewport(1024, 560);
         await run.prepare(values.voice ?? 'sherpa');
+
+        if (values.only === 'finished') {
+            console.log('Documents read to their end open at the start');
+            await run.finishedReading();
+            return;
+        }
 
         console.log('Small window (1024×560): read the long paragraph');
         await run.play();
@@ -441,6 +582,9 @@ async function main(): Promise<void> {
         await run.topButton('1440');
         await run.setViewport(1024, 560);
         await run.topButton('1024x560');
+
+        console.log('Documents read to their end open at the start');
+        await run.finishedReading();
     } finally {
         const passed = run?.results.filter((r) => r.passed).length ?? 0;
         const total = run?.results.length ?? 0;
