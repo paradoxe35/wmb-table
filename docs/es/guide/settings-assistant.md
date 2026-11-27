@@ -170,6 +170,12 @@ Si ya usa una aplicación de IA en su ordenador, como Claude Desktop o Codex, pu
 2. En `Configuración`, abra la pestaña de su aplicación: `Claude Desktop`, `Codex` u `Otra aplicación`.
 3. Copie el ejemplo marcado `(recomendado)` y siga la breve explicación que aparece encima. Los ejemplos ya contienen la ruta completa de Wmb Table en su ordenador: no tiene que buscar nada.
 
+Para Claude Desktop, lo más sencillo es el botón `Configurar automáticamente` arriba de su pestaña. Wmb Table añade entonces su propia entrada al archivo `claude_desktop_config.json`, después de hacer una copia de seguridad (`claude_desktop_config.json.wmb-table-backup-…`); sus demás servidores no cambian. Luego reinicie Claude Desktop.
+
+- Si Claude Desktop no está instalado, la pestaña lo indica y da el enlace de descarga; Wmb Table no crea ningún archivo.
+- `Ya configurado` indica que la entrada está en su lugar. Si Wmb Table cambió de carpeta, el botón `Actualizar` corrige la ruta.
+- Si el archivo no es un JSON válido, o Wmb Table no tiene permiso para modificarlo, no se cambia nada: añada entonces el ejemplo a mano.
+
 Cada pestaña ofrece dos métodos:
 
 - `HTTP`: su aplicación se conecta a la dirección mostrada, por ejemplo `http://127.0.0.1:23132/mcp`. Wmb Table debe estar abierto. Es el método recomendado para Codex.

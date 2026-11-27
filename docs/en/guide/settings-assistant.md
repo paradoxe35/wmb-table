@@ -195,6 +195,12 @@ If you already use an AI app on your computer, such as Claude Desktop or Codex, 
 2. Under `Configuration`, open the tab for your app: `Claude Desktop`, `Codex` or `Other app`.
 3. Copy the example marked `(recommended)` and follow the short note above it. The examples already hold the full path of Wmb Table on your computer: there is nothing to look up.
 
+For Claude Desktop, the simplest way is the `Set up automatically` button at the top of its tab. Wmb Table then adds its own entry to the file `claude_desktop_config.json`, after making a backup copy (`claude_desktop_config.json.wmb-table-backup-…`); your other servers are not changed. Then restart Claude Desktop.
+
+- If Claude Desktop is not installed, the tab says so and gives the download link; Wmb Table creates no file.
+- `Already set up` means the entry is in place. If Wmb Table moved to another folder, the `Update` button fixes the path.
+- If the file is not valid JSON, or Wmb Table may not change it, nothing is changed: add the example by hand instead.
+
 Each tab offers two methods:
 
 - `HTTP`: your app connects to the address shown, for example `http://127.0.0.1:23132/mcp`. Wmb Table must be open. This is the recommended method for Codex.

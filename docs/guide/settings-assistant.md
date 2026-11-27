@@ -201,6 +201,12 @@ Si vous utilisez déjà une application d'IA sur votre ordinateur, comme Claude 
 2. Dans `Configuration`, ouvrez l'onglet de votre application : `Claude Desktop`, `Codex` ou `Autre application`.
 3. Copiez l'exemple marqué `(recommandé)` et suivez la petite explication au-dessus. Les exemples contiennent déjà le chemin complet de Wmb Table sur votre ordinateur : vous n'avez rien à chercher.
 
+Pour Claude Desktop, le plus simple est le bouton `Configurer automatiquement` en haut de son onglet. Wmb Table ajoute alors lui-même son entrée au fichier `claude_desktop_config.json`, après en avoir fait une copie de sauvegarde (`claude_desktop_config.json.wmb-table-backup-…`) ; vos autres serveurs ne sont pas modifiés. Redémarrez ensuite Claude Desktop.
+
+- Si Claude Desktop n'est pas installé, l'onglet le dit et donne le lien de téléchargement ; Wmb Table ne crée aucun fichier.
+- `Déjà configuré` indique que l'entrée est en place. Si Wmb Table a changé de dossier, le bouton `Mettre à jour` corrige le chemin.
+- Si le fichier n'est pas un JSON valide, ou si Wmb Table n'a pas le droit de le modifier, rien n'est changé : ajoutez alors l'exemple à la main.
+
 Chaque onglet propose deux méthodes :
 
 - `HTTP` : votre application se connecte à l'adresse affichée, par exemple `http://127.0.0.1:23132/mcp`. Wmb Table doit être ouvert. C'est la méthode recommandée pour Codex.
