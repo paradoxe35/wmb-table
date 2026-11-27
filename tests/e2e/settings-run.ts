@@ -11,6 +11,7 @@ import {
     type HeldPort,
 } from './mcp-server-checks';
 import { McpCliChecks } from './mcp-cli-checks';
+import { ClaudeDesktopChecks } from './mcp-claude-desktop-checks';
 import { AppProcess } from './driver/app-process';
 import { MOCK_PROVIDER_ID, setUpApp } from './driver/app-setup';
 import type { CdpSession } from './driver/cdp';
@@ -489,6 +490,21 @@ class SettingsRun {
         });
     }
 
+    claudeDesktopChecks(app: AppProcess): ClaudeDesktopChecks {
+        return new ClaudeDesktopChecks(
+            {
+                repoRoot,
+                cdp: this.cdp,
+                settings: this.settings,
+                check: (...args) => this.check(...args),
+                shot: (name) => this.shot(name),
+                setUiLanguage: (language) => this.setUiLanguage(language),
+                reload: () => this.reload(),
+            },
+            app,
+        );
+    }
+
     async smallWindow(): Promise<void> {
         await this.cdp.send('Emulation.setDeviceMetricsOverride', {
             width: 700,
@@ -548,6 +564,7 @@ async function main(): Promise<boolean> {
         const probe = await holdPort(DEFAULT_MCP_PORT);
         await probe?.release();
         const mcpUrl = await run.mcpChecks().firstLaunch(probe !== null);
+        await run.claudeDesktopChecks(app).run();
         const guiCdp = cdp;
         await new McpCliChecks({
             repoRoot,
