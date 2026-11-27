@@ -171,7 +171,7 @@ export class AssistantOnboarding {
         await this.ctx.shot('settings-tab-fresh');
 
         const s = this.ctx.settings;
-        await s.clickText('.ant-card button', 'Ajouter un fournisseur');
+        await s.openAddProvider();
         await this.ctx.cdp.waitFor(
             `Boolean(document.querySelector('#ai-custom-provider-name'))`,
             'add provider modal',

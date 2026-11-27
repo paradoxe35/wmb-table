@@ -167,7 +167,6 @@ const es: Record<string, string> = {
 
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Añadir un proveedor',
-    'Ajouter un fournisseur personnalisé': 'Añadir un proveedor personalizado',
     'Compatible avec l’API OpenAI.': 'Compatible con la API de OpenAI.',
     'Supprimer ce fournisseur ?': '¿Eliminar este proveedor?',
     'Un fournisseur avec ce nom existe déjà.': 'Ya existe un proveedor con este nombre.',

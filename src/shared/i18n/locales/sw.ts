@@ -168,7 +168,6 @@ const sw: Record<string, string> = {
 
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Ongeza mtoa huduma',
-    'Ajouter un fournisseur personnalisé': 'Ongeza mtoa huduma maalum',
     'Compatible avec l’API OpenAI.': 'Inalingana na API ya OpenAI.',
     'Supprimer ce fournisseur ?': 'Futa mtoa huduma huyu?',
     'Un fournisseur avec ce nom existe déjà.': 'Mtoa huduma mwenye jina hili tayari yupo.',

@@ -141,33 +141,28 @@ export default function AiTab() {
                     htmlFor="ai-active-provider"
                     hint={t('Choisissez le service à utiliser pour le chat IA.')}
                 >
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <Select
-                            id="ai-active-provider"
-                            style={{ flex: '1 1 220px', minWidth: 0 }}
-                            value={settings.activeProvider}
-                            options={providerOptions}
-                            onChange={handleProviderChange}
-                            placeholder={t('Choisir un fournisseur')}
-                            popupRender={(menu) => (
-                                <>
-                                    {menu}
-                                    <Divider style={{ margin: '4px 0' }} />
-                                    <Button
-                                        type="text"
-                                        icon={<PlusOutlined />}
-                                        style={{ width: '100%', textAlign: 'start' }}
-                                        onClick={openCustomModal}
-                                    >
-                                        {t('Ajouter un fournisseur personnalisé')}
-                                    </Button>
-                                </>
-                            )}
-                        />
-                        <Button icon={<PlusOutlined />} onClick={openCustomModal}>
-                            {t('Ajouter un fournisseur')}
-                        </Button>
-                    </div>
+                    <Select
+                        id="ai-active-provider"
+                        style={{ width: '100%' }}
+                        value={settings.activeProvider}
+                        options={providerOptions}
+                        onChange={handleProviderChange}
+                        placeholder={t('Choisir un fournisseur')}
+                        popupRender={(menu) => (
+                            <>
+                                {menu}
+                                <Divider style={{ margin: '4px 0' }} />
+                                <Button
+                                    type="text"
+                                    icon={<PlusOutlined />}
+                                    style={{ width: '100%', textAlign: 'start' }}
+                                    onClick={openCustomModal}
+                                >
+                                    {t('Ajouter un fournisseur')}
+                                </Button>
+                            </>
+                        )}
+                    />
                 </Field>
                 {setupWarning ? (
                     <Alert

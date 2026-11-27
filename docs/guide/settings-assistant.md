@@ -66,7 +66,7 @@ Vous pouvez aussi ajouter un service compatible si vous avez une adresse et un m
 <ScreenshotPlaceholder
   file="fr-settings-assistant-provider-selector.png"
   label="Choix du fournisseur IA"
-  hint="Montrer la liste des fournisseurs avec Local, OpenRouter, OpenAI, Gemini, Claude et Ajouter un fournisseur personnalisé."
+  hint="Montrer la liste des fournisseurs avec Local, OpenRouter, OpenAI, Gemini, Claude et Ajouter un fournisseur."
 />
 
 ## Étape 3 : si vous choisissez un service en ligne

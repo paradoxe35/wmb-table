@@ -96,6 +96,13 @@ export class SettingsPage {
         );
     }
 
+    async openAddProvider(): Promise<void> {
+        await this.click('.ant-select:has(#ai-active-provider)');
+        await this.click(
+            '.ant-select-dropdown:not(.ant-select-dropdown-hidden) button:has(.anticon-plus)',
+        );
+    }
+
     /** Replaces the field's text in one input event, like a paste. */
     async paste(selector: string, text: string): Promise<void> {
         await this.focusAndSelect(selector);

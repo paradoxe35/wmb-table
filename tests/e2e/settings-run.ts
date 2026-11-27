@@ -218,7 +218,7 @@ class SettingsRun {
         await this.shot('custom-provider-tested');
 
         console.log('S6/S7/S11: add a provider');
-        await s.clickText('.ant-card button', 'Ajouter un fournisseur');
+        await s.openAddProvider();
         await this.cdp.waitFor(
             `Boolean(document.querySelector('#ai-custom-provider-name'))`,
             'modal',
@@ -454,9 +454,7 @@ class SettingsRun {
             );
             await this.shot(`custom-provider-${language}`);
             if (language === 'en') {
-                await this.settings.click(
-                    '.ant-card .ant-select + button, .ant-card button:has(.anticon-plus)',
-                );
+                await this.settings.openAddProvider();
                 await this.cdp.waitFor(
                     `Boolean(document.querySelector('#ai-custom-provider-name'))`,
                     'modal',
