@@ -88,14 +88,27 @@ class SettingsRun {
         await this.screens.setTheme('light');
     }
 
-    /** The renderer keeps its own copy of the preference and pushes it to main on load. */
+    /**
+     * The renderer keeps its own copy of the preference and pushes it to main on load, and the
+     * old page can push its language again while it unloads, so check after a reload and retry.
+     */
     async setUiLanguage(language: string): Promise<void> {
-        await this.cdp.evaluate(`(async () => {
-            const stored = JSON.parse(localStorage.getItem('wmb-theme') ?? '{"state":{}}');
-            stored.state.uiLanguagePreference = '${language}';
-            localStorage.setItem('wmb-theme', JSON.stringify(stored));
-            await window.api.app.setUiLanguage('${language}');
-        })()`);
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            await this.cdp.evaluate(`(async () => {
+                const stored = JSON.parse(localStorage.getItem('wmb-theme') ?? '{"state":{}}');
+                stored.state.uiLanguagePreference = '${language}';
+                localStorage.setItem('wmb-theme', JSON.stringify(stored));
+                await window.api.app.setUiLanguage('${language}');
+            })()`);
+            await this.reload();
+            const applied = await this.cdp.evaluate<boolean>(`(async () => {
+                const stored = JSON.parse(localStorage.getItem('wmb-theme') ?? '{"state":{}}');
+                return stored.state.uiLanguagePreference === '${language}' &&
+                    (await window.api.app.getUiLanguage()) === '${language}';
+            })()`);
+            if (applied) return;
+        }
+        throw new Error(`The UI language did not stay "${language}" after 3 reloads`);
     }
 
     aiSettings(): Promise<AiSettingsLike> {

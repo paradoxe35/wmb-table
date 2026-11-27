@@ -73,7 +73,7 @@ export class SettingsPage {
                     (${JSON.stringify(text)} === null || node.textContent.includes(${JSON.stringify(text)})),
             );
             if (!el) return null;
-            el.scrollIntoView({ block: 'nearest' });
+            el.scrollIntoView({ block: 'center' });
             const rect = el.getBoundingClientRect();
             return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
         })()`;
