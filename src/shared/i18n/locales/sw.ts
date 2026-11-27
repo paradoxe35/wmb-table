@@ -569,6 +569,7 @@ const sw: Record<string, string> = {
     'Reprendre la lecture': 'Endelea na usomaji',
     'Démarrer la lecture': 'Anza usomaji',
     'Lire à voix haute': 'Soma kwa sauti',
+    'Revenir au début': 'Rudi mwanzo',
     'Pause voix': 'Sitisha sauti',
     'Reprendre la voix': 'Endelea na sauti',
     'Lecture audio indisponible': 'Usomaji wa sauti haupatikani',

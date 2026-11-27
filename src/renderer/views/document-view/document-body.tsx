@@ -13,6 +13,8 @@ import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
 import { useScrollLock } from '@renderer/hooks/use-scroll-lock';
 import { useDocumentParagraphAnchor } from './hooks/use-document-paragraph-anchor';
+import { useUserScrollTracking } from './follow-reading';
+import DocumentTopButton from './document-top-button';
 
 const CONTEXT_PARAGRAPH_CLASS = 'sermon-paragraph--context-target';
 
@@ -48,6 +50,7 @@ export default function DocumentBody({
     const [contextMenuOpen, setContextMenuOpen] = useState(false);
 
     useScrollLock(containerRef, contextMenuOpen);
+    useUserScrollTracking(containerRef, !loading && ready);
 
     const pendingParagraphIndex = getPendingNavigationParagraphIndex(
         pendingNavigation,
@@ -115,12 +118,14 @@ export default function DocumentBody({
                             ref={containerRef}
                             id={DOCUMENT_CONTAINER_ID}
                             className="sermon-body"
+                            data-scroll-locked={contextMenuOpen || undefined}
                             style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
                             onContextMenu={onContextMenu}
                         >
                             {children}
                         </div>
                     </Dropdown>
+                    <DocumentTopButton scrollerRef={containerRef} active={!loading && ready} />
                 </>
             )}
         </div>

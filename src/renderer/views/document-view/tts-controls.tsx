@@ -9,6 +9,16 @@ import { useTtsHighlight } from '@renderer/hooks/use-tts-highlight';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
 import { getPendingNavigationParagraphIndex } from '@renderer/utils/pending-navigation';
+import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
+import {
+    type FollowReason,
+    decideFollow,
+    measureFollowGeometry,
+    spokenOnScreen,
+    planFollowScroll,
+    prefersReducedMotion,
+} from './follow-reading';
+import { followPause, msSinceUserScroll, resumeFollowing } from '@renderer/utils/user-scroll';
 
 // ── Shared TTS controls interface ──
 
@@ -193,14 +203,24 @@ const TtsParagraph = memo(function TtsParagraph({
     const previousActiveRef = useRef(false);
     const previousAutoScrollRef = useRef(autoScroll);
     const previousMainViewRef = useRef(mainView);
+    const range = ttsHighlight.highlightRange;
+    const segmentKey = range ? `${range.start}:${range.end}` : '';
+    const spokenRef = useRef(range);
+    spokenRef.current = range;
+    const previousSegmentKeyRef = useRef(segmentKey);
 
     useEffect(() => {
         const becameActive = ttsHighlight.isActive && !previousActiveRef.current;
+        const segmentMoved =
+            ttsHighlight.isActive &&
+            previousActiveRef.current &&
+            segmentKey !== previousSegmentKeyRef.current;
         const autoScrollEnabled = autoScroll && !previousAutoScrollRef.current;
         const enteredDocumentView =
             mainView === 'document' && previousMainViewRef.current !== 'document';
 
         previousActiveRef.current = ttsHighlight.isActive;
+        previousSegmentKeyRef.current = segmentKey;
         previousAutoScrollRef.current = autoScroll;
         previousMainViewRef.current = mainView;
 
@@ -213,22 +233,57 @@ const TtsParagraph = memo(function TtsParagraph({
             return;
         }
 
-        if (!becameActive && !autoScrollEnabled && !enteredDocumentView) {
+        const explicit = autoScrollEnabled || enteredDocumentView;
+        if (!becameActive && !segmentMoved && !explicit) {
             return;
         }
+        const reason: FollowReason = becameActive || explicit ? 'paragraph' : 'segment';
 
-        // When returning from options, the document panel was display:none.
-        // Wait for it to be visible and laid out again before re-centering.
         let frameId = 0;
-        const alignToCurrentTtsSegment = () => {
-            frameId = requestAnimationFrame(() => {
-                containerRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+        let retryId: ReturnType<typeof setTimeout> | undefined;
+        const follow = () => {
+            const paragraphElement = containerRef.current;
+            const scroller = paragraphElement?.closest<HTMLElement>(`#${DOCUMENT_CONTAINER_ID}`);
+            if (!paragraphElement || !scroller) return;
+            const geometry = measureFollowGeometry(scroller, paragraphElement, spokenRef.current);
+            const decision = decideFollow({
+                pause: followPause(scroller),
+                msSinceScroll: msSinceUserScroll(scroller),
+                reason,
+                explicit,
+                onScreen: spokenOnScreen(geometry),
+                locked: scroller.dataset.scrollLocked === 'true',
             });
+            if (!decision.follow) {
+                // Nothing else may come for a single-sentence paragraph, so try again later
+                if (decision.retryInMs != null) {
+                    retryId = setTimeout(() => {
+                        frameId = requestAnimationFrame(follow);
+                    }, decision.retryInMs + 50);
+                }
+                return;
+            }
+            if (decision.resume) resumeFollowing(scroller);
+
+            const delta = planFollowScroll(geometry, reason);
+            if (delta == null) return;
+
+            const viewportHeight = geometry.viewport.bottom - geometry.viewport.top;
+            const smooth =
+                reason === 'segment' &&
+                Math.abs(delta) <= viewportHeight &&
+                !prefersReducedMotion();
+            scroller.scrollBy({ top: delta, behavior: smooth ? 'smooth' : 'instant' });
         };
 
-        alignToCurrentTtsSegment();
-        return () => cancelAnimationFrame(frameId);
-    }, [ttsHighlight.isActive, autoScroll, mainView, suppressAutoScroll]);
+        // When returning from options, the document panel was display:none.
+        // Wait for it to be visible and laid out again before measuring.
+        frameId = requestAnimationFrame(follow);
+        return () => {
+            cancelAnimationFrame(frameId);
+            clearTimeout(retryId);
+        };
+    }, [ttsHighlight.isActive, segmentKey, autoScroll, mainView, suppressAutoScroll]);
 
     return (
         <div ref={containerRef}>

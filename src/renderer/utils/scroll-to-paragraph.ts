@@ -1,3 +1,5 @@
+import { noteUserJump } from './user-scroll';
+
 const BLINK_CLASS = 'paragraph-highlight-blink';
 const BLINK_FALLBACK_MS = 2500;
 
@@ -24,6 +26,7 @@ export function scrollToParagraph(container: HTMLElement | null, paragraphIndex:
     const targetTop = Math.min(Math.max(rawTargetTop, 0), maxScrollTop);
 
     container.scrollTop = targetTop;
+    noteUserJump(container);
 
     // Cancel any previous blink so two paragraphs never glow at once.
     activeBlinkCleanup?.();
