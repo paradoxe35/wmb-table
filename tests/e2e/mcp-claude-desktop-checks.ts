@@ -113,21 +113,13 @@ export class ClaudeDesktopChecks {
         }
         this.arrange('not-configured');
         await this.redetect('not-configured');
-        await this.clickConfigure();
+        await this.ctx.settings.click(CONFIGURE);
         await this.redetect('configured');
         await this.shot(`mcp-claude-desktop-just-configured-${language}`);
         await this.ctx.reload();
         await this.showTab();
         await this.redetect('configured');
         await this.shot(`mcp-claude-desktop-configured-${language}`);
-    }
-
-    /** Centred first: at the top edge, the sticky settings tabs would take the click. */
-    private async clickConfigure(): Promise<void> {
-        await this.ctx.cdp.evaluate(
-            `document.querySelector('${CONFIGURE}').scrollIntoView({ block: 'center' })`,
-        );
-        await this.ctx.settings.click(CONFIGURE);
     }
 
     private readConfig(): DesktopConfig {
@@ -169,7 +161,7 @@ export class ClaudeDesktopChecks {
 
         this.arrange('not-configured');
         await this.redetect('not-configured');
-        await this.clickConfigure();
+        await this.ctx.settings.click(CONFIGURE);
         await this.redetect('configured');
         const written = this.readConfig();
         const ours = written.mcpServers['wmb-table'];
