@@ -10,6 +10,8 @@ export default [
             'out/**',
             'tmp/**',
             '.claude/**',
+            'docs/.vitepress/cache/**',
+            'docs/.vitepress/dist/**',
             'release/**',
             'node_modules/**',
             'resources/**',
