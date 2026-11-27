@@ -1,3 +1,8 @@
+import {
+    buildMcpCommandArgs,
+    buildMcpCommandEntry,
+    type McpCommandEntry,
+} from '@shared/mcp-command-entry';
 import { MCP_SERVER_NAME, type McpLaunchCommand, type McpLaunchPlatform } from '@shared/mcp.types';
 
 export type McpClientId = 'claude-desktop' | 'codex' | 'other';
@@ -47,25 +52,12 @@ function tomlArray(values: readonly string[]): string {
     return `[${values.map(tomlString).join(', ')}]`;
 }
 
-function claudeDesktopJson(server: Record<string, unknown>): string {
+function claudeDesktopJson(server: McpCommandEntry): string {
     return JSON.stringify({ mcpServers: { [MCP_SERVER_NAME]: server } }, null, 2);
 }
 
-/**
- * On Linux, Chromium starts its sandbox before Wmb Table's own code runs, and that fails as
- * root, in containers and where user namespaces are restricted. This mode never loads a web
- * page, so the switch costs nothing and lets the command start everywhere.
- */
-function sandboxSwitches(platform: McpLaunchPlatform): string[] {
-    return platform === 'linux' ? ['--no-sandbox'] : [];
-}
-
-function mcpCommandArgs(launch: McpLaunchCommand, extra: readonly string[] = []): string[] {
-    return [...launch.args, ...sandboxSwitches(launch.platform), 'mcp', ...extra];
-}
-
 function shellWords(launch: McpLaunchCommand, extra: readonly string[] = []): string[] {
-    return [launch.command, ...mcpCommandArgs(launch, extra)].map((word) =>
+    return [launch.command, ...buildMcpCommandArgs(launch, extra)].map((word) =>
         quoteShellArgument(word, launch.platform),
     );
 }
@@ -75,7 +67,7 @@ function shellWords(launch: McpLaunchCommand, extra: readonly string[] = []): st
  * starts local servers itself, so the command is best there; reaching a URL needs mcp-remote.
  */
 export function buildMcpClientSetups(launch: McpLaunchCommand, url: string): McpClientSetup[] {
-    const args = mcpCommandArgs(launch);
+    const args = buildMcpCommandArgs(launch);
     const commandLine = shellWords(launch).join(' ');
     return [
         {
@@ -84,7 +76,7 @@ export function buildMcpClientSetups(launch: McpLaunchCommand, url: string): Mcp
             recommended: {
                 method: 'command',
                 hint: CLAUDE_DESKTOP_HINT,
-                code: claudeDesktopJson({ command: launch.command, args }),
+                code: claudeDesktopJson(buildMcpCommandEntry(launch)),
             },
             alternative: {
                 method: 'http',
