@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import log from '@main/lib/logger';
 import type {
+    McpLaunchCommand,
     McpServerError,
     McpServerSettings,
     McpServerSettingsPatch,
@@ -28,7 +29,7 @@ function serialized<T>(task: () => Promise<T>): Promise<T> {
     return result;
 }
 
-function currentLaunchCommand() {
+export function currentLaunchCommand(): McpLaunchCommand {
     return detectMcpLaunchCommand({
         platform: process.platform,
         execPath: process.execPath,

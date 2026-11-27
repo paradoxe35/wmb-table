@@ -43,3 +43,25 @@ export type McpServerSettingsPatch = Partial<Pick<McpServerSettings, 'enabled' |
 export function buildMcpUrl(port: number): string {
     return `http://${MCP_HOST}:${port}${MCP_PATH}`;
 }
+
+/** The AI apps whose configuration Wmb Table can write itself. */
+export type McpAutoConfigClientId = 'claude-desktop';
+
+export type McpClientConfigError = 'malformed' | 'permission-denied' | 'write-failed';
+
+export type McpClientConfigState =
+    | { state: 'not-installed' }
+    | { state: 'not-configured' }
+    /** `upToDate` is false when the entry points at another copy, path or port. */
+    | { state: 'configured'; upToDate: boolean }
+    | { state: 'error'; error: McpClientConfigError };
+
+export type McpClientStatus = McpClientConfigState & {
+    clientId: McpAutoConfigClientId;
+    /** The file Wmb Table reads and writes; null when the app is not installed. */
+    configPath: string | null;
+};
+
+export interface McpConfigureClientRequest {
+    clientId: McpAutoConfigClientId;
+}

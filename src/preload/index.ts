@@ -52,7 +52,7 @@ import type {
     AiSendMessageRequest,
     AiSettings,
 } from '@shared/ai.types';
-import type { McpServerSettingsPatch } from '@shared/mcp.types';
+import type { McpConfigureClientRequest, McpServerSettingsPatch } from '@shared/mcp.types';
 
 function invoke<C extends InvokeChannel>(
     channel: C,
@@ -327,6 +327,9 @@ const api = {
         getStatus: () => invoke(McpChannels.getStatus),
         updateSettings: (patch: McpServerSettingsPatch) =>
             invoke(McpChannels.updateSettings, patch),
+        detectClients: () => invoke(McpChannels.detectClients),
+        configureClient: (request: McpConfigureClientRequest) =>
+            invoke(McpChannels.configureClient, request),
     },
 
     ai: {
