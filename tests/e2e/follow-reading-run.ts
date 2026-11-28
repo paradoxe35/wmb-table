@@ -289,7 +289,9 @@ class FollowReadingRun {
         let deepest = 0;
         const start = Date.now();
         while (Date.now() - start < timeoutMs) {
-            deepest = Math.max(deepest, await this.cdp.evaluate<number>(`${SCROLLER}.scrollTop`));
+            // The view is briefly gone while whole-book reading opens the next chapter
+            const top = await this.cdp.evaluate<number>(`${SCROLLER}?.scrollTop ?? 0`);
+            deepest = Math.max(deepest, top);
             if (await this.cdp.evaluate<boolean>(until)) return deepest;
             await sleep(250);
         }
@@ -552,6 +554,18 @@ async function main(): Promise<void> {
         await run.shot('normal');
 
         console.log('Back to the start while the voice reads');
+        // Only meaningful once the voice reads text the first screen does not show
+        await cdp.waitFor(
+            `(() => {
+                const spoken = document.querySelector('.tts-active-sentence');
+                const scroller = ${SCROLLER};
+                if (!spoken) return false;
+                const top = spoken.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+                return top + scroller.scrollTop > scroller.clientHeight * 1.2;
+            })()`,
+            'the voice reading below the first screen',
+            90_000,
+        );
         for (const deltaY of [2500, -400]) {
             await cdp.send('Input.dispatchMouseEvent', {
                 type: 'mouseWheel',
@@ -566,15 +580,34 @@ async function main(): Promise<void> {
             `document.querySelector('.document-top-button--visible button')`,
             'the back-to-start button',
         );
-        await sleep(8000);
-        const stillAtStart = await cdp.evaluate<number>(`${SCROLLER}.scrollTop`);
-        const stillReading = await cdp.evaluate<boolean>(
-            `Boolean(document.querySelector('.tts-active-sentence'))`,
+        await cdp.waitFor(`${SCROLLER}.scrollTop === 0`, 'the view back at the start', 5_000);
+        // Follow reading may pick up again only once the spoken text is back in view
+        const samples: { top: number; spokenInView: boolean }[] = [];
+        for (let i = 0; i < 50; i++) {
+            samples.push(
+                await cdp.evaluate(`(() => {
+                    const scroller = ${SCROLLER};
+                    const view = scroller.getBoundingClientRect();
+                    const spoken = document.querySelector('.tts-active-sentence')?.getBoundingClientRect();
+                    return {
+                        top: Math.round(scroller.scrollTop),
+                        spokenInView: Boolean(spoken && spoken.bottom > view.top && spoken.top < view.top + scroller.clientHeight),
+                    };
+                })()`),
+            );
+            await sleep(160);
+        }
+        const pulledAway = samples.findIndex(
+            (sample, i) =>
+                i > 0 && sample.top !== samples[i - 1].top && !samples[i - 1].spokenInView,
+        );
+        const heldWhileHidden = samples.filter(
+            (sample) => sample.top === 0 && !sample.spokenInView,
         );
         run.check(
-            'after going back to the start, the view stays there while the voice reads on',
-            stillAtStart === 0 && stillReading,
-            { stillAtStart, stillReading },
+            'after going back to the start, the view stays there while the voice reads further down',
+            pulledAway === -1 && heldWhileHidden.length >= 10,
+            { pulledAway, heldWhileHidden: heldWhileHidden.length, last: samples.at(-1) },
         );
         await run.stop();
 

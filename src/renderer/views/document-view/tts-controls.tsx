@@ -18,7 +18,12 @@ import {
     planFollowScroll,
     prefersReducedMotion,
 } from './follow-reading';
-import { followPause, msSinceUserScroll, resumeFollowing } from '@renderer/utils/user-scroll';
+import {
+    followPause,
+    isJumpMoving,
+    msSinceUserScroll,
+    resumeFollowing,
+} from '@renderer/utils/user-scroll';
 
 // ── Shared TTS controls interface ──
 
@@ -253,6 +258,7 @@ const TtsParagraph = memo(function TtsParagraph({
                 explicit,
                 onScreen: spokenOnScreen(geometry),
                 locked: scroller.dataset.scrollLocked === 'true',
+                jumpMoving: isJumpMoving(scroller),
             });
             if (!decision.follow) {
                 // Nothing else may come for a single-sentence paragraph, so try again later

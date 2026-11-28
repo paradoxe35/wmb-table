@@ -8,6 +8,11 @@ export type FollowPause = 'scroll' | 'jump';
 
 const pauses = new WeakMap<Element, FollowPause>();
 const lastScrollAt = new WeakMap<Element, number>();
+/** Ends the move of a jump still under way (a smooth glide passes over the spoken text). */
+const moving = new WeakMap<Element, () => void>();
+
+/** In case the browser sends no `scrollend`, e.g. when the view was already in place. */
+const JUMP_MOVE_FALLBACK_MS = 3_000;
 
 export function noteUserScroll(scroller: Element, now = performance.now()): void {
     lastScrollAt.set(scroller, now);
@@ -16,6 +21,20 @@ export function noteUserScroll(scroller: Element, now = performance.now()): void
 
 export function noteUserJump(scroller: Element): void {
     pauses.set(scroller, 'jump');
+    moving.get(scroller)?.();
+    const settled = () => {
+        clearTimeout(fallback);
+        scroller.removeEventListener('scrollend', settled);
+        if (moving.get(scroller) === settled) moving.delete(scroller);
+    };
+    const fallback = setTimeout(settled, JUMP_MOVE_FALLBACK_MS);
+    scroller.addEventListener('scrollend', settled);
+    moving.set(scroller, settled);
+}
+
+/** The view is still on its way to where the reader jumped. */
+export function isJumpMoving(scroller: Element): boolean {
+    return moving.has(scroller);
 }
 
 export function resumeFollowing(scroller: Element): void {
