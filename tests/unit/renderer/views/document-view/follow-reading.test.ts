@@ -273,7 +273,32 @@ describe('decideFollow', () => {
         explicit: false,
         onScreen: false,
         locked: false,
+        jumpMoving: false,
     };
+
+    it('waits for a jump to finish moving before it counts the spoken text as seen', () => {
+        const gliding = { ...base, pause: 'jump' as const, jumpMoving: true, onScreen: true };
+        expect(decideFollow(gliding)).toEqual({ follow: false, retryInMs: 250 });
+        expect(decideFollow({ ...gliding, reason: 'paragraph' })).toEqual({
+            follow: false,
+            retryInMs: 250,
+        });
+        expect(decideFollow({ ...gliding, jumpMoving: false })).toEqual({
+            follow: true,
+            resume: true,
+        });
+    });
+
+    it('a skip or turning follow reading on still follows during the glide', () => {
+        expect(decideFollow({ ...base, jumpMoving: true })).toEqual({
+            follow: true,
+            resume: false,
+        });
+        expect(decideFollow({ ...base, pause: 'jump', jumpMoving: true, explicit: true })).toEqual({
+            follow: true,
+            resume: true,
+        });
+    });
 
     it('follows when the reader did nothing', () => {
         expect(decideFollow(base)).toEqual({ follow: true, resume: false });

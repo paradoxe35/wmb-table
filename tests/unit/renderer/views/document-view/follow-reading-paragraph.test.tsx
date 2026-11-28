@@ -186,8 +186,45 @@ describe('follow reading in the document', () => {
         await playSegment(2);
         scrollBy.mockClear();
         noteUserJump(scroller);
+        scroller.dispatchEvent(new Event('scrollend'));
         layout.sentence = { top: 440, bottom: 480 };
         await playSegment(3);
+        expect(scrollBy).toHaveBeenCalledExactlyOnceWith({ top: 260, behavior: 'smooth' });
+        expect(followPause(scroller)).toBeNull();
+    });
+
+    it('does not pull the view back while the back-to-start glide passes over the spoken text', async () => {
+        renderList();
+        await playSegment(2);
+        scrollBy.mockClear();
+        noteUserJump(scroller);
+        // Mid-glide, the spoken sentence is on screen when the voice moves on
+        layout.sentence = { top: 440, bottom: 480 };
+        await playSegment(3);
+        expect(scrollBy).not.toHaveBeenCalled();
+
+        // The glide reaches the start, far above the spoken text
+        layout.sentence = { top: 1900, bottom: 1950 };
+        await act(async () => {
+            scroller.dispatchEvent(new Event('scrollend'));
+            await new Promise((resolve) => setTimeout(resolve, 400));
+        });
+        expect(scrollBy).not.toHaveBeenCalled();
+        expect(followPause(scroller)).toBe('jump');
+    });
+
+    it('follows once a jump lands on the spoken text', async () => {
+        renderList();
+        await playSegment(2);
+        scrollBy.mockClear();
+        noteUserJump(scroller);
+        layout.sentence = { top: 440, bottom: 480 };
+        await playSegment(3);
+        expect(scrollBy).not.toHaveBeenCalled();
+        await act(async () => {
+            scroller.dispatchEvent(new Event('scrollend'));
+            await new Promise((resolve) => setTimeout(resolve, 400));
+        });
         expect(scrollBy).toHaveBeenCalledExactlyOnceWith({ top: 260, behavior: 'smooth' });
         expect(followPause(scroller)).toBeNull();
     });

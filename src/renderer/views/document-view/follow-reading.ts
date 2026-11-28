@@ -73,6 +73,8 @@ export function planFollowScroll(
 /** A new paragraph waits this long after the last wheel move, so the view never jumps under it. */
 export const SCROLL_SETTLE_MS = 1_500;
 const LOCKED_RETRY_MS = 500;
+/** How often to look again while the view is still gliding to where the reader jumped. */
+const JUMP_MOVING_RETRY_MS = 250;
 
 export type FollowDecision =
     { follow: true; resume: boolean } | { follow: false; retryInMs: number | null };
@@ -91,6 +93,7 @@ export function decideFollow({
     explicit,
     onScreen,
     locked,
+    jumpMoving,
 }: {
     pause: FollowPause | null;
     msSinceScroll: number;
@@ -100,9 +103,12 @@ export function decideFollow({
     onScreen: boolean;
     /** A context menu holds the view still. */
     locked: boolean;
+    /** The view is still on its way to where the reader jumped, maybe over the spoken text. */
+    jumpMoving: boolean;
 }): FollowDecision {
     if (locked) return { follow: false, retryInMs: LOCKED_RETRY_MS };
     if (explicit || !pause) return { follow: true, resume: pause != null };
+    if (pause === 'jump' && jumpMoving) return { follow: false, retryInMs: JUMP_MOVING_RETRY_MS };
     if (onScreen) return { follow: true, resume: true };
     if (pause === 'jump' || reason === 'segment') return { follow: false, retryInMs: null };
     if (msSinceScroll < SCROLL_SETTLE_MS) {
