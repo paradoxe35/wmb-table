@@ -596,6 +596,8 @@ const es: Record<string, string> = {
         'El navegador no tiene voz para este idioma.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'No se puede verificar la compatibilidad del proveedor.',
+    'Le service de voix Edge est momentanément surchargé. Réessayez dans un instant.':
+        'El servicio de voz de Edge está saturado en este momento. Inténtelo de nuevo en un instante.',
     'Connexion internet indisponible. Vérifiez votre connexion et réessayez.':
         'No hay conexión a internet. Verifique su conexión e inténtelo de nuevo.',
     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':

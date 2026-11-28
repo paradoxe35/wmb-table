@@ -4,6 +4,8 @@ import { readFile, unlink } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import log from 'electron-log';
 import { EdgeTTS } from 'node-edge-tts';
+import pLimitModule from 'p-limit';
+import { resolveDefaultExport } from '@main/lib/module-interop';
 import { SimpleCache } from '@main/lib/simple-cache';
 import type { TtsProvider } from './provider';
 import type {
@@ -16,7 +18,13 @@ import type {
     TtsVoice,
 } from '@shared/tts.types';
 import { voiceLanguageCode } from '@shared/tts.types';
-import { fetchWithRetry, retryNetworkCall } from '@main/lib/network-retry';
+import {
+    HttpStatusError,
+    RetryableError,
+    fetchWithRetry,
+    isRetryableStatus,
+    retryNetworkCall,
+} from '@main/lib/network-retry';
 import { trimMp3Silence } from './silence';
 
 // ── Voice listing ──
@@ -54,6 +62,52 @@ function rateToEdgeFormat(rate: number): string {
 
 function tempMp3Path(): string {
     return join(tmpdir(), `edge-tts-${randomBytes(8).toString('hex')}.mp3`);
+}
+
+// ── Refusals ──
+
+/** Edge refuses bursts of connections, so requests go out a few at a time. */
+const MAX_PARALLEL_REQUESTS = 2;
+const pLimit = resolveDefaultExport(pLimitModule);
+const requestLimit = pLimit(MAX_PARALLEL_REQUESTS);
+
+export const EDGE_BUSY_MESSAGE =
+    'Le service de voix Edge est momentanément surchargé. Réessayez dans un instant.';
+
+/** Edge also answers a burst with 409, not only 429. */
+const isTemporaryRefusal = (status: number) => status === 409 || isRetryableStatus(status);
+
+/**
+ * `ws` reports a refused connection only as text ("Unexpected server response: 429"), and
+ * node-edge-tts a dropped one as a plain error, so neither would be retried as they are.
+ */
+export function toEdgeError(error: unknown): unknown {
+    const message = error instanceof Error ? error.message : '';
+    const refused = /Unexpected server response: (\d{3})/.exec(message);
+    if (refused) {
+        const status = Number(refused[1]);
+        return isTemporaryRefusal(status)
+            ? new RetryableError(message)
+            : new HttpStatusError(status, message);
+    }
+    if (
+        /^(Timed out (while connecting to|waiting for) Edge TTS|WebSocket closed before)/.test(
+            message,
+        )
+    ) {
+        return new RetryableError(message);
+    }
+    return error;
+}
+
+/** Still refused after the retries: say so plainly, and stay retryable for the prefetch. */
+function toFinalError(error: unknown): unknown {
+    const message = error instanceof Error ? error.message : '';
+    const refused = /Unexpected server response: (\d{3})/.exec(message);
+    if (refused && isTemporaryRefusal(Number(refused[1]))) {
+        return Object.assign(new RetryableError(EDGE_BUSY_MESSAGE), { cause: error });
+    }
+    return error;
 }
 
 // ── Provider ──
@@ -119,8 +173,21 @@ export class EdgeProvider implements TtsProvider {
 
         const tmpPath = tempMp3Path();
         try {
-            await retryNetworkCall(() => tts.ttsPromise(request.text, tmpPath), {
-                label: 'Edge TTS synthesis',
+            await retryNetworkCall(
+                () =>
+                    requestLimit(() =>
+                        tts.ttsPromise(request.text, tmpPath).catch((error: unknown) => {
+                            throw toEdgeError(error);
+                        }),
+                    ),
+                {
+                    label: 'Edge TTS synthesis',
+                    retries: 3,
+                    minTimeoutMs: 1_000,
+                    maxTimeoutMs: 8_000,
+                },
+            ).catch((error: unknown) => {
+                throw toFinalError(error);
             });
             const audioBuffer = await readFile(tmpPath);
 

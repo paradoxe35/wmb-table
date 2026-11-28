@@ -596,6 +596,8 @@ const sw: Record<string, string> = {
         'Lugha ya waraka hailingani na lugha inayotumika ({{language}}). Badilisha lugha kwenye mipangilio.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'Haiwezekani kuthibitisha uoanifu wa mtoa huduma.',
+    'Le service de voix Edge est momentanément surchargé. Réessayez dans un instant.':
+        'Huduma ya sauti ya Edge ina shughuli nyingi kwa sasa. Jaribu tena baada ya muda mfupi.',
     'Connexion internet indisponible. Vérifiez votre connexion et réessayez.':
         'Hakuna muunganisho wa intaneti. Angalia muunganisho wako kisha ujaribu tena.',
     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':

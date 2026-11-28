@@ -609,6 +609,8 @@ const en: Record<string, string> = {
         'The document language does not match the active language ({{language}}). Change the language in settings.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'Unable to verify provider compatibility.',
+    'Le service de voix Edge est momentanément surchargé. Réessayez dans un instant.':
+        'The Edge voice service is busy right now. Try again in a moment.',
     'Connexion internet indisponible. Vérifiez votre connexion et réessayez.':
         'No internet connection. Check your connection and try again.',
     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':

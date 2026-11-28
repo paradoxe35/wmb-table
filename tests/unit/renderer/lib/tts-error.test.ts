@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getTtsPlaybackErrorMessage } from '@renderer/lib/tts-error';
+import en from '@shared/i18n/locales/en';
 
 const t = (key: string) =>
     (
@@ -29,6 +30,18 @@ describe('getTtsPlaybackErrorMessage', () => {
         expect(
             getTtsPlaybackErrorMessage(t, new Error("La clé API OpenAI n'est pas configurée.")),
         ).toBe('OpenAI API key is not configured.');
+    });
+
+    it('tells the reader Edge is busy instead of blaming their settings', () => {
+        const busy =
+            'Le service de voix Edge est momentanément surchargé. Réessayez dans un instant.';
+        expect(getTtsPlaybackErrorMessage(t, new Error(busy))).toBe(busy);
+        expect(
+            getTtsPlaybackErrorMessage(
+                (key: string) => en[key as keyof typeof en] ?? key,
+                new Error(busy),
+            ),
+        ).toBe('The Edge voice service is busy right now. Try again in a moment.');
     });
 
     it('falls back to the generic provider message for unknown failures', () => {
