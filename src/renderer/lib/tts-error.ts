@@ -27,6 +27,7 @@ const USER_FACING_TTS_ERROR_PATTERNS = [
     /^Ce fournisseur ne prend pas /,
     /^Aucune voix Cartesia /,
     /^La synthèse du navigateur /,
+    /^Le service de voix Edge /,
 ];
 
 function isNetworkErrorMessage(message: string): boolean {

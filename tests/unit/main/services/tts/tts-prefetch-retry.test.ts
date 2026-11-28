@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { TtsSegment } from '@shared/tts.types';
+import { RetryableError } from '@main/lib/network-retry';
 
 const sendToRenderer = vi.fn();
 const mainWindow = {} as Electron.BrowserWindow;
@@ -145,6 +146,24 @@ describe('prefetch recovery after a network outage', () => {
         internals.playbackGeneration = 2;
         await vi.advanceTimersByTimeAsync(20_000);
         await pending;
+    });
+
+    it('keeps preparing the next sentences while Edge is busy, without stopping playback', async () => {
+        const { internals } = createService();
+        let attempts = 0;
+        internals.prepareSegment = vi.fn(async () => {
+            attempts++;
+            if (attempts < 3) throw new RetryableError('Le service de voix Edge est surchargé.');
+            return CACHE_HIT;
+        });
+        internals.prepared.add(1);
+
+        const pending = internals.prepareAndQueue(1, 1);
+        await vi.advanceTimersByTimeAsync(60_000);
+        await pending;
+
+        expect(audioPushes()).toHaveLength(1);
+        expect(lastState()).toBeUndefined();
     });
 
     it('fails fast on an error that retrying cannot fix', async () => {
